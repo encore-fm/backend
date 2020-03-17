@@ -1,0 +1,19 @@
+# config file example
+
+title = "Spotify-Jukebox Config File"
+
+# uncategorized options
+max_users = 1234
+
+[spotify]
+client_id = "id"
+client_secret = "secret"
+
+[server]
+port = 8080
+
+[database]
+host = "111.1.1.1"
+
+
+
