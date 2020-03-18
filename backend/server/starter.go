@@ -3,7 +3,6 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -19,7 +18,7 @@ func (s *Model) Start() {
 
 	log.Infof(
 		"server started at port %s, took %v",
-		strconv.Itoa(s.Port),
+		s.Port,
 		time.Since(start),
 	)
 	listenAndServe(s)

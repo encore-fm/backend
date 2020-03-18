@@ -10,5 +10,5 @@ func (s *Model) setupServerRoutes(r *mux.Router) {
 }
 
 func (s *Model) setupUserRoutes(r *mux.Router) {
-	r.HandleFunc("/user/join", handlers.UserJoinHandler)
+	r.HandleFunc("/users/join/{username}", handlers.UserJoinHandler)
 }

@@ -16,7 +16,11 @@ type ServerConfig struct {
 }
 
 type DBConfig struct {
-	Host string `mapstructure:"host"`
+	DBHost             string `mapstructure:"db_host"`
+	DBPort             int    `mapstructure:"db_port"`
+	DBName             string `mapstructure:"db_name"`
+	UserCollectionName string `mapstructure:"user_collection_name"`
+	SongCollectionName string `mapstructure:"song_collection_name"`
 }
 
 type Config struct {

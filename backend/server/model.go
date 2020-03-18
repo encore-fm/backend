@@ -1,12 +1,19 @@
 package server
 
+import (
+	"github.com/antonbaumann/spotify-jukebox/config"
+	"go.mongodb.org/mongo-driver/mongo"
+)
+
 type Model struct {
-	Port int
+	Port     int
+	DBClient *mongo.Client
 }
 
-func New(port int) *Model {
+func New(client *mongo.Client) *Model {
 	server := &Model{
-		Port: port,
+		Port:     config.Conf.Server.Port,
+		DBClient: client,
 	}
 	return server
 }

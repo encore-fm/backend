@@ -3,7 +3,7 @@
 title = "Spotify-Jukebox Config File"
 
 # uncategorized options
-max_users = 1234
+max_users = 1000
 
 [spotify]
 client_id = "id"
@@ -13,7 +13,11 @@ client_secret = "secret"
 port = 8080
 
 [database]
-host = "111.1.1.1"
+db_host = "127.0.0.1"
+db_port = 27017
+db_name = "spotify-jukebox"
+user_collection_name = "users"
+song_collection_name = "songs"
 
 
 
