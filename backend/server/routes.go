@@ -1,14 +1,13 @@
 package server
 
 import (
-	"github.com/antonbaumann/spotify-jukebox/handlers"
 	"github.com/gorilla/mux"
 )
 
 func (s *Model) setupServerRoutes(r *mux.Router) {
-	_ = r
+	r.HandleFunc("/ping", s.ServerHandler.Ping)
 }
 
 func (s *Model) setupUserRoutes(r *mux.Router) {
-	r.HandleFunc("/users/join/{username}", handlers.UserJoinHandler)
+	r.HandleFunc("/users/join/{username}", s.UserHandler.Join)
 }

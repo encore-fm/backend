@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/server"
@@ -9,7 +11,9 @@ import (
 
 func main() {
 	// connect to database
-	client, err := db.Connect()
+	ctx := context.Background()
+
+	dbConn, err := db.New(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -20,6 +24,6 @@ func main() {
 	)
 
 	// start server
-	svr := server.New(client)
+	svr := server.New(dbConn)
 	svr.Start()
 }
