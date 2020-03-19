@@ -12,7 +12,8 @@ type SpotifyConfig struct {
 }
 
 type ServerConfig struct {
-	Port int `mapstructure:"port"`
+	Port            int    `mapstructure:"port"`
+	FrontendBaseUrl string `mapstructure:"frontend_base_url"`
 }
 
 type DBConfig struct {
