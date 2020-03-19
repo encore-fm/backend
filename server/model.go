@@ -17,7 +17,7 @@ func New(dbConn *db.Model) *Model {
 	serverHandler := &handlers.ServerHandler{}
 
 	userHandler := &handlers.UserHandler{
-		UserCollection: dbConn.Database.Collection(config.Conf.Database.UserCollectionName),
+		UserCollection: db.NewUserCollection(dbConn.Client),
 	}
 
 	server := &Model{
