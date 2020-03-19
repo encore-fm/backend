@@ -11,7 +11,6 @@ import (
 
 type Model struct {
 	Client   *mongo.Client
-	Database *mongo.Database
 }
 
 func New(ctx context.Context) (*Model, error) {
@@ -35,6 +34,5 @@ func New(ctx context.Context) (*Model, error) {
 
 	return &Model{
 		Client: client,
-		Database: client.Database(config.Conf.Database.DBName),
 	}, nil
 }
