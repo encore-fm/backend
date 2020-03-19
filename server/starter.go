@@ -31,7 +31,7 @@ func (s *Model) listenAndServe(r *mux.Router) {
 	addr := fmt.Sprintf(":%v", s.Port)
 	corsObj := handlers.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
 	err := http.ListenAndServe(addr, handlers.CORS(corsObj)(r))
-	if err != nil {ç
+	if err != nil {
 		log.Errorf("server error: %v", err)
 	}
 }
