@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,13 +23,15 @@ func (s *Model) Start() {
 		s.Port,
 		time.Since(start),
 	)
-	listenAndServe(s)
+
+	s.listenAndServe(r)
 }
 
-func listenAndServe(s *Model) {
+func (s *Model) listenAndServe(r *mux.Router) {
 	addr := fmt.Sprintf(":%v", s.Port)
-	err := http.ListenAndServe(addr, nil)
-	if err != nil {
+	corsObj := handlers.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
+	err := http.ListenAndServe(addr, handlers.CORS(corsObj)(r))
+	if err != nil {ç
 		log.Errorf("server error: %v", err)
 	}
 }
