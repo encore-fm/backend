@@ -41,17 +41,25 @@ func (h *UserHandler) addUser(newUser *user.Model) error {
 	return err
 }
 
+// Join adds user to session
 func (h *UserHandler) Join(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	username := vars["username"]
 
-	newUser := user.New(vars["username"])
+	newUser, err := user.New(username)
+	if err != nil {
+		log.Errorf("creating new user [%v]: %v", username, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
 	if err := h.addUser(newUser); err != nil {
-		log.Infof("user [%v] tried to join but username is already taken", newUser.Username)
+		log.Infof("user [%v] tried to join but username is already taken", username)
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
 
-	log.Infof("user [%v] joined", newUser.Username)
-	w.WriteHeader(http.StatusOK)
-	// todo: send back user secret and store in database
+	log.Infof("user [%v] joined", username)
+
+	jsonResponse(w, newUser)
 }
