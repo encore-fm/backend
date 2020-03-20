@@ -12,6 +12,12 @@ type Model struct {
 	Score    float64 `json:"score" bson:"score"`
 }
 
+type ListElement struct {
+	Username string  `json:"username" bson:"username"`
+	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
+	Score    float64 `json:"score" bson:"score"`
+}
+
 // returns a 128 char secret key
 func GenerateSecret() (string, error) {
 	key := make([]byte, 64)

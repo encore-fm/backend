@@ -11,11 +11,15 @@ go build .
 #### User related
 ##### join: 
 - `GET /users/join/{username}`
-- response: `{"username": "<username>", "secret": "<secret>", "is_admin": false, "score": <score>}`
+- response: `{"username": <username>, "secret": <secret>, "is_admin": false, "score": <score>}`
+##### list:
+- `GET /users/{username}/list`
+- headers: `{"Authorization": <secret>}`
+- response: `[{"username": <username>, "is_admin": false, "score": <score>}]`
 #### Admin related
 ##### login: 
 - `POST /admin/login` 
-- request: `{"username": "<username>", "password": "<password>"}`
-- response: `{"username": "<username>", "secret": "<secret>", "is_admin": true, "score": <score>}`
+- request: `{"username": <username>, "password": <password>}`
+- response: `{"username": <username>, "secret": <secret>, "is_admin": true, "score": <score>}`
 #### Server related
 - ping: `GET /ping`

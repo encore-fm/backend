@@ -52,3 +52,23 @@ func (h *UserCollection) AddUser(newUser *user.Model) error {
 	_, err = h.collection.InsertOne(context.TODO(), newUser)
 	return err
 }
+
+func (h *UserCollection) ListUsers() ([]*user.ListElement, error) {
+	var userList []*user.ListElement
+	cursor, err := h.collection.Find(context.TODO(), bson.D{{}})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	for cursor.Next(context.TODO()) {
+		var elem user.ListElement
+		err := cursor.Decode(&elem)
+		if err != nil {
+			return userList, err
+		}
+
+		userList = append(userList, &elem)
+	}
+	return userList, nil
+}
