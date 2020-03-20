@@ -8,6 +8,7 @@ import (
 type Model struct {
 	Username string  `json:"username" bson:"username"`
 	Secret   string  `json:"secret" bson:"secret"`
+	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
 	Score    float64 `json:"score" bson:"score"`
 }
 
@@ -29,6 +30,21 @@ func New(username string) (*Model, error) {
 	model := &Model{
 		Username: username,
 		Secret:   secret,
+		IsAdmin:  false,
+		Score:    0,
+	}
+	return model, nil
+}
+
+func NewAdmin(username string) (*Model, error) {
+	secret, err := GenerateSecret()
+	if err != nil {
+		return nil, err
+	}
+	model := &Model{
+		Username: username,
+		Secret:   secret,
+		IsAdmin:  true,
 		Score:    0,
 	}
 	return model, nil
