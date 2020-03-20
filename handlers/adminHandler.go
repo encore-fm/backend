@@ -43,7 +43,7 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 
 	u, err := h.UserCollection.GetUser(credentials.Username)
 	if err != nil {
-		log.Errorf("admin login: %v", err)
+		log.Errorf("admin login: get user from db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -57,7 +57,13 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 	// if user does not exist in database -> create new user
 	u, err = user.New(credentials.Username)
 	if err != nil {
-		log.Errorf("admin login: %v", err)
+		log.Errorf("admin login: create new user: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := h.UserCollection.AddUser(u); err != nil {
+		log.Errorf("admin login: add user to db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

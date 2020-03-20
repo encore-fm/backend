@@ -41,8 +41,11 @@ func (h *UserCollection) GetUser(username string) (*user.Model, error) {
 }
 
 func (h *UserCollection) AddUser(newUser *user.Model) error {
-	_, err := h.GetUser(newUser.Username)
-	if err != mongo.ErrNoDocuments {
+	u, err := h.GetUser(newUser.Username)
+	if err != nil {
+		return err
+	}
+	if u != nil {
 		return ErrUsernameTaken
 	}
 
