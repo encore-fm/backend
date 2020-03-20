@@ -41,33 +41,33 @@ func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.UserCollection.GetUser(credentials.Username)
+	admin, err := h.UserCollection.GetUser(credentials.Username)
 	if err != nil {
 		log.Errorf("admin login: get user from db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if u != nil {
+	if admin != nil {
 		log.Infof("admin login: [%v] successfully logged in", credentials.Username)
-		jsonResponse(w, u)
+		jsonResponse(w, admin)
 		return
 	}
 
 	// if user does not exist in database -> create new user
-	u, err = user.New(credentials.Username)
+	admin, err = user.NewAdmin(credentials.Username)
 	if err != nil {
 		log.Errorf("admin login: create new user: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := h.UserCollection.AddUser(u); err != nil {
+	if err := h.UserCollection.AddUser(admin); err != nil {
 		log.Errorf("admin login: add user to db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	log.Infof("admin login: [%v] successfully logged in", credentials.Username)
-	jsonResponse(w, u)
+	jsonResponse(w, admin)
 }
