@@ -25,14 +25,6 @@ func NewUserCollection(client *mongo.Client) *UserCollection {
 	return &UserCollection{userCollection}
 }
 
-func (h *UserCollection) ExistsUser(username string) (bool, error) {
-	u, err := h.GetUser(username)
-	if err != nil {
-		return false, err
-	}
-	return u != nil, nil
-}
-
 // Get User returns a user struct is username exists
 // if username does not exist it returns nil
 func (h *UserCollection) GetUser(username string) (*user.Model, error) {
