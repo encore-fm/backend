@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
@@ -12,6 +13,10 @@ import (
 type UserHandler struct {
 	UserCollection *db.UserCollection
 }
+
+var (
+	ErrInvalidUserRequest = errors.New("user request invalid")
+)
 
 // Join adds user to session
 func (h *UserHandler) Join(w http.ResponseWriter, r *http.Request) {
@@ -34,4 +39,50 @@ func (h *UserHandler) Join(w http.ResponseWriter, r *http.Request) {
 	log.Infof("user [%v] joined", username)
 
 	jsonResponse(w, newUser)
+}
+
+// ListUsers lists all users in the session
+func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	ok, err := h.validUserRequest(r)
+	if err != nil {
+		log.Errorf("list users: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		log.Warnf("list users: invalid user request by [%v]", username)
+		http.Error(w, ErrInvalidUserRequest.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userList, err := h.UserCollection.ListUsers()
+	if err != nil {
+		log.Errorf("list users: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof("user [%v] requested user list", username)
+	jsonResponse(w, userList)
+}
+
+func (h *UserHandler) validUserRequest(r *http.Request) (bool, error) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	u, err := h.UserCollection.GetUser(username)
+	// error while looking up user
+	if err != nil {
+		return false, err
+	}
+	// username does not exist
+	if u == nil {
+		return false, nil
+	}
+
+	secret := r.Header.Get("Authorization")
+	return secret == u.Secret, nil
 }
