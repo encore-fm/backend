@@ -6,6 +6,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+type AdminConfig struct {
+	Username string `mapstructure:"username"`
+	Password string `mapstructure:"password"`
+}
+
 type SpotifyConfig struct {
 	ClientID     string `mapstructure:"client_id"`
 	ClientSecret string `mapstructure:"client_secret"`
@@ -25,6 +30,7 @@ type DBConfig struct {
 }
 
 type Config struct {
+	Admin    *AdminConfig   `mapstructure:"admin"`
 	Spotify  *SpotifyConfig `mapstructure:"spotify"`
 	Server   *ServerConfig  `mapstructure:"server"`
 	Database *DBConfig      `mapstructure:"database"`

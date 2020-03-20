@@ -11,11 +11,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Start sets up all routes and starts the server
 func (s *Model) Start() {
 	start := time.Now()
 	r := mux.NewRouter()
 	s.setupServerRoutes(r)
 	s.setupUserRoutes(r)
+	s.setupAdminRoutes(r)
 	http.Handle("/", r)
 
 	log.Infof(
