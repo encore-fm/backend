@@ -25,11 +25,15 @@ func NewUserCollection(client *mongo.Client) *UserCollection {
 	return &UserCollection{userCollection}
 }
 
+// Get User returns a user struct is username exists
+// if username does not exist it returns nil
 func (h *UserCollection) GetUser(username string) (*user.Model, error) {
 	filter := bson.D{{"username", username}}
 	var foundUser *user.Model
 	err := h.collection.FindOne(context.TODO(), filter).Decode(&foundUser)
-	// if username does not exist -> no documents in result error
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +41,11 @@ func (h *UserCollection) GetUser(username string) (*user.Model, error) {
 }
 
 func (h *UserCollection) AddUser(newUser *user.Model) error {
-	_, err := h.GetUser(newUser.Username)
-	if err != mongo.ErrNoDocuments {
+	u, err := h.GetUser(newUser.Username)
+	if err != nil {
+		return err
+	}
+	if u != nil {
 		return ErrUsernameTaken
 	}
 

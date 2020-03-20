@@ -8,13 +8,17 @@ import (
 
 type Model struct {
 	Port          int
-	DBConn        *db.Model
 	UserHandler   *handlers.UserHandler
+	AdminHandler  *handlers.AdminHandler
 	ServerHandler *handlers.ServerHandler
 }
 
 func New(dbConn *db.Model) *Model {
 	serverHandler := &handlers.ServerHandler{}
+
+	adminHandler := &handlers.AdminHandler{
+		UserCollection: db.NewUserCollection(dbConn.Client),
+	}
 
 	userHandler := &handlers.UserHandler{
 		UserCollection: db.NewUserCollection(dbConn.Client),
@@ -22,9 +26,9 @@ func New(dbConn *db.Model) *Model {
 
 	server := &Model{
 		Port:          config.Conf.Server.Port,
-		DBConn:        dbConn,
 		UserHandler:   userHandler,
 		ServerHandler: serverHandler,
+		AdminHandler:  adminHandler,
 	}
 
 	return server
