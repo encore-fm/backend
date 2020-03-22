@@ -16,6 +16,7 @@ func (s *Model) Start() {
 	start := time.Now()
 	r := mux.NewRouter()
 	s.setupServerRoutes(r)
+	s.setupSpotifyRoutes(r)
 	s.setupUserRoutes(r)
 	s.setupAdminRoutes(r)
 	http.Handle("/", r)

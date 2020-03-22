@@ -12,6 +12,8 @@ password = "password"
 [spotify]
 client_id = "id"
 client_secret = "secret"
+redirect_url = "redirect.url"
+state = "state"
 
 [server]
 port = 8080

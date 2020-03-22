@@ -18,3 +18,7 @@ func (s *Model) setupUserRoutes(r *mux.Router) {
 func (s *Model) setupAdminRoutes(r *mux.Router) {
 	r.HandleFunc("/admin/login", s.AdminHandler.Login).Methods(http.MethodPost)
 }
+
+func (s *Model) setupSpotifyRoutes(r *mux.Router) {
+	r.HandleFunc("/callback", s.SpotifyHandler.Redirect)
+}
