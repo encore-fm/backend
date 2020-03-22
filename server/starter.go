@@ -31,8 +31,10 @@ func (s *Model) Start() {
 
 func (s *Model) listenAndServe(r *mux.Router) {
 	addr := fmt.Sprintf(":%v", s.Port)
-	corsObj := handlers.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
-	err := http.ListenAndServe(addr, handlers.CORS(corsObj)(r))
+	allowedOrigins := handlers.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
+	allowedHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "HEAD", "OPTIONS"})
+	err := http.ListenAndServe(addr, handlers.CORS(allowedOrigins, allowedHeaders, allowedMethods)(r))
 	if err != nil {
 		log.Errorf("server error: %v", err)
 	}
