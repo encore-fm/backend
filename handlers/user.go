@@ -57,7 +57,7 @@ func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	songID := vars["song_id"]
 
-	if !h.spotifyIsAuthenticated {
+	if !h.spotifyActivated {
 		log.Errorf("suggest song: %v", ErrSpotifyNotAuthenticated)
 		http.Error(w, ErrSpotifyNotAuthenticated.Error(), http.StatusInternalServerError)
 		return
@@ -79,4 +79,3 @@ func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	log.Infof("suggest song: by [%v] songID [%v]", username, songID)
 	jsonResponse(w, songInfo)
 }
-
