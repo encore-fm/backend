@@ -79,3 +79,18 @@ func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	log.Infof("suggest song: by [%v] songID [%v]", username, songID)
 	jsonResponse(w, songInfo)
 }
+
+func (h *Handler) ListSongs(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	songList, err := h.SongCollection.ListSongs()
+	if err != nil {
+		log.Errorf("list users: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof("user [%v] requested song list", username)
+	jsonResponse(w, songList)
+}

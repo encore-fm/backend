@@ -28,6 +28,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 		"/users/{username}/suggest/{song_id}",
 		auth(http.HandlerFunc(s.Handler.SuggestSong)),
 	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/listSongs",
+		auth(http.HandlerFunc(s.Handler.ListSongs)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router) {
