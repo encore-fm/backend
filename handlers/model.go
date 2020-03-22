@@ -6,11 +6,11 @@ import (
 )
 
 type Handler struct {
-	spotifyAuthenticator   spotify.Authenticator
-	Spotify                spotify.Client
-	spotifyIsAuthenticated bool
-	UserCollection         *db.UserCollection
-	SongCollection         *db.SongCollection
+	spotifyAuthenticator spotify.Authenticator
+	Spotify              spotify.Client
+	spotifyActivated     bool
+	UserCollection       *db.UserCollection
+	SongCollection       *db.SongCollection
 }
 
 func New(
@@ -19,9 +19,9 @@ func New(
 	auth spotify.Authenticator,
 ) *Handler {
 	return &Handler{
-		spotifyAuthenticator:   auth,
-		spotifyIsAuthenticated: false,
-		UserCollection:         userCollection,
-		SongCollection:         songCollection,
+		spotifyAuthenticator: auth,
+		spotifyActivated:     false,
+		UserCollection:       userCollection,
+		SongCollection:       songCollection,
 	}
 }

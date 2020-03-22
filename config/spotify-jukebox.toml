@@ -14,6 +14,7 @@ client_id = "id"
 client_secret = "secret"
 redirect_url = "redirect.url"
 state = "state"
+open_browser = true
 
 [server]
 port = 8080

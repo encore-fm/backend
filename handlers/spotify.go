@@ -8,7 +8,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-
 var ErrCouldNotGetToken = errors.New("couldn't get token")
 
 // the user will eventually be redirected back to your redirect URL
@@ -22,7 +21,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 	// create a client using the specified token
 	h.Spotify = h.spotifyAuthenticator.NewClient(token)
-	h.spotifyIsAuthenticated = true
+	h.spotifyActivated = true
 	// the client can now be used to make authenticated requests
 	log.Info("spotify client can now be used to make authenticated requests")
 	http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)

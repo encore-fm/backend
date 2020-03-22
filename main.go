@@ -6,6 +6,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/server"
+	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
@@ -35,10 +36,16 @@ func main() {
 	)
 
 	// create spotify client
-
 	spotifyAuth := spotifyAuthSetup()
 	url := spotifyAuth.AuthURL(config.Conf.Spotify.State)
 	log.Infof("Go to %v", url)
+
+	// open authentication url in browser
+	if config.Conf.Spotify.OpenBrowser {
+		if err := browser.OpenURL(url); err != nil {
+			log.Warn(err)
+		}
+	}
 
 	// start server
 	svr := server.New(dbConn, spotifyAuth)

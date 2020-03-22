@@ -32,7 +32,6 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infof("user [%v] joined", username)
-
 	jsonResponse(w, newUser)
 }
 
@@ -57,7 +56,7 @@ func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	songID := vars["song_id"]
 
-	if !h.spotifyIsAuthenticated {
+	if !h.spotifyActivated {
 		log.Errorf("suggest song: %v", ErrSpotifyNotAuthenticated)
 		http.Error(w, ErrSpotifyNotAuthenticated.Error(), http.StatusInternalServerError)
 		return
@@ -80,3 +79,17 @@ func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songInfo)
 }
 
+func (h *Handler) ListSongs(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	songList, err := h.SongCollection.ListSongs()
+	if err != nil {
+		log.Errorf("list users: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof("user [%v] requested song list", username)
+	jsonResponse(w, songList)
+}
