@@ -8,34 +8,19 @@ import (
 )
 
 type Model struct {
-	Port           int
-	UserHandler    *handlers.UserHandler
-	AdminHandler   *handlers.AdminHandler
-	ServerHandler  *handlers.ServerHandler
-	SpotifyHandler *handlers.SpotifyHandler
+	Port    int
+	Handler *handlers.Handler
 }
 
 func New(dbConn *db.Model, spotifyAuth spotify.Authenticator) *Model {
-	serverHandler := &handlers.ServerHandler{}
-
-	spotifyHandler := &handlers.SpotifyHandler{
-		Authenticator: spotifyAuth,
-	}
-
-	adminHandler := &handlers.AdminHandler{
-		UserCollection: db.NewUserCollection(dbConn.Client),
-	}
-
-	userHandler := &handlers.UserHandler{
-		UserCollection: db.NewUserCollection(dbConn.Client),
-	}
+	handler := handlers.New(
+		db.NewUserCollection(dbConn.Client),
+		spotifyAuth,
+	)
 
 	server := &Model{
-		Port:           config.Conf.Server.Port,
-		UserHandler:    userHandler,
-		ServerHandler:  serverHandler,
-		AdminHandler:   adminHandler,
-		SpotifyHandler: spotifyHandler,
+		Port:    config.Conf.Server.Port,
+		Handler: handler,
 	}
 
 	return server

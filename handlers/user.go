@@ -4,22 +4,17 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
-
-type UserHandler struct {
-	UserCollection *db.UserCollection
-}
 
 var (
 	ErrInvalidUserRequest = errors.New("user request invalid")
 )
 
 // Join adds user to session
-func (h *UserHandler) Join(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -42,7 +37,7 @@ func (h *UserHandler) Join(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListUsers lists all users in the session
-func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -69,7 +64,7 @@ func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, userList)
 }
 
-func (h *UserHandler) validUserRequest(r *http.Request) (bool, error) {
+func (h *Handler) validUserRequest(r *http.Request) (bool, error) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 

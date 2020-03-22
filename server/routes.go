@@ -7,18 +7,20 @@ import (
 )
 
 func (s *Model) setupServerRoutes(r *mux.Router) {
-	r.HandleFunc("/ping", s.ServerHandler.Ping)
+	r.HandleFunc("/ping", s.Handler.Ping)
 }
 
 func (s *Model) setupUserRoutes(r *mux.Router) {
-	r.HandleFunc("/users/join/{username}", s.UserHandler.Join).Methods(http.MethodGet)
-	r.HandleFunc("/users/{username}/list", s.UserHandler.ListUsers).Methods(http.MethodGet)
+	r.HandleFunc("/users/join/{username}", s.Handler.Join).Methods(http.MethodGet)
+	r.HandleFunc("/users/{username}/list", s.Handler.ListUsers).Methods(http.MethodGet)
+
+	r.HandleFunc("/users/test", s.Handler.Test).Methods(http.MethodGet)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router) {
-	r.HandleFunc("/admin/login", s.AdminHandler.Login).Methods(http.MethodPost)
+	r.HandleFunc("/admin/login", s.Handler.Login).Methods(http.MethodPost)
 }
 
 func (s *Model) setupSpotifyRoutes(r *mux.Router) {
-	r.HandleFunc("/callback", s.SpotifyHandler.Redirect)
+	r.HandleFunc("/callback", s.Handler.Redirect)
 }

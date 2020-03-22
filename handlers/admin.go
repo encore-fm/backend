@@ -6,14 +6,9 @@ import (
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	log "github.com/sirupsen/logrus"
 )
-
-type AdminHandler struct {
-	UserCollection *db.UserCollection
-}
 
 var (
 	ErrUserNotAdmin  = errors.New("user not an admin")
@@ -23,7 +18,7 @@ var (
 // Log in checks credentials {username, password} in request.Body
 // if they match with configured admin credentials the admin-user
 // struct will be returned
-func (h *AdminHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var credentials config.AdminConfig
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		log.Errorf("admin login: decoding request body: %v", err)
