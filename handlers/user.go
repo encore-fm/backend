@@ -32,7 +32,6 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Infof("user [%v] joined", username)
-
 	jsonResponse(w, newUser)
 }
 

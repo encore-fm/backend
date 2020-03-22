@@ -8,6 +8,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type SongCollection struct {
@@ -54,13 +55,19 @@ func (h *SongCollection) AddSong(newSong *song.Model) error {
 }
 
 func (h *SongCollection) ListSongs() ([]*song.Model, error) {
-	var songList []*song.Model
-	cursor, err := h.collection.Find(context.TODO(), bson.D{{}})
+	opts := options.Find()
+	opts.SetSort(bson.D{
+		{"score", -1},
+		{"time_added", 1},
+	})
+
+	cursor, err := h.collection.Find(context.TODO(), bson.D{}, opts)
 	if err != nil {
 		return nil, err
 	}
 	defer cursor.Close(context.TODO())
 
+	var songList []*song.Model
 	for cursor.Next(context.TODO()) {
 		var elem song.Model
 		err := cursor.Decode(&elem)
