@@ -15,10 +15,13 @@ import (
 func (s *Model) Start() {
 	start := time.Now()
 	r := mux.NewRouter()
+
+	// setup routes
 	s.setupServerRoutes(r)
 	s.setupSpotifyRoutes(r)
-	s.setupUserRoutes(r)
+	s.setupUserRoutes(r, userAuth(s.Handler.UserCollection))
 	s.setupAdminRoutes(r)
+
 	http.Handle("/", r)
 
 	log.Infof(

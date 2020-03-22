@@ -10,6 +10,18 @@ import (
 	"github.com/zmb3/spotify"
 )
 
+func spotifyAuthSetup() spotify.Authenticator {
+	spotifyAuth := spotify.NewAuthenticator(
+		config.Conf.Spotify.RedirectUrl,
+		spotify.ScopeUserReadPrivate,
+	)
+	spotifyAuth.SetAuthInfo(
+		config.Conf.Spotify.ClientID,
+		config.Conf.Spotify.ClientSecret,
+	)
+	return spotifyAuth
+}
+
 func main() {
 	// connect to database
 	dbConn, err := db.New(context.TODO())
@@ -23,14 +35,8 @@ func main() {
 	)
 
 	// create spotify client
-	spotifyAuth := spotify.NewAuthenticator(
-		config.Conf.Spotify.RedirectUrl,
-		spotify.ScopeUserReadPrivate,
-	)
-	spotifyAuth.SetAuthInfo(
-		config.Conf.Spotify.ClientID,
-		config.Conf.Spotify.ClientSecret,
-	)
+
+	spotifyAuth := spotifyAuthSetup()
 	url := spotifyAuth.AuthURL(config.Conf.Spotify.State)
 	log.Infof("Go to %v", url)
 

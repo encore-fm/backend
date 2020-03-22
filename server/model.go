@@ -15,6 +15,7 @@ type Model struct {
 func New(dbConn *db.Model, spotifyAuth spotify.Authenticator) *Model {
 	handler := handlers.New(
 		db.NewUserCollection(dbConn.Client),
+		db.NewSongCollection(dbConn.Client),
 		spotifyAuth,
 	)
 

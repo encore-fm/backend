@@ -4,14 +4,14 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/zmb3/spotify"
 )
 
-var (
-	ErrInvalidUserRequest = errors.New("user request invalid")
-)
+var ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
 
 // Join adds user to session
 func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
@@ -41,18 +41,6 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	ok, err := h.validUserRequest(r)
-	if err != nil {
-		log.Errorf("list users: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if !ok {
-		log.Warnf("list users: invalid user request by [%v]", username)
-		http.Error(w, ErrInvalidUserRequest.Error(), http.StatusUnauthorized)
-		return
-	}
-
 	userList, err := h.UserCollection.ListUsers()
 	if err != nil {
 		log.Errorf("list users: %v", err)
@@ -64,20 +52,31 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, userList)
 }
 
-func (h *Handler) validUserRequest(r *http.Request) (bool, error) {
+func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
+	songID := vars["song_id"]
 
-	u, err := h.UserCollection.GetUser(username)
-	// error while looking up user
+	if !h.spotifyIsAuthenticated {
+		log.Errorf("suggest song: %v", ErrSpotifyNotAuthenticated)
+		http.Error(w, ErrSpotifyNotAuthenticated.Error(), http.StatusInternalServerError)
+		return
+	}
+	fullTrack, err := h.Spotify.GetTrack(spotify.ID(songID))
 	if err != nil {
-		return false, err
-	}
-	// username does not exist
-	if u == nil {
-		return false, nil
+		log.Errorf("suggest song: retrieving info from spotify: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	secret := r.Header.Get("Authorization")
-	return secret == u.Secret, nil
+	songInfo := song.New(username, 0, fullTrack)
+	if err := h.SongCollection.AddSong(songInfo); err != nil {
+		log.Errorf("suggest song: insert into songs collection: %v", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof("suggest song: by [%v] songID [%v]", username, songID)
+	jsonResponse(w, songInfo)
 }
+

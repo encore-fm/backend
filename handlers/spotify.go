@@ -22,6 +22,7 @@ func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 	// create a client using the specified token
 	h.Spotify = h.spotifyAuthenticator.NewClient(token)
+	h.spotifyIsAuthenticated = true
 	// the client can now be used to make authenticated requests
 	log.Info("spotify client can now be used to make authenticated requests")
 	http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)

@@ -6,14 +6,22 @@ import (
 )
 
 type Handler struct {
-	spotifyAuthenticator spotify.Authenticator
-	Spotify              spotify.Client
-	UserCollection       *db.UserCollection
+	spotifyAuthenticator   spotify.Authenticator
+	Spotify                spotify.Client
+	spotifyIsAuthenticated bool
+	UserCollection         *db.UserCollection
+	SongCollection         *db.SongCollection
 }
 
-func New(userCollection *db.UserCollection, auth spotify.Authenticator) *Handler {
+func New(
+	userCollection *db.UserCollection,
+	songCollection *db.SongCollection,
+	auth spotify.Authenticator,
+) *Handler {
 	return &Handler{
-		spotifyAuthenticator:auth,
-		UserCollection: userCollection,
+		spotifyAuthenticator:   auth,
+		spotifyIsAuthenticated: false,
+		UserCollection:         userCollection,
+		SongCollection:         songCollection,
 	}
 }
