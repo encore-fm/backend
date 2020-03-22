@@ -16,6 +16,32 @@ go build .
 - `GET /users/{username}/list`
 - headers: `{"Authorization": <secret>}`
 - response: `[{"username": <username>, "is_admin": false, "score": <score>}]`
+##### suggest song
+- `GET /users/{username}/suggest/{song_id}`
+- headers: `{"Authorization": <secret>}`
+- response: `{
+                 "duration_ms" : <duration>,
+                 "preview_url" : <url>,
+                 "score" : <score>,
+                 "id" : <id>,
+                 "time_added" : <time string>,
+                 "suggested_by" : <user>,
+                 "name" : <name>,
+                 "artists" : []
+               }`
+##### list songs
+- `GET /users/{username}/listSongs`
+- headers: `{"Authorization": <secret>}`
+- response: `[{
+                 "duration_ms" : <duration>,
+                 "preview_url" : <url>,
+                 "score" : <score>,
+                 "id" : <id>,
+                 "time_added" : <time string>,
+                 "suggested_by" : <user>,
+                 "name" : <name>,
+                 "artists" : []
+               }]`
 #### Admin related
 ##### login: 
 - `POST /admin/login` 
