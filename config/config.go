@@ -15,7 +15,7 @@ type SpotifyConfig struct {
 	ClientID     string `mapstructure:"client_id"`
 	ClientSecret string `mapstructure:"client_secret"`
 	RedirectUrl  string `mapstructure:"redirect_url"`
-	State        string `mapstructure:"redirect_url"`
+	State        string `mapstructure:"state"`
 	OpenBrowser  bool   `mapstructure:"open_browser"`
 }
 
@@ -49,7 +49,7 @@ func init() {
 	viper.SetConfigType("toml")
 	viper.SetConfigName("spotify-jukebox")
 	viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
-	viper.AddConfigPath("config/") // this is only the example file with dummy values
+	viper.AddConfigPath(".") // this is only the example file with dummy values
 
 	c, err := FromFile()
 	if err != nil {
