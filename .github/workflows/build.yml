@@ -24,3 +24,6 @@ jobs:
 
       - name: Test
         run: go test ./... -race -coverprofile=coverage.txt -covermode=atomic
+
+      - name: Coverage
+        run: bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }}
