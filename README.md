@@ -24,6 +24,8 @@ go build .
 - response: `{
                  "duration_ms" : <duration>,
                  "preview_url" : <url>,
+                 "cover_url": <url>,
+                 "album_name": <name>,
                  "score" : <score>,
                  "id" : <id>,
                  "time_added" : <time string>,
@@ -37,6 +39,8 @@ go build .
 - response: `[{
                  "duration_ms" : <duration>,
                  "preview_url" : <url>,
+                 "cover_url": <url>,
+                 "album_name": <name>,
                  "score" : <score>,
                  "id" : <id>,
                  "time_added" : <time string>,
