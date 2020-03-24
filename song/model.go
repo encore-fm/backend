@@ -11,6 +11,8 @@ type Model struct {
 	Name        string    `json:"name" bson:"name"`
 	Artists     []string  `json:"artists" bson:"artists"`
 	Duration    int       `json:"duration_ms" bson:"duration_ms"`
+	CoverUrl    string    `json:"cover_url" bson:"cover_url"`
+	AlbumName   string    `json:"album_name" bson:"album_name"`
 	PreviewUrl  string    `json:"preview_url" bson:"preview_url"`
 	SuggestedBy string    `json:"suggested_by" bson:"suggested_by"`
 	Score       float64   `json:"score" bson:"score"`
@@ -22,12 +24,19 @@ func New(
 	score float64,
 	info *spotify.FullTrack,
 ) *Model {
+	albumUrl := ""
+	if len(info.Album.Images) != 0 {
+		albumUrl = info.Album.Images[0].URL
+	}
+
 	return &Model{
 		ID:          string(info.ID),
 		Name:        info.Name,
 		Artists:     getArtistNames(info),
 		Duration:    info.Duration,
 		PreviewUrl:  info.PreviewURL,
+		CoverUrl:    albumUrl,
+		AlbumName:   info.Album.Name,
 		SuggestedBy: suggestingUser,
 		Score:       score,
 		TimeAdded:   time.Now(),
