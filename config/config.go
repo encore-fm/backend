@@ -49,7 +49,8 @@ func init() {
 	viper.SetConfigType("toml")
 	viper.SetConfigName("spotify-jukebox")
 	viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
-	viper.AddConfigPath(".") // this is only the example file with dummy values
+	viper.AddConfigPath("./") // this is only the example file with dummy values
+	viper.AddConfigPath("config/") // this is only the example file with dummy values
 
 	c, err := FromFile()
 	if err != nil {
