@@ -33,6 +33,16 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 		"/users/{username}/listSongs",
 		auth(http.HandlerFunc(s.Handler.ListSongs)),
 	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/vote/{song_id}/up",
+		auth(http.HandlerFunc(s.Handler.VoteUp)),
+	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/vote/{song_id}/down",
+		auth(http.HandlerFunc(s.Handler.VoteDown)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router) {

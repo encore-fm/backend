@@ -2,22 +2,31 @@ package song
 
 import (
 	"testing"
+	"time"
 
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/zmb3/spotify"
 )
 
 func TestNew1(t *testing.T) {
-	username := "test"
+	username := "username"
 	songScore := float64(42)
-	songID := "song_id"
-	songName := "song_name"
-	previewURL := "preview_url"
-	duration := 1000
-	artistStrings := []string{"artist_1", "artist_2", "artist_3"}
-	coverUrl := "cover_url"
-	albumName := "album_name"
 
+	expected := &Model{
+		ID:          "song_id",
+		Name:        "song_name",
+		Artists:     []string{"artist_1", "artist_2", "artist_3"},
+		Duration:    100,
+		CoverUrl:    "cover_url",
+		AlbumName:   "album_name",
+		PreviewUrl:  "preview_url",
+		SuggestedBy: username,
+		Score:       songScore,
+		TimeAdded:   time.Time{},
+		Upvoters:    []user.Voter{},
+		Downvoters:  []user.Voter{},
+	}
 	info := &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
 			Artists: []spotify.SimpleArtist{
@@ -25,40 +34,45 @@ func TestNew1(t *testing.T) {
 				{Name: "artist_2"},
 				{Name: "artist_3"},
 			},
-			Duration:   duration,
-			ID:         spotify.ID(songID),
-			Name:       songName,
-			PreviewURL: previewURL,
+			Duration:   expected.Duration,
+			ID:         spotify.ID(expected.ID),
+			Name:       expected.Name,
+			PreviewURL: expected.PreviewUrl,
 		},
 		Album: spotify.SimpleAlbum{
-			Name: albumName,
+			Name: expected.AlbumName,
 			Images: []spotify.Image{
-				{URL: coverUrl},
+				{URL: expected.CoverUrl},
 			},
 		},
 	}
 
 	result := New(username, songScore, info)
-	assert.Equal(t, songName, result.Name)
-	assert.Equal(t, previewURL, result.PreviewUrl)
-	assert.Equal(t, songID, result.ID)
-	assert.Equal(t, duration, result.Duration)
-	assert.Equal(t, artistStrings, result.Artists)
-	assert.Equal(t, coverUrl, result.CoverUrl)
-	assert.Equal(t, albumName, result.AlbumName)
+
+	//overwrite result.TimeAdded
+	result.TimeAdded = time.Time{}
+
+	assert.Equal(t, expected, result)
 }
 
 func TestNew2(t *testing.T) {
-	username := "test"
+	username := "username"
 	songScore := float64(42)
-	songID := "song_id"
-	songName := "song_name"
-	previewURL := "preview_url"
-	duration := 1000
-	artistStrings := []string{"artist_1", "artist_2", "artist_3"}
-	coverUrl := ""
-	albumName := "album_name"
 
+	expected := &Model{
+		ID:          "song_id",
+		Name:        "song_name",
+		Artists:     []string{"artist_1", "artist_2", "artist_3"},
+		Duration:    100,
+		CoverUrl:    "",
+		AlbumName:   "album_name",
+		PreviewUrl:  "preview_url",
+		SuggestedBy: username,
+		Score:       songScore,
+		TimeAdded:   time.Time{},
+		Upvoters:    []user.Voter{},
+		Downvoters:  []user.Voter{},
+	}
 	info := &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
 			Artists: []spotify.SimpleArtist{
@@ -66,22 +80,22 @@ func TestNew2(t *testing.T) {
 				{Name: "artist_2"},
 				{Name: "artist_3"},
 			},
-			Duration:   duration,
-			ID:         spotify.ID(songID),
-			Name:       songName,
-			PreviewURL: previewURL,
+			Duration:   expected.Duration,
+			ID:         spotify.ID(expected.ID),
+			Name:       expected.Name,
+			PreviewURL: expected.PreviewUrl,
 		},
 		Album: spotify.SimpleAlbum{
-			Name: albumName,
+			Name: expected.AlbumName,
+			Images: []spotify.Image{
+			},
 		},
 	}
 
 	result := New(username, songScore, info)
-	assert.Equal(t, songName, result.Name)
-	assert.Equal(t, previewURL, result.PreviewUrl)
-	assert.Equal(t, songID, result.ID)
-	assert.Equal(t, duration, result.Duration)
-	assert.Equal(t, artistStrings, result.Artists)
-	assert.Equal(t, coverUrl, result.CoverUrl)
-	assert.Equal(t, albumName, result.AlbumName)
+
+	//overwrite result.TimeAdded
+	result.TimeAdded = time.Time{}
+
+	assert.Equal(t, expected, result)
 }

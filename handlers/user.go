@@ -11,7 +11,10 @@ import (
 	"github.com/zmb3/spotify"
 )
 
-var ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
+var (
+	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
+	ErrUserAlreadyVoted = errors.New("user already voted")
+)
 
 // Join adds user to session
 func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
@@ -92,4 +95,52 @@ func (h *Handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("user [%v] requested song list", username)
 	jsonResponse(w, songList)
+}
+
+func (h *Handler) VoteUp(w http.ResponseWriter, r *http.Request) {
+	msg := "vote up"
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	songID := vars["song_id"]
+
+	songInfo, err := h.SongCollection.GetSongByID(songID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	userInfo, err := h.UserCollection.GetUser(username)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// add user to upvoters if not in list
+	upvoters, ok := songInfo.Upvoters.Add(username, userInfo.Score)
+	songInfo.Upvoters = upvoters
+	if ok {
+		log.Errorf("%v: %v", msg, ErrUserAlreadyVoted)
+		http.Error(w, ErrUserAlreadyVoted.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// remove user from downvoters if in list
+	downvoters, _ := songInfo.Downvoters.Remove(username)
+	songInfo.Downvoters = downvoters
+
+	// todo find good score system
+	songInfo.Score += 1
+
+	// todo update suggesting user score
+
+	// todo write song info to db
+
+	// todo return song list
+}
+
+func (h *Handler) VoteDown(w http.ResponseWriter, r *http.Request) {
+
 }
