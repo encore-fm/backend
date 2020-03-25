@@ -35,13 +35,8 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 	).Methods(http.MethodGet)
 
 	r.Handle(
-		"/users/{username}/vote/{song_id}/up",
-		auth(http.HandlerFunc(s.Handler.VoteUp)),
-	).Methods(http.MethodGet)
-
-	r.Handle(
-		"/users/{username}/vote/{song_id}/down",
-		auth(http.HandlerFunc(s.Handler.VoteDown)),
+		"/users/{username}/vote/{song_id}/{vote_action}",
+		auth(http.HandlerFunc(s.Handler.Vote)),
 	).Methods(http.MethodGet)
 }
 

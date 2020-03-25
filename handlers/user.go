@@ -14,6 +14,8 @@ import (
 var (
 	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
 	ErrUserAlreadyVoted = errors.New("user already voted")
+	ErrSongNotInCollection = errors.New("song with given ID not in db")
+	ErrUserNotExisting = errors.New("user with given ID does not exist")
 )
 
 // Join adds user to session
@@ -97,17 +99,30 @@ func (h *Handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songList)
 }
 
-func (h *Handler) VoteUp(w http.ResponseWriter, r *http.Request) {
-	msg := "vote up"
+func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
+	msg := "vote"
 
 	vars := mux.Vars(r)
 	username := vars["username"]
 	songID := vars["song_id"]
+	voteAction := vars["vote_action"]
+
+	if voteAction != "up" && voteAction != "down" {
+		errMsg := `vote action must be in {"up", "down"}`
+		log.Errorf("%v: %v", msg, errMsg)
+		http.Error(w, errMsg, http.StatusBadRequest)
+		return
+	}
 
 	songInfo, err := h.SongCollection.GetSongByID(songID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if songInfo == nil {
+		log.Errorf("%v: %v", msg, ErrSongNotInCollection)
+		http.Error(w, ErrSongNotInCollection.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -117,30 +132,76 @@ func (h *Handler) VoteUp(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	// add user to upvoters if not in list
-	upvoters, ok := songInfo.Upvoters.Add(username, userInfo.Score)
-	songInfo.Upvoters = upvoters
-	if ok {
-		log.Errorf("%v: %v", msg, ErrUserAlreadyVoted)
-		http.Error(w, ErrUserAlreadyVoted.Error(), http.StatusBadRequest)
+	if userInfo == nil {
+		log.Errorf("%v: %v", msg, ErrUserNotExisting)
+		http.Error(w, ErrUserNotExisting.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// remove user from downvoters if in list
-	downvoters, _ := songInfo.Downvoters.Remove(username)
-	songInfo.Downvoters = downvoters
+	scoreIncAmount := float64(0)
+
+	if voteAction == "up" {
+		// add user to upvoters if not in list
+		upvoters, ok := songInfo.Upvoters.Add(username, userInfo.Score)
+		songInfo.Upvoters = upvoters
+		if !ok {
+			log.Errorf("%v: %v", msg, ErrUserAlreadyVoted)
+			http.Error(w, ErrUserAlreadyVoted.Error(), http.StatusBadRequest)
+			return
+		}
+		scoreIncAmount += 1
+
+		// remove user from downvoters if in list
+		downvoters, ok := songInfo.Downvoters.Remove(username)
+		songInfo.Downvoters = downvoters
+		if ok {
+			scoreIncAmount += 1
+		}
+	}
+	if voteAction == "down" {
+		// add user to downvoters if not in list
+		downvoters, ok := songInfo.Downvoters.Add(username, userInfo.Score)
+		songInfo.Downvoters = downvoters
+		if !ok {
+			log.Errorf("%v: %v", msg, ErrUserAlreadyVoted)
+			http.Error(w, ErrUserAlreadyVoted.Error(), http.StatusBadRequest)
+			return
+		}
+		scoreIncAmount -= 1
+
+		// remove user from upvoters if in list
+		upvoters, ok := songInfo.Upvoters.Remove(username)
+		songInfo.Upvoters = upvoters
+		if ok {
+			scoreIncAmount -= 1
+		}
+	}
 
 	// todo find good score system
-	songInfo.Score += 1
+	songInfo.Score += scoreIncAmount
 
-	// todo update suggesting user score
+	// write new song info to db
+	if err := h.SongCollection.UpdateSong(songInfo); err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// todo write song info to db
+	// update score of user that suggested song
+	if err := h.UserCollection.IncrementScore(songInfo.SuggestedBy, scoreIncAmount); err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-	// todo return song list
-}
+	// return updated song list
+	songList, err := h.SongCollection.ListSongs()
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-func (h *Handler) VoteDown(w http.ResponseWriter, r *http.Request) {
-
+	log.Infof("user [%v] %vvoted song [%v]", username, voteAction, songID)
+	jsonResponse(w, songList)
 }
