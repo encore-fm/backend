@@ -27,6 +27,8 @@ type userCollection struct {
 	collection *mongo.Collection
 }
 
+var _ UserCollection = (*userCollection)(nil)
+
 func NewUserCollection(client *mongo.Client) UserCollection {
 	collection := client.
 		Database(config.Conf.Database.DBName).

@@ -17,7 +17,7 @@ var (
 
 type authFunc = func(http.Handler) http.Handler
 
-func authenticate(userCollection *db.UserCollection, checkAdmin bool) authFunc {
+func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			msg := "authenticate admin request: %v"
@@ -56,10 +56,10 @@ func authenticate(userCollection *db.UserCollection, checkAdmin bool) authFunc {
 	}
 }
 
-func userAuth(userCollection *db.UserCollection) authFunc {
+func userAuth(userCollection db.UserCollection) authFunc {
 	return authenticate(userCollection, false)
 }
 
-func adminAuth(userCollection *db.UserCollection) authFunc {
+func adminAuth(userCollection db.UserCollection) authFunc {
 	return authenticate(userCollection, true)
 }

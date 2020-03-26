@@ -16,10 +16,17 @@ var (
 	ErrWrongPassword = errors.New("wrong password")
 )
 
+type AdminHandler interface {
+	Login(w http.ResponseWriter, r *http.Request)
+	RemoveSong(w http.ResponseWriter, r *http.Request)
+}
+
+var _ AdminHandler = (*handler)(nil)
+
 // Log in checks credentials {username, password} in request.Body
 // if they match with configured admin credentials the admin-user
 // struct will be returned
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 	var credentials config.AdminConfig
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		log.Errorf("admin login: decoding request body: %v", err)
@@ -68,7 +75,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, admin)
 }
 
-func (h *Handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
+func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	msg := "remove song"
 	vars := mux.Vars(r)
 	songID := vars["song_id"]

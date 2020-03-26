@@ -18,8 +18,18 @@ var (
 	ErrUserNotExisting = errors.New("user with given ID does not exist")
 )
 
+type UserHandler interface {
+	Join(w http.ResponseWriter, r *http.Request)
+	ListUsers(w http.ResponseWriter, r *http.Request)
+	SuggestSong(w http.ResponseWriter, r *http.Request)
+	ListSongs(w http.ResponseWriter, r *http.Request)
+	Vote(w http.ResponseWriter, r *http.Request)
+}
+
+var _ UserHandler = (*handler)(nil)
+
 // Join adds user to session
-func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -41,7 +51,7 @@ func (h *Handler) Join(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListUsers lists all users in the session
-func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
+func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -56,7 +66,7 @@ func (h *Handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, userList)
 }
 
-func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
+func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 	songID := vars["song_id"]
@@ -84,7 +94,7 @@ func (h *Handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songInfo)
 }
 
-func (h *Handler) ListSongs(w http.ResponseWriter, r *http.Request) {
+func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -99,7 +109,7 @@ func (h *Handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songList)
 }
 
-func (h *Handler) Vote(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	msg := "vote"
 
 	vars := mux.Vars(r)

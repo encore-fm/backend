@@ -10,8 +10,14 @@ import (
 
 var ErrCouldNotGetToken = errors.New("couldn't get token")
 
+type SpotifyHandler interface {
+	Redirect(w http.ResponseWriter, r *http.Request)
+}
+
+var _ SpotifyHandler = (*handler)(nil)
+
 // the user will eventually be redirected back to your redirect URL
-func (h *Handler) Redirect(w http.ResponseWriter, r *http.Request) {
+func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	// use the same state string here that you used to generate the URL
 	token, err := h.spotifyAuthenticator.Token(config.Conf.Spotify.State, r)
 	if err != nil {

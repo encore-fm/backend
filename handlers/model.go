@@ -5,20 +5,20 @@ import (
 	"github.com/zmb3/spotify"
 )
 
-type Handler struct {
+type handler struct {
 	spotifyAuthenticator spotify.Authenticator
 	Spotify              spotify.Client
 	spotifyActivated     bool
 	UserCollection       db.UserCollection
-	SongCollection       *db.SongCollection
+	SongCollection       db.SongCollection
 }
 
 func New(
 	userCollection db.UserCollection,
-	songCollection *db.SongCollection,
+	songCollection db.SongCollection,
 	auth spotify.Authenticator,
-) *Handler {
-	return &Handler{
+) *handler {
+	return &handler{
 		spotifyAuthenticator: auth,
 		spotifyActivated:     false,
 		UserCollection:       userCollection,
