@@ -53,8 +53,10 @@ func (h *UserCollection) AddUser(newUser *user.Model) error {
 		return fmt.Errorf(errMsg, ErrUsernameTaken)
 	}
 
-	_, err = h.collection.InsertOne(context.TODO(), newUser)
-	return fmt.Errorf(errMsg, err)
+	if _, err = h.collection.InsertOne(context.TODO(), newUser); err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	return nil
 }
 
 func (h *UserCollection) ListUsers() ([]*user.ListElement, error) {
