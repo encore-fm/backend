@@ -12,25 +12,35 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type SongCollection struct {
+type SongCollection interface {
+	GetSongByID(songID string) (*song.Model, error)
+	AddSong(newSong *song.Model) error
+	RemoveSong(songID string) error
+	UpdateSong(updatedSong *song.Model) error
+	ListSongs() ([]*song.Model, error)
+}
+
+type songCollection struct {
 	collection *mongo.Collection
 }
 
+var _ SongCollection = (*songCollection)(nil)
+
 var (
 	ErrSongAlreadyInQueue = errors.New("song already in queue")
-	ErrNoSongWithID = errors.New("no song with this ID")
+	ErrNoSongWithID       = errors.New("no song with this ID")
 )
 
-func NewSongCollection(client *mongo.Client) *SongCollection {
-	songCollection := client.
+func NewSongCollection(client *mongo.Client) SongCollection {
+	collection := client.
 		Database(config.Conf.Database.DBName).
 		Collection(config.Conf.Database.SongCollectionName)
-	return &SongCollection{songCollection}
+	return &songCollection{collection: collection}
 }
 
 // GetSongByID returns a song struct if songID exists
 // if songID does not exist it returns nil
-func (h *SongCollection) GetSongByID(songID string) (*song.Model, error) {
+func (h *songCollection) GetSongByID(songID string) (*song.Model, error) {
 	errMsg := "get song by id: %v"
 	filter := bson.D{{"id", songID}}
 	var foundSong *song.Model
@@ -44,7 +54,7 @@ func (h *SongCollection) GetSongByID(songID string) (*song.Model, error) {
 	return foundSong, nil
 }
 
-func (h *SongCollection) AddSong(newSong *song.Model) error {
+func (h *songCollection) AddSong(newSong *song.Model) error {
 	errMsg := "add song to db: %v"
 	u, err := h.GetSongByID(newSong.ID)
 	if err != nil {
@@ -60,10 +70,10 @@ func (h *SongCollection) AddSong(newSong *song.Model) error {
 	return nil
 }
 
-func (h *SongCollection) RemoveSong(songID string) error {
+func (h *songCollection) RemoveSong(songID string) error {
 	errMsg := "remove song from db: %v"
 	filter := bson.D{{"id", songID}}
-	result , err := h.collection.DeleteOne(context.TODO(), filter)
+	result, err := h.collection.DeleteOne(context.TODO(), filter)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -73,7 +83,7 @@ func (h *SongCollection) RemoveSong(songID string) error {
 	return nil
 }
 
-func (h *SongCollection) UpdateSong(updatedSong *song.Model) error {
+func (h *songCollection) UpdateSong(updatedSong *song.Model) error {
 	errMsg := "update song in db: %v"
 	filter := bson.D{{"id", updatedSong.ID}}
 	result, err := h.collection.ReplaceOne(context.TODO(), filter, updatedSong)
@@ -86,7 +96,7 @@ func (h *SongCollection) UpdateSong(updatedSong *song.Model) error {
 	return nil
 }
 
-func (h *SongCollection) ListSongs() ([]*song.Model, error) {
+func (h *songCollection) ListSongs() ([]*song.Model, error) {
 	errMsg := "list songs: %v"
 	opts := options.Find()
 	opts.SetSort(bson.D{

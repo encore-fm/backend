@@ -52,6 +52,9 @@ func init() {
 	viper.AddConfigPath("./") // this is only the example file with dummy values
 	viper.AddConfigPath("config/") // this is only the example file with dummy values
 
+	viper.AddConfigPath("../config/") // todo: find better way to make tests work
+
+
 	c, err := FromFile()
 	if err != nil {
 		panic(err)
