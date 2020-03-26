@@ -308,7 +308,7 @@ func TestHandler_RemoveSong_SongNotInDB(t *testing.T) {
 
 	// Check the status code is what we expect
 	if status := rr.Code; status != http.StatusInternalServerError {
-		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", status, http.StatusInternalServerError)
 	}
 
 	// Check the response body is what we expect
