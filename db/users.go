@@ -16,20 +16,27 @@ var (
 	ErrIncrementScoreNoUserWithID = errors.New("increment score: no user with given ID")
 )
 
-type UserCollection struct {
+type UserCollection interface {
+	GetUser(username string) (*user.Model, error)
+	AddUser(newUser *user.Model) error
+	ListUsers() ([]*user.ListElement, error)
+	IncrementScore(username string, amount float64) error
+}
+
+type userCollection struct {
 	collection *mongo.Collection
 }
 
-func NewUserCollection(client *mongo.Client) *UserCollection {
-	userCollection := client.
+func NewUserCollection(client *mongo.Client) UserCollection {
+	collection := client.
 		Database(config.Conf.Database.DBName).
 		Collection(config.Conf.Database.UserCollectionName)
-	return &UserCollection{userCollection}
+	return &userCollection{collection}
 }
 
 // Get User returns a user struct is username exists
 // if username does not exist it returns nil
-func (h *UserCollection) GetUser(username string) (*user.Model, error) {
+func (h *userCollection) GetUser(username string) (*user.Model, error) {
 	errMsg := "get user: %v"
 	filter := bson.D{{"username", username}}
 	var foundUser *user.Model
@@ -43,7 +50,7 @@ func (h *UserCollection) GetUser(username string) (*user.Model, error) {
 	return foundUser, nil
 }
 
-func (h *UserCollection) AddUser(newUser *user.Model) error {
+func (h *userCollection) AddUser(newUser *user.Model) error {
 	errMsg := "add user: %v"
 	u, err := h.GetUser(newUser.Username)
 	if err != nil {
@@ -59,7 +66,7 @@ func (h *UserCollection) AddUser(newUser *user.Model) error {
 	return nil
 }
 
-func (h *UserCollection) ListUsers() ([]*user.ListElement, error) {
+func (h *userCollection) ListUsers() ([]*user.ListElement, error) {
 	errMsg := "list users: %v"
 	var userList []*user.ListElement
 	cursor, err := h.collection.Find(context.TODO(), bson.D{{}})
@@ -80,7 +87,7 @@ func (h *UserCollection) ListUsers() ([]*user.ListElement, error) {
 	return userList, nil
 }
 
-func (h *UserCollection) IncrementScore(username string, amount float64) error {
+func (h *userCollection) IncrementScore(username string, amount float64) error {
 	errMsg := "increment user score: %v"
 	filter := bson.D{{"username", username}}
 	update := bson.D{
