@@ -33,6 +33,11 @@ go build .
                  "name" : <name>,
                  "artists" : []
                }`
+##### vote up/down
+- `GET /users/{username}/vote/{song_id}/up`
+- `GET /users/{username}/vote/{song_id}/down`
+- headers: `{"Authorization": <secret>}`
+- response: `[SongInfo]`
 ##### list songs
 - `GET /users/{username}/listSongs`
 - headers: `{"Authorization": <secret>}`
@@ -53,5 +58,21 @@ go build .
 - `POST /admin/login` 
 - request: `{"username": <username>, "password": <password>}`
 - response: `{"username": <username>, "secret": <secret>, "is_admin": true, "score": <score>}`
+##### login: 
+- `GET /users/{username}/removeSong/{song_id}`
+- headers: `{"Authorization": <secret>}`
+- response: `[{
+                   "duration_ms" : <duration>,
+                   "preview_url" : <url>,
+                   "cover_url": <url>,
+                   "album_name": <name>,
+                   "score" : <score>,
+                   "id" : <id>,
+                   "time_added" : <time string>,
+                   "suggested_by" : <user>,
+                   "name" : <name>,
+                   "artists" : []
+                 }]`
 #### Server related
-- ping: `GET /ping`
+##### ping:
+- `GET /ping`

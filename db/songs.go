@@ -18,7 +18,7 @@ type SongCollection struct {
 
 var (
 	ErrSongAlreadyInQueue = errors.New("song already in queue")
-	ErrUpdateNoSongWithID = errors.New("error updating song: no song with this ID")
+	ErrNoSongWithID = errors.New("no song with this ID")
 )
 
 func NewSongCollection(client *mongo.Client) *SongCollection {
@@ -45,7 +45,7 @@ func (h *SongCollection) GetSongByID(songID string) (*song.Model, error) {
 }
 
 func (h *SongCollection) AddSong(newSong *song.Model) error {
-	errMsg := "ad song: %v"
+	errMsg := "add song to db: %v"
 	u, err := h.GetSongByID(newSong.ID)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
@@ -60,15 +60,28 @@ func (h *SongCollection) AddSong(newSong *song.Model) error {
 	return nil
 }
 
+func (h *SongCollection) RemoveSong(songID string) error {
+	errMsg := "remove song from db: %v"
+	filter := bson.D{{"id", songID}}
+	result , err := h.collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if result.DeletedCount != 1 {
+		return fmt.Errorf(errMsg, ErrNoSongWithID)
+	}
+	return nil
+}
+
 func (h *SongCollection) UpdateSong(updatedSong *song.Model) error {
-	errMsg := "update song: %v"
+	errMsg := "update song in db: %v"
 	filter := bson.D{{"id", updatedSong.ID}}
 	result, err := h.collection.ReplaceOne(context.TODO(), filter, updatedSong)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf(errMsg, ErrUpdateNoSongWithID)
+		return fmt.Errorf(errMsg, ErrNoSongWithID)
 	}
 	return nil
 }

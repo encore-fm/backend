@@ -40,11 +40,16 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 	).Methods(http.MethodGet)
 }
 
-func (s *Model) setupAdminRoutes(r *mux.Router) {
+func (s *Model) setupAdminRoutes(r *mux.Router, auth authFunc) {
 	r.Handle(
 		"/admin/login",
 		http.HandlerFunc(s.Handler.Login),
 	).Methods(http.MethodPost)
+
+	r.Handle(
+		"/users/{username}/removeSong/{song_id}",
+		auth(http.HandlerFunc(s.Handler.RemoveSong)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupSpotifyRoutes(r *mux.Router) {
