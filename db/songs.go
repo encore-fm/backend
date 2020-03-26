@@ -54,8 +54,10 @@ func (h *SongCollection) AddSong(newSong *song.Model) error {
 		return fmt.Errorf(errMsg, ErrSongAlreadyInQueue)
 	}
 
-	_, err = h.collection.InsertOne(context.TODO(), newSong)
-	return fmt.Errorf(errMsg, err)
+	if _, err = h.collection.InsertOne(context.TODO(), newSong); err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	return nil
 }
 
 func (h *SongCollection) UpdateSong(updatedSong *song.Model) error {
