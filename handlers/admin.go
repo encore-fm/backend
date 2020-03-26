@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	ErrUserNotAdmin  = errors.New("user not an admin")
-	ErrWrongPassword = errors.New("wrong password")
+	ErrWrongCredentials = errors.New("username and password do not match")
 )
 
 type AdminHandler interface {
@@ -33,14 +32,10 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	if credentials.Username != config.Conf.Admin.Username {
-		log.Errorf("admin login: %v", ErrUserNotAdmin)
-		http.Error(w, ErrUserNotAdmin.Error(), http.StatusForbidden)
-		return
-	}
-	if credentials.Password != config.Conf.Admin.Password {
-		log.Errorf("admin login: %v", ErrWrongPassword)
-		http.Error(w, ErrWrongPassword.Error(), http.StatusForbidden)
+	if credentials.Username != config.Conf.Admin.Username ||
+		credentials.Password != config.Conf.Admin.Password {
+		log.Errorf("admin login: %v", ErrWrongCredentials)
+		http.Error(w, ErrWrongCredentials.Error(), http.StatusForbidden)
 		return
 	}
 
