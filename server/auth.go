@@ -12,14 +12,15 @@ import (
 var (
 	ErrUserNotFound    = errors.New("user not found")
 	ErrWrongUserSecret = errors.New("wrong user secret")
+	ErrUserNotAdmin    = errors.New("user not an admin")
 )
 
 type authFunc = func(http.Handler) http.Handler
 
-func userAuth(userCollection *db.UserCollection) authFunc {
+func authenticate(userCollection *db.UserCollection, checkAdmin bool) authFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			msg := "authenticate user request: %v"
+			msg := "authenticate admin request: %v"
 			vars := mux.Vars(r)
 			username := vars["username"]
 
@@ -43,7 +44,22 @@ func userAuth(userCollection *db.UserCollection) authFunc {
 				http.Error(w, ErrWrongUserSecret.Error(), http.StatusUnauthorized)
 				return
 			}
+
+			if checkAdmin && !u.IsAdmin {
+				log.Warnf(msg, ErrUserNotAdmin)
+				http.Error(w, ErrUserNotAdmin.Error(), http.StatusUnauthorized)
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+func userAuth(userCollection *db.UserCollection) authFunc {
+	return authenticate(userCollection, false)
+}
+
+func adminAuth(userCollection *db.UserCollection) authFunc {
+	return authenticate(userCollection, true)
 }

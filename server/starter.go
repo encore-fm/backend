@@ -20,7 +20,7 @@ func (s *Model) Start() {
 	s.setupServerRoutes(r)
 	s.setupSpotifyRoutes(r)
 	s.setupUserRoutes(r, userAuth(s.Handler.UserCollection))
-	s.setupAdminRoutes(r)
+	s.setupAdminRoutes(r, adminAuth(s.Handler.UserCollection))
 
 	http.Handle("/", r)
 

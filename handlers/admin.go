@@ -7,6 +7,7 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -65,4 +66,26 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("admin login: [%v] successfully logged in", credentials.Username)
 	jsonResponse(w, admin)
+}
+
+func (h *Handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
+	msg := "remove song"
+	vars := mux.Vars(r)
+	songID := vars["song_id"]
+
+	if err := h.SongCollection.RemoveSong(songID); err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	songList, err := h.SongCollection.ListSongs()
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Infof("admin removed song [%v]", songID)
+	jsonResponse(w, songList)
 }
