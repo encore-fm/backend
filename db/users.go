@@ -24,6 +24,7 @@ type UserCollection interface {
 }
 
 type userCollection struct {
+	client     *mongo.Client
 	collection *mongo.Collection
 }
 
@@ -33,7 +34,10 @@ func NewUserCollection(client *mongo.Client) UserCollection {
 	collection := client.
 		Database(config.Conf.Database.DBName).
 		Collection(config.Conf.Database.UserCollectionName)
-	return &userCollection{collection}
+	return &userCollection{
+		client: client,
+		collection: collection,
+	}
 }
 
 // Get User returns a user struct is username exists

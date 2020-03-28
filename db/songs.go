@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type SongCollection interface {
@@ -23,8 +24,8 @@ type SongCollection interface {
 }
 
 type songCollection struct {
+	client     *mongo.Client
 	collection *mongo.Collection
-	mux        sync.Mutex
 }
 
 var _ SongCollection = (*songCollection)(nil)
@@ -39,7 +40,10 @@ func NewSongCollection(client *mongo.Client) SongCollection {
 	collection := client.
 		Database(config.Conf.Database.DBName).
 		Collection(config.Conf.Database.SongCollectionName)
-	return &songCollection{collection: collection}
+	return &songCollection{
+		client:     client,
+		collection: collection,
+	}
 }
 
 // GetSongByID returns a song struct if songID exists
@@ -118,62 +122,90 @@ func (h *songCollection) ListSongs(ctx context.Context) ([]*song.Model, error) {
 	return songList, nil
 }
 
+// todo make atomic
 func (h *songCollection) Vote(
 	ctx context.Context,
 	songID string,
 	username string,
 	scoreChange float64,
 ) (*song.Model, error) {
-	h.mux.Lock()
-	defer h.mux.Unlock()
-
 	errMsg := "[db] vote: %v"
 
-	songInfo, err := h.GetSongByID(ctx, songID)
+	// start server session
+	opts := options.Session().SetDefaultReadConcern(readconcern.Majority())
+	sess, err := h.client.StartSession(opts)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
-	if songInfo == nil {
-		return nil, fmt.Errorf(errMsg, ErrNoSongWithID)
-	}
+	defer sess.EndSession(ctx)
 
-	// make sure users dont vote on songs they suggested
-	if songInfo.SuggestedBy == username {
-		return nil, fmt.Errorf(errMsg, ErrVoteOnSuggestedSong)
-	}
+	txnOpts := options.Transaction().SetReadPreference(readpref.Primary())
+	result, err := sess.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		songInfo, err := h.GetSongByID(sessCtx, songID)
+		if err != nil {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, err
+		}
+		if songInfo == nil {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, ErrNoSongWithID
+		}
+		// make sure users dont vote on songs they suggested
+		if songInfo.SuggestedBy == username {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, ErrVoteOnSuggestedSong
+		}
 
-	if scoreChange > 0 {
-		// check if user did already vote up and insert if not
-		if ok := songInfo.Upvoters.Add(username, scoreChange); !ok {
-			return nil, fmt.Errorf(errMsg, ErrUserAlreadyVoted)
+		if scoreChange > 0 {
+			// check if user did already vote up and insert if not
+			if ok := songInfo.Upvoters.Add(username, scoreChange); !ok {
+				_ = sessCtx.AbortTransaction(sessCtx)
+				return nil, ErrUserAlreadyVoted
+			}
+			// if user downvoted song
+			// - add score back
+			// - remove user from downvoters
+			if downvoteScore, ok := songInfo.Downvoters.Get(username); ok {
+				scoreChange += downvoteScore
+				songInfo.Downvoters.Remove(username)
+			}
 		}
-		// if user downvoted song
-		// - add score back
-		// - remove user from downvoters
-		if downvoteScore, ok := songInfo.Downvoters.Get(username); ok {
-			scoreChange += downvoteScore
-			songInfo.Downvoters.Remove(username)
-		}
-	}
 
-	if scoreChange < 0 {
-		// check if user did already vote down and insert if not
-		if ok := songInfo.Downvoters.Add(username, -scoreChange); !ok {
-			return nil, fmt.Errorf(errMsg, ErrUserAlreadyVoted)
+		if scoreChange < 0 {
+			// check if user did already vote down and insert if not
+			if ok := songInfo.Downvoters.Add(username, -scoreChange); !ok {
+				_ = sessCtx.AbortTransaction(sessCtx)
+				return nil, ErrUserAlreadyVoted
+			}
+			// if user voted song up
+			// - remove score
+			// - remove user from upvoters
+			if upvoteScore, ok := songInfo.Upvoters.Get(username); ok {
+				scoreChange -= upvoteScore
+				songInfo.Upvoters.Remove(username)
+			}
 		}
-		// if user voted song up
-		// - remove score
-		// - remove user from upvoters
-		if upvoteScore, ok := songInfo.Upvoters.Get(username); ok {
-			scoreChange -= upvoteScore
-			songInfo.Upvoters.Remove(username)
-		}
-	}
 
-	// apply change and save song info in db
-	songInfo.Score += scoreChange
-	if err := h.ReplaceSong(ctx, songInfo); err != nil {
+		// apply change and save song info in db
+		songInfo.Score += scoreChange
+		if err := h.ReplaceSong(sessCtx, songInfo); err != nil {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, err
+		}
+
+		if err := sessCtx.CommitTransaction(sessCtx); err != nil {
+			return nil, fmt.Errorf("commit transaction: %v", err)
+		}
+		return songInfo, nil
+	}, txnOpts)
+	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
+
+	songInfo, ok := result.(*song.Model)
+	if !ok {
+		return nil, fmt.Errorf(errMsg, "cannot cast result into `*song.Model`")
+	}
+
 	return songInfo, nil
 }
