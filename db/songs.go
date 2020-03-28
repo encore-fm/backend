@@ -20,7 +20,7 @@ type SongCollection interface {
 	RemoveSong(ctx context.Context, songID string) error
 	ListSongs(ctx context.Context) ([]*song.Model, error)
 	ReplaceSong(ctx context.Context, updatedSong *song.Model) error
-	Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, error)
+	Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, float64, error)
 }
 
 type songCollection struct {
@@ -122,20 +122,19 @@ func (h *songCollection) ListSongs(ctx context.Context) ([]*song.Model, error) {
 	return songList, nil
 }
 
-// todo make atomic
 func (h *songCollection) Vote(
 	ctx context.Context,
 	songID string,
 	username string,
 	scoreChange float64,
-) (*song.Model, error) {
+) (*song.Model, float64, error) {
 	errMsg := "[db] vote: %v"
 
 	// start server session
 	opts := options.Session().SetDefaultReadConcern(readconcern.Majority())
 	sess, err := h.client.StartSession(opts)
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
+		return nil, 0, fmt.Errorf(errMsg, err)
 	}
 	defer sess.EndSession(ctx)
 
@@ -199,13 +198,13 @@ func (h *songCollection) Vote(
 		return songInfo, nil
 	}, txnOpts)
 	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
+		return nil, 0, fmt.Errorf(errMsg, err)
 	}
 
 	songInfo, ok := result.(*song.Model)
 	if !ok {
-		return nil, fmt.Errorf(errMsg, "cannot cast result into `*song.Model`")
+		return nil, 0, fmt.Errorf(errMsg, "cannot cast result into `*song.Model`")
 	}
 
-	return songInfo, nil
+	return songInfo, scoreChange, nil
 }

@@ -9,6 +9,9 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 var (
@@ -56,18 +59,41 @@ func (h *userCollection) GetUser(ctx context.Context, username string) (*user.Mo
 	return foundUser, nil
 }
 
-// todo make concurrency-save
+// todo: find better way to make atomic ...
 func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
 	errMsg := "add user: %v"
-	u, err := h.GetUser(ctx, newUser.Username)
+
+	// start server session
+	opts := options.Session().SetDefaultReadConcern(readconcern.Majority())
+	sess, err := h.client.StartSession(opts)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
-	if u != nil {
-		return fmt.Errorf(errMsg, ErrUsernameTaken)
-	}
+	defer sess.EndSession(ctx)
 
-	if _, err = h.collection.InsertOne(ctx, newUser); err != nil {
+	txnOpts := options.Transaction().SetReadPreference(readpref.Primary())
+	_, err = sess.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		u, err := h.GetUser(sessCtx, newUser.Username)
+		if err != nil {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, err
+		}
+		if u != nil {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, ErrUsernameTaken
+		}
+
+		if _, err = h.collection.InsertOne(sessCtx, newUser); err != nil {
+			_ = sessCtx.AbortTransaction(sessCtx)
+			return nil, err
+		}
+
+		if err := sessCtx.CommitTransaction(sessCtx); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}, txnOpts)
+	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
 	return nil

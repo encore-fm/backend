@@ -149,8 +149,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		scoreChange = -scoreChange
 	}
 
-	// todo: find better way to make `Vote` atomic
-	songInfo, err := h.SongCollection.Vote(ctx, songID, username, scoreChange)
+	songInfo, change, err := h.SongCollection.Vote(ctx, songID, username, scoreChange)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,7 +157,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// update score of user that suggested song
-	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, scoreChange); err != nil {
+	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, change); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
