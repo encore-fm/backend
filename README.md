@@ -5,6 +5,13 @@
 ## Quick start
 #### Build and run
 ```sh
+docker-compose up -d
+
+# on first time building docker image
+# initialize mongo db replication
+mongo admin -u root -p root
+rs.initiate()
+
 go build .
 ./spotify-jukebox
 ```

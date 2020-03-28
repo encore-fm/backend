@@ -49,8 +49,8 @@ func NewSongCollection(client *mongo.Client) SongCollection {
 // GetSongByID returns a song struct if songID exists
 // if songID does not exist it returns nil
 func (h *songCollection) GetSongByID(ctx context.Context, songID string) (*song.Model, error) {
-	errMsg := "get song by id: %v"
-	filter := bson.D{{"id", songID}}
+	errMsg := "[db] get song by id: %v"
+	filter := bson.D{{"_id", songID}}
 	var foundSong *song.Model
 	err := h.collection.FindOne(ctx, filter).Decode(&foundSong)
 	if err == mongo.ErrNoDocuments {
@@ -63,7 +63,7 @@ func (h *songCollection) GetSongByID(ctx context.Context, songID string) (*song.
 }
 
 func (h *songCollection) AddSong(ctx context.Context, newSong *song.Model) error {
-	errMsg := "add song to db: %v"
+	errMsg := "[db] add song: %v"
 	if _, err := h.collection.InsertOne(ctx, newSong); err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -71,8 +71,8 @@ func (h *songCollection) AddSong(ctx context.Context, newSong *song.Model) error
 }
 
 func (h *songCollection) RemoveSong(ctx context.Context, songID string) error {
-	errMsg := "remove song from db: %v"
-	filter := bson.D{{"id", songID}}
+	errMsg := "[db] remove song: %v"
+	filter := bson.D{{"_id", songID}}
 	result, err := h.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
@@ -85,7 +85,7 @@ func (h *songCollection) RemoveSong(ctx context.Context, songID string) error {
 
 func (h *songCollection) ReplaceSong(ctx context.Context, updatedSong *song.Model) error {
 	errMsg := "[db] replace song: %v"
-	filter := bson.D{{"id", updatedSong.ID}}
+	filter := bson.D{{"_id", updatedSong.ID}}
 
 	result, err := h.collection.ReplaceOne(ctx, filter, updatedSong)
 	if err != nil {
@@ -98,7 +98,7 @@ func (h *songCollection) ReplaceSong(ctx context.Context, updatedSong *song.Mode
 }
 
 func (h *songCollection) ListSongs(ctx context.Context) ([]*song.Model, error) {
-	errMsg := "list songs: %v"
+	errMsg := "[db] list songs: %v"
 	opts := options.Find()
 	opts.SetSort(bson.D{
 		{"score", -1},
