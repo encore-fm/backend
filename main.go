@@ -4,6 +4,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/server"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/pkg/browser"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
@@ -45,7 +46,11 @@ func main() {
 		}
 	}
 
+	// create broker
+	broker := sse.NewBroker()
+	broker.Start()
+
 	// start server
-	svr := server.New(dbConn, spotifyAuth)
+	svr := server.New(dbConn, spotifyAuth, broker)
 	svr.Start()
 }

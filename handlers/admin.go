@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -90,6 +91,13 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// send new playlist to broker
+	event := sse.Event{
+		Event: sse.PlaylistChange,
+		Data:  songList,
+	}
+	h.Broker.Notifier <- event
 
 	log.Infof("admin removed song [%v]", songID)
 	jsonResponse(w, songList)

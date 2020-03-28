@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/zmb3/spotify"
 )
 
@@ -11,17 +12,20 @@ type handler struct {
 	spotifyActivated     bool
 	UserCollection       db.UserCollection
 	SongCollection       db.SongCollection
+	Broker               *sse.Broker
 }
 
 func New(
 	userCollection db.UserCollection,
 	songCollection db.SongCollection,
 	auth spotify.Authenticator,
+	broker *sse.Broker,
 ) *handler {
 	return &handler{
 		spotifyAuthenticator: auth,
 		spotifyActivated:     false,
 		UserCollection:       userCollection,
 		SongCollection:       songCollection,
+		Broker:               broker,
 	}
 }

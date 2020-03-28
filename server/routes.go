@@ -58,3 +58,10 @@ func (s *Model) setupSpotifyRoutes(r *mux.Router) {
 		http.HandlerFunc(s.SpotifyHandler.Redirect),
 	)
 }
+
+func (s *Model) setupEventRoutes(r *mux.Router) {
+	r.Handle(
+		"/events",
+		http.HandlerFunc(s.Broker.ServeHTTP),
+	)
+}
