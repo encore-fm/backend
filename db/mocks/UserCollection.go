@@ -2,6 +2,8 @@
 
 package mocks
 
+import context "context"
+
 import mock "github.com/stretchr/testify/mock"
 import user "github.com/antonbaumann/spotify-jukebox/user"
 
@@ -10,13 +12,13 @@ type UserCollection struct {
 	mock.Mock
 }
 
-// AddUser provides a mock function with given fields: newUser
-func (_m *UserCollection) AddUser(newUser *user.Model) error {
-	ret := _m.Called(newUser)
+// AddUser provides a mock function with given fields: ctx, newUser
+func (_m *UserCollection) AddUser(ctx context.Context, newUser *user.Model) error {
+	ret := _m.Called(ctx, newUser)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(*user.Model) error); ok {
-		r0 = rf(newUser)
+	if rf, ok := ret.Get(0).(func(context.Context, *user.Model) error); ok {
+		r0 = rf(ctx, newUser)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -24,13 +26,13 @@ func (_m *UserCollection) AddUser(newUser *user.Model) error {
 	return r0
 }
 
-// GetUser provides a mock function with given fields: username
-func (_m *UserCollection) GetUser(username string) (*user.Model, error) {
-	ret := _m.Called(username)
+// GetUser provides a mock function with given fields: ctx, username
+func (_m *UserCollection) GetUser(ctx context.Context, username string) (*user.Model, error) {
+	ret := _m.Called(ctx, username)
 
 	var r0 *user.Model
-	if rf, ok := ret.Get(0).(func(string) *user.Model); ok {
-		r0 = rf(username)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *user.Model); ok {
+		r0 = rf(ctx, username)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*user.Model)
@@ -38,8 +40,8 @@ func (_m *UserCollection) GetUser(username string) (*user.Model, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
-		r1 = rf(username)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, username)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -47,13 +49,13 @@ func (_m *UserCollection) GetUser(username string) (*user.Model, error) {
 	return r0, r1
 }
 
-// IncrementScore provides a mock function with given fields: username, amount
-func (_m *UserCollection) IncrementScore(username string, amount float64) error {
-	ret := _m.Called(username, amount)
+// IncrementScore provides a mock function with given fields: ctx, username, amount
+func (_m *UserCollection) IncrementScore(ctx context.Context, username string, amount float64) error {
+	ret := _m.Called(ctx, username, amount)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(string, float64) error); ok {
-		r0 = rf(username, amount)
+	if rf, ok := ret.Get(0).(func(context.Context, string, float64) error); ok {
+		r0 = rf(ctx, username, amount)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -61,13 +63,13 @@ func (_m *UserCollection) IncrementScore(username string, amount float64) error 
 	return r0
 }
 
-// ListUsers provides a mock function with given fields:
-func (_m *UserCollection) ListUsers() ([]*user.ListElement, error) {
-	ret := _m.Called()
+// ListUsers provides a mock function with given fields: ctx
+func (_m *UserCollection) ListUsers(ctx context.Context) ([]*user.ListElement, error) {
+	ret := _m.Called(ctx)
 
 	var r0 []*user.ListElement
-	if rf, ok := ret.Get(0).(func() []*user.ListElement); ok {
-		r0 = rf()
+	if rf, ok := ret.Get(0).(func(context.Context) []*user.ListElement); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*user.ListElement)
@@ -75,8 +77,8 @@ func (_m *UserCollection) ListUsers() ([]*user.ListElement, error) {
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func() error); ok {
-		r1 = rf()
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

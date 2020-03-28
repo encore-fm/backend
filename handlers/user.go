@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"errors"
+	"math"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/song"
@@ -13,9 +15,8 @@ import (
 
 var (
 	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
-	ErrUserAlreadyVoted = errors.New("user already voted")
-	ErrSongNotInCollection = errors.New("song with given ID not in db")
-	ErrUserNotExisting = errors.New("user with given ID does not exist")
+	ErrSongNotInCollection     = errors.New("song with given ID not in db")
+	ErrUserNotExisting         = errors.New("user with given ID does not exist")
 )
 
 type UserHandler interface {
@@ -30,6 +31,7 @@ var _ UserHandler = (*handler)(nil)
 
 // Join adds user to session
 func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -40,7 +42,7 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.UserCollection.AddUser(newUser); err != nil {
+	if err := h.UserCollection.AddUser(ctx, newUser); err != nil {
 		log.Infof("user [%v] tried to join but username is already taken", username)
 		w.WriteHeader(http.StatusConflict)
 		return
@@ -52,10 +54,11 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 
 // ListUsers lists all users in the session
 func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	userList, err := h.UserCollection.ListUsers()
+	userList, err := h.UserCollection.ListUsers(ctx)
 	if err != nil {
 		log.Errorf("list users: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -67,6 +70,7 @@ func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	username := vars["username"]
 	songID := vars["song_id"]
@@ -84,7 +88,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	}
 
 	songInfo := song.New(username, 0, fullTrack)
-	if err := h.SongCollection.AddSong(songInfo); err != nil {
+	if err := h.SongCollection.AddSong(ctx, songInfo); err != nil {
 		log.Errorf("suggest song: insert into songs collection: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -95,12 +99,15 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
+
+	msg := "[handler] list songs"
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	songList, err := h.SongCollection.ListSongs()
+	songList, err := h.SongCollection.ListSongs(ctx)
 	if err != nil {
-		log.Errorf("list users: %v", err)
+		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -110,8 +117,9 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
-	msg := "vote"
+	ctx := context.Background()
 
+	msg := "vote"
 	vars := mux.Vars(r)
 	username := vars["username"]
 	songID := vars["song_id"]
@@ -124,19 +132,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songInfo, err := h.SongCollection.GetSongByID(songID)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if songInfo == nil {
-		log.Errorf("%v: %v", msg, ErrSongNotInCollection)
-		http.Error(w, ErrSongNotInCollection.Error(), http.StatusBadRequest)
-		return
-	}
-
-	userInfo, err := h.UserCollection.GetUser(username)
+	userInfo, err := h.UserCollection.GetUser(ctx, username)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -148,64 +144,28 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scoreIncAmount := float64(0)
-
-	if voteAction == "up" {
-		// add user to upvoters if not in list
-		upvoters, ok := songInfo.Upvoters.Add(username, userInfo.Score)
-		songInfo.Upvoters = upvoters
-		if !ok {
-			log.Errorf("%v: %v", msg, ErrUserAlreadyVoted)
-			http.Error(w, ErrUserAlreadyVoted.Error(), http.StatusBadRequest)
-			return
-		}
-		scoreIncAmount += 1
-
-		// remove user from downvoters if in list
-		downvoters, ok := songInfo.Downvoters.Remove(username)
-		songInfo.Downvoters = downvoters
-		if ok {
-			scoreIncAmount += 1
-		}
-	}
+	scoreChange := math.Max(userInfo.Score, 1)
 	if voteAction == "down" {
-		// add user to downvoters if not in list
-		downvoters, ok := songInfo.Downvoters.Add(username, userInfo.Score)
-		songInfo.Downvoters = downvoters
-		if !ok {
-			log.Errorf("%v: %v", msg, ErrUserAlreadyVoted)
-			http.Error(w, ErrUserAlreadyVoted.Error(), http.StatusBadRequest)
-			return
-		}
-		scoreIncAmount -= 1
-
-		// remove user from upvoters if in list
-		upvoters, ok := songInfo.Upvoters.Remove(username)
-		songInfo.Upvoters = upvoters
-		if ok {
-			scoreIncAmount -= 1
-		}
+		scoreChange = -scoreChange
 	}
 
-	// todo find good score system
-	songInfo.Score += scoreIncAmount
-
-	// write new song info to db
-	if err := h.SongCollection.UpdateSong(songInfo); err != nil {
+	// todo: find better way to make `Vote` atomic
+	songInfo, err := h.SongCollection.Vote(ctx, songID, username, scoreChange)
+	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// update score of user that suggested song
-	if err := h.UserCollection.IncrementScore(songInfo.SuggestedBy, scoreIncAmount); err != nil {
+	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, scoreChange); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// return updated song list
-	songList, err := h.SongCollection.ListSongs()
+	songList, err := h.SongCollection.ListSongs(ctx)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -1,46 +1,38 @@
 package user
 
-type Voter struct {
-	Username string  `json:"username" bson:"username"`
-	Score    float64 `json:"score" bson:"score"`
-}
-
-type Voters []Voter
+type Voters map[string]float64
 
 func NewVoters() Voters {
-	return []Voter{}
+	return make(map[string]float64)
 }
 
-func (v Voters) Find(username string) (int, bool) {
-	for i, voter := range v {
-		if voter.Username == username {
-			return i, true
-		}
-	}
-	return -1, false
+func (v Voters) Contains(username string) bool {
+	_, ok := v[username]
+	return ok
 }
 
-func (v Voters) Add(username string, score float64) (Voters, bool) {
-	_, ok := v.Find(username)
+func (v Voters) Get(username string) (float64, bool){
+	val, ok := v[username]
+	return val, ok
+}
+
+func (v Voters) Add(username string, score float64) bool {
+	ok := v.Contains(username)
 	if ok {
-		return v, false
+		return false
 	}
-	newVoter := Voter{
-		Username: username,
-		Score: score,
-	}
-	voters := []Voter(v)
-	voters = append(voters, newVoter)
-	return voters, true
+	v[username] = score
+	return true
 }
 
-func (v Voters) Remove(username string) (Voters, bool) {
-	i, ok := v.Find(username)
-	if !ok {
-		return v, false
+func (v Voters) Remove(username string) bool {
+	if ok := v.Contains(username); !ok {
+		return false
 	}
-	voters := []Voter(v)
-	voters = append(voters[:i], voters[i+1:]...)
-	return voters, true
+	delete(v, username)
+	return true
 }
 
+func (v Voters) Size() int {
+	return len(v)
+}

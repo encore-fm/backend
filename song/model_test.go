@@ -24,8 +24,8 @@ func TestNew1(t *testing.T) {
 		SuggestedBy: username,
 		Score:       songScore,
 		TimeAdded:   time.Time{},
-		Upvoters:    []user.Voter{},
-		Downvoters:  []user.Voter{},
+		Upvoters:    user.NewVoters(),
+		Downvoters:  user.NewVoters(),
 	}
 	info := &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
@@ -70,8 +70,8 @@ func TestNew2(t *testing.T) {
 		SuggestedBy: username,
 		Score:       songScore,
 		TimeAdded:   time.Time{},
-		Upvoters:    []user.Voter{},
-		Downvoters:  []user.Voter{},
+		Upvoters:    user.NewVoters(),
+		Downvoters:  user.NewVoters(),
 	}
 	info := &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
