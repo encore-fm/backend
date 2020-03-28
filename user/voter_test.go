@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewVoters(t *testing.T) {
-	expected := voters(make(map[string]float64))
+	expected := Voters{}
 	result := NewVoters()
 	assert.Equal(t, expected, result)
 }
