@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"net/http"
 
@@ -20,11 +21,12 @@ type authFunc = func(http.Handler) http.Handler
 func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := context.Background()
 			msg := "authenticate admin request: %v"
 			vars := mux.Vars(r)
 			username := vars["username"]
 
-			u, err := userCollection.GetUser(username)
+			u, err := userCollection.GetUser(ctx, username)
 			// error while looking up user
 			if err != nil {
 				log.Errorf(msg, err)

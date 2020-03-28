@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -26,6 +27,7 @@ var _ AdminHandler = (*handler)(nil)
 // if they match with configured admin credentials the admin-user
 // struct will be returned
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	var credentials config.AdminConfig
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		log.Errorf("admin login: decoding request body: %v", err)
@@ -39,7 +41,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	admin, err := h.UserCollection.GetUser(credentials.Username)
+	admin, err := h.UserCollection.GetUser(ctx, credentials.Username)
 	if err != nil {
 		log.Errorf("admin login: get user from db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -60,7 +62,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.UserCollection.AddUser(admin); err != nil {
+	if err := h.UserCollection.AddUser(ctx, admin); err != nil {
 		log.Errorf("admin login: add user to db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -71,17 +73,18 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 	msg := "remove song"
 	vars := mux.Vars(r)
 	songID := vars["song_id"]
 
-	if err := h.SongCollection.RemoveSong(songID); err != nil {
+	if err := h.SongCollection.RemoveSong(ctx, songID); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	songList, err := h.SongCollection.ListSongs()
+	songList, err := h.SongCollection.ListSongs(ctx)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

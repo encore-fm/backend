@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/song"
@@ -13,22 +14,25 @@ import (
 )
 
 type SongCollection interface {
-	GetSongByID(songID string) (*song.Model, error)
-	AddSong(newSong *song.Model) error
-	RemoveSong(songID string) error
-	UpdateSong(updatedSong *song.Model) error
-	ListSongs() ([]*song.Model, error)
+	GetSongByID(ctx context.Context, songID string) (*song.Model, error)
+	AddSong(ctx context.Context, newSong *song.Model) error
+	RemoveSong(ctx context.Context, songID string) error
+	ListSongs(ctx context.Context) ([]*song.Model, error)
+	ReplaceSong(ctx context.Context, updatedSong *song.Model) error
+	Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, error)
 }
 
 type songCollection struct {
 	collection *mongo.Collection
+	mux        sync.Mutex
 }
 
 var _ SongCollection = (*songCollection)(nil)
 
 var (
-	ErrSongAlreadyInQueue = errors.New("song already in queue")
-	ErrNoSongWithID       = errors.New("no song with this ID")
+	ErrNoSongWithID        = errors.New("no song with this ID")
+	ErrVoteOnSuggestedSong = errors.New("cannot vote on suggested song")
+	ErrUserAlreadyVoted    = errors.New("user already voted")
 )
 
 func NewSongCollection(client *mongo.Client) SongCollection {
@@ -40,11 +44,11 @@ func NewSongCollection(client *mongo.Client) SongCollection {
 
 // GetSongByID returns a song struct if songID exists
 // if songID does not exist it returns nil
-func (h *songCollection) GetSongByID(songID string) (*song.Model, error) {
+func (h *songCollection) GetSongByID(ctx context.Context, songID string) (*song.Model, error) {
 	errMsg := "get song by id: %v"
 	filter := bson.D{{"id", songID}}
 	var foundSong *song.Model
-	err := h.collection.FindOne(context.TODO(), filter).Decode(&foundSong)
+	err := h.collection.FindOne(ctx, filter).Decode(&foundSong)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
@@ -54,26 +58,18 @@ func (h *songCollection) GetSongByID(songID string) (*song.Model, error) {
 	return foundSong, nil
 }
 
-func (h *songCollection) AddSong(newSong *song.Model) error {
+func (h *songCollection) AddSong(ctx context.Context, newSong *song.Model) error {
 	errMsg := "add song to db: %v"
-	u, err := h.GetSongByID(newSong.ID)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-	if u != nil {
-		return fmt.Errorf(errMsg, ErrSongAlreadyInQueue)
-	}
-
-	if _, err = h.collection.InsertOne(context.TODO(), newSong); err != nil {
+	if _, err := h.collection.InsertOne(ctx, newSong); err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
 	return nil
 }
 
-func (h *songCollection) RemoveSong(songID string) error {
+func (h *songCollection) RemoveSong(ctx context.Context, songID string) error {
 	errMsg := "remove song from db: %v"
 	filter := bson.D{{"id", songID}}
-	result, err := h.collection.DeleteOne(context.TODO(), filter)
+	result, err := h.collection.DeleteOne(ctx, filter)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -83,10 +79,11 @@ func (h *songCollection) RemoveSong(songID string) error {
 	return nil
 }
 
-func (h *songCollection) UpdateSong(updatedSong *song.Model) error {
-	errMsg := "update song in db: %v"
+func (h *songCollection) ReplaceSong(ctx context.Context, updatedSong *song.Model) error {
+	errMsg := "[db] replace song: %v"
 	filter := bson.D{{"id", updatedSong.ID}}
-	result, err := h.collection.ReplaceOne(context.TODO(), filter, updatedSong)
+
+	result, err := h.collection.ReplaceOne(ctx, filter, updatedSong)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -96,7 +93,7 @@ func (h *songCollection) UpdateSong(updatedSong *song.Model) error {
 	return nil
 }
 
-func (h *songCollection) ListSongs() ([]*song.Model, error) {
+func (h *songCollection) ListSongs(ctx context.Context) ([]*song.Model, error) {
 	errMsg := "list songs: %v"
 	opts := options.Find()
 	opts.SetSort(bson.D{
@@ -104,14 +101,14 @@ func (h *songCollection) ListSongs() ([]*song.Model, error) {
 		{"time_added", 1},
 	})
 
-	cursor, err := h.collection.Find(context.TODO(), bson.D{}, opts)
+	cursor, err := h.collection.Find(ctx, bson.D{}, opts)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(ctx)
 
 	var songList []*song.Model
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var elem song.Model
 		if err := cursor.Decode(&elem); err != nil {
 			return songList, fmt.Errorf(errMsg, err)
@@ -119,4 +116,64 @@ func (h *songCollection) ListSongs() ([]*song.Model, error) {
 		songList = append(songList, &elem)
 	}
 	return songList, nil
+}
+
+func (h *songCollection) Vote(
+	ctx context.Context,
+	songID string,
+	username string,
+	scoreChange float64,
+) (*song.Model, error) {
+	h.mux.Lock()
+	defer h.mux.Unlock()
+
+	errMsg := "[db] vote: %v"
+
+	songInfo, err := h.GetSongByID(ctx, songID)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	if songInfo == nil {
+		return nil, fmt.Errorf(errMsg, ErrNoSongWithID)
+	}
+
+	// make sure users dont vote on songs they suggested
+	if songInfo.SuggestedBy == username {
+		return nil, fmt.Errorf(errMsg, ErrVoteOnSuggestedSong)
+	}
+
+	if scoreChange > 0 {
+		// check if user did already vote up and insert if not
+		if ok := songInfo.Upvoters.Add(username, scoreChange); !ok {
+			return nil, fmt.Errorf(errMsg, ErrUserAlreadyVoted)
+		}
+		// if user downvoted song
+		// - add score back
+		// - remove user from downvoters
+		if downvoteScore, ok := songInfo.Downvoters.Get(username); ok {
+			scoreChange += downvoteScore
+			songInfo.Downvoters.Remove(username)
+		}
+	}
+
+	if scoreChange < 0 {
+		// check if user did already vote down and insert if not
+		if ok := songInfo.Downvoters.Add(username, -scoreChange); !ok {
+			return nil, fmt.Errorf(errMsg, ErrUserAlreadyVoted)
+		}
+		// if user voted song up
+		// - remove score
+		// - remove user from upvoters
+		if upvoteScore, ok := songInfo.Upvoters.Get(username); ok {
+			scoreChange -= upvoteScore
+			songInfo.Upvoters.Remove(username)
+		}
+	}
+
+	// apply change and save song info in db
+	songInfo.Score += scoreChange
+	if err := h.ReplaceSong(ctx, songInfo); err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	return songInfo, nil
 }

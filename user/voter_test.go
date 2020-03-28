@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewVoters(t *testing.T) {
-	expected := Voters([]Voter{})
+	expected := voters(make(map[string]float64))
 	result := NewVoters()
 	assert.Equal(t, expected, result)
 }
@@ -15,61 +15,55 @@ func TestNewVoters(t *testing.T) {
 func TestVoters_Add(t *testing.T) {
 	voters := NewVoters()
 
-	voters, ok := voters.Add("username", 123)
+	ok := voters.Add("username", 123)
 	assert.True(t, ok)
-	assert.Equal(t, 1, len(voters))
+	assert.Equal(t, 1, voters.Size())
 
-	voters, ok = voters.Add("username", 13)
+	ok = voters.Add("username", 13)
 	assert.False(t, ok)
-	assert.Equal(t, 1, len(voters))
+	assert.Equal(t, 1, voters.Size())
 
-	voters, ok = voters.Add("2", 13)
+	ok = voters.Add("2", 13)
 	assert.True(t, ok)
-	assert.Equal(t, 2, len(voters))
+	assert.Equal(t, 2, voters.Size())
 }
 
 func TestVoters_Find(t *testing.T) {
 	voters := NewVoters()
 
-	voters, _ = voters.Add("username", 123)
-	i, ok := voters.Find("username")
-	assert.Equal(t, 0, i)
+	_ = voters.Add("username", 123)
+	ok := voters.Contains("username")
 	assert.True(t, ok)
 
-	i, ok = voters.Find("not in voters")
-	assert.Equal(t, -1, i)
+	ok = voters.Contains("not in voters")
 	assert.False(t, ok)
 
-	voters, _ = voters.Add("user_2", 123)
-	i, ok = voters.Find("user_2")
-	assert.Equal(t, 1, i)
+	_ = voters.Add("user_2", 123)
+	ok = voters.Contains("user_2")
 	assert.True(t, ok)
 }
 
 func TestVoters_Remove(t *testing.T) {
 	voters := NewVoters()
 
-	voters, _ = voters.Add("1", 123)
-	voters, _ = voters.Add("2", 123)
-	voters, _ = voters.Add("3", 123)
-	assert.Equal(t, 3, len(voters))
+	 _ = voters.Add("1", 123)
+	 _ = voters.Add("2", 123)
+	 _ = voters.Add("3", 123)
+	assert.Equal(t, 3, voters.Size())
 
-	voters, ok := voters.Remove("not in voters")
+	ok := voters.Remove("not in voters")
 	assert.False(t, ok)
 
-	voters, ok = voters.Remove("2")
+	ok = voters.Remove("2")
 	assert.True(t, ok)
-	assert.Equal(t, 2, len(voters))
+	assert.Equal(t, 2, voters.Size())
 
-	i, ok := voters.Find("1")
+	ok = voters.Contains("1")
 	assert.True(t, ok)
-	assert.Equal(t, 0, i)
 
-	i, ok = voters.Find("2")
+	ok = voters.Contains("2")
 	assert.False(t, ok)
-	assert.Equal(t, -1, i)
 
-	i, ok = voters.Find("3")
+	ok = voters.Contains("3")
 	assert.True(t, ok)
-	assert.Equal(t, 1, i)
 }

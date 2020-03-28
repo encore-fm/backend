@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -33,7 +34,7 @@ func TestHandler_Login(t *testing.T) {
 	}
 
 	userCollection.(*mocks.UserCollection).
-		On("GetUser", "admin").
+		On("GetUser", context.TODO(), "admin").
 		Return(
 			userInfo,
 			nil,
@@ -84,14 +85,14 @@ func TestHandler_Login_UserNotInDB(t *testing.T) {
 	userCollection = &mocks.UserCollection{}
 
 	userCollection.(*mocks.UserCollection).
-		On("GetUser", "admin").
+		On("GetUser", context.TODO(), "admin").
 		Return(
 			nil,
 			nil,
 		)
 
 	userCollection.(*mocks.UserCollection).
-		On("AddUser", mock.MatchedBy(func(u *user.Model) bool {
+		On("AddUser", context.TODO(), mock.MatchedBy(func(u *user.Model) bool {
 			return u.IsAdmin && u.Username == "admin" && u.Score == 0
 		})).
 		Return(
@@ -221,13 +222,13 @@ func TestHandler_RemoveSong(t *testing.T) {
 	songCollection = &mocks.SongCollection{}
 
 	songCollection.(*mocks.SongCollection).
-		On("RemoveSong", "id").
+		On("RemoveSong", context.TODO(), "id").
 		Return(
 			nil,
 		)
 
 	songCollection.(*mocks.SongCollection).
-		On("ListSongs").
+		On("ListSongs", context.TODO()).
 		Return(
 			[]*song.Model{},
 			nil,
@@ -277,7 +278,7 @@ func TestHandler_RemoveSong_SongNotInDB(t *testing.T) {
 	songCollection = &mocks.SongCollection{}
 
 	songCollection.(*mocks.SongCollection).
-		On("RemoveSong", "id").
+		On("RemoveSong", context.TODO(), "id").
 		Return(
 			ErrSongNotInCollection,
 		)

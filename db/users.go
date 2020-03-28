@@ -17,10 +17,10 @@ var (
 )
 
 type UserCollection interface {
-	GetUser(username string) (*user.Model, error)
-	AddUser(newUser *user.Model) error
-	ListUsers() ([]*user.ListElement, error)
-	IncrementScore(username string, amount float64) error
+	GetUser(ctx context.Context, username string) (*user.Model, error)
+	AddUser(ctx context.Context, newUser *user.Model) error
+	ListUsers(ctx context.Context, ) ([]*user.ListElement, error)
+	IncrementScore(ctx context.Context, username string, amount float64) error
 }
 
 type userCollection struct {
@@ -38,11 +38,11 @@ func NewUserCollection(client *mongo.Client) UserCollection {
 
 // Get User returns a user struct is username exists
 // if username does not exist it returns nil
-func (h *userCollection) GetUser(username string) (*user.Model, error) {
+func (h *userCollection) GetUser(ctx context.Context, username string) (*user.Model, error) {
 	errMsg := "get user: %v"
 	filter := bson.D{{"username", username}}
 	var foundUser *user.Model
-	err := h.collection.FindOne(context.TODO(), filter).Decode(&foundUser)
+	err := h.collection.FindOne(ctx, filter).Decode(&foundUser)
 	if err == mongo.ErrNoDocuments {
 		return nil, nil
 	}
@@ -52,9 +52,10 @@ func (h *userCollection) GetUser(username string) (*user.Model, error) {
 	return foundUser, nil
 }
 
-func (h *userCollection) AddUser(newUser *user.Model) error {
+// todo make concurrency-save
+func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
 	errMsg := "add user: %v"
-	u, err := h.GetUser(newUser.Username)
+	u, err := h.GetUser(ctx, newUser.Username)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -62,22 +63,22 @@ func (h *userCollection) AddUser(newUser *user.Model) error {
 		return fmt.Errorf(errMsg, ErrUsernameTaken)
 	}
 
-	if _, err = h.collection.InsertOne(context.TODO(), newUser); err != nil {
+	if _, err = h.collection.InsertOne(ctx, newUser); err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
 	return nil
 }
 
-func (h *userCollection) ListUsers() ([]*user.ListElement, error) {
+func (h *userCollection) ListUsers(ctx context.Context) ([]*user.ListElement, error) {
 	errMsg := "list users: %v"
 	var userList []*user.ListElement
-	cursor, err := h.collection.Find(context.TODO(), bson.D{{}})
+	cursor, err := h.collection.Find(ctx, bson.D{{}})
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
-	defer cursor.Close(context.TODO())
+	defer cursor.Close(ctx)
 
-	for cursor.Next(context.TODO()) {
+	for cursor.Next(ctx) {
 		var elem user.ListElement
 		err := cursor.Decode(&elem)
 		if err != nil {
@@ -89,7 +90,7 @@ func (h *userCollection) ListUsers() ([]*user.ListElement, error) {
 	return userList, nil
 }
 
-func (h *userCollection) IncrementScore(username string, amount float64) error {
+func (h *userCollection) IncrementScore(ctx context.Context, username string, amount float64) error {
 	errMsg := "increment user score: %v"
 	filter := bson.D{{"username", username}}
 	update := bson.D{
@@ -103,7 +104,7 @@ func (h *userCollection) IncrementScore(username string, amount float64) error {
 			},
 		},
 	}
-	result, err := h.collection.UpdateOne(context.TODO(), filter, update)
+	result, err := h.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
