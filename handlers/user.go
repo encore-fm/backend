@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -99,6 +100,18 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("suggest song: by [%v] songID [%v]", username, songID)
 	jsonResponse(w, songInfo)
+
+	// fetch songList and send event
+	songList, err := h.SongCollection.ListSongs(ctx)
+	if err != nil {
+		log.Errorf("suggest song: event: %v", err)
+	}
+	// send new playlist to broker
+	event := sse.Event{
+		Event: sse.PlaylistChange,
+		Data:  songList,
+	}
+	h.Broker.Notifier <- event
 }
 
 func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
@@ -176,4 +189,11 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("user [%v] %vvoted song [%v]", username, voteAction, songID)
 	jsonResponse(w, songList)
+
+	// send new playlist to broker
+	event := sse.Event{
+		Event: sse.PlaylistChange,
+		Data:  songList,
+	}
+	h.Broker.Notifier <- event
 }
