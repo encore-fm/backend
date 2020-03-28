@@ -101,7 +101,7 @@ func (_m *SongCollection) ReplaceSong(ctx context.Context, updatedSong *song.Mod
 }
 
 // Vote provides a mock function with given fields: ctx, songID, username, scoreChange
-func (_m *SongCollection) Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, error) {
+func (_m *SongCollection) Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, float64, error) {
 	ret := _m.Called(ctx, songID, username, scoreChange)
 
 	var r0 *song.Model
@@ -113,12 +113,19 @@ func (_m *SongCollection) Vote(ctx context.Context, songID string, username stri
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, float64) error); ok {
+	var r1 float64
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, float64) float64); ok {
 		r1 = rf(ctx, songID, username, scoreChange)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(float64)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, string, string, float64) error); ok {
+		r2 = rf(ctx, songID, username, scoreChange)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
