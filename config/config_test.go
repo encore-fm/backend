@@ -31,13 +31,15 @@ func TestFromFile(t *testing.T) {
 
 	// test server config
 	serverConfig := &ServerConfig{
-		Port: 8080,
+		Port:            8080,
 		FrontendBaseUrl: "http://localhost:3000",
 	}
 	assert.Equal(t, serverConfig, result.Server)
 
 	// test database config
 	dbConfig := &DBConfig{
+		DBUser:             "root",
+		DBPassword:         "root",
 		DBHost:             "127.0.0.1",
 		DBPort:             27017,
 		DBName:             "spotify-jukebox",

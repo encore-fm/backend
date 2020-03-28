@@ -8,7 +8,7 @@ import (
 )
 
 type Model struct {
-	ID          string      `json:"id" bson:"id"`
+	ID          string      `json:"id" bson:"_id"`
 	Name        string      `json:"name" bson:"name"`
 	Artists     []string    `json:"artists" bson:"artists"`
 	Duration    int         `json:"duration_ms" bson:"duration_ms"`

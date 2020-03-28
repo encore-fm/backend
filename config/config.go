@@ -25,6 +25,8 @@ type ServerConfig struct {
 }
 
 type DBConfig struct {
+	DBUser             string `mapstructure:"db_user"`
+	DBPassword         string `mapstructure:"db_password"`
 	DBHost             string `mapstructure:"db_host"`
 	DBPort             int    `mapstructure:"db_port"`
 	DBName             string `mapstructure:"db_name"`
@@ -49,11 +51,10 @@ func init() {
 	viper.SetConfigType("toml")
 	viper.SetConfigName("spotify-jukebox")
 	viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
-	viper.AddConfigPath("./") // this is only the example file with dummy values
+	viper.AddConfigPath("./")      // this is only the example file with dummy values
 	viper.AddConfigPath("config/") // this is only the example file with dummy values
 
 	viper.AddConfigPath("../config/") // todo: find better way to make tests work
-
 
 	c, err := FromFile()
 	if err != nil {

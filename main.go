@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/server"
@@ -25,7 +23,7 @@ func spotifyAuthSetup() spotify.Authenticator {
 
 func main() {
 	// connect to database
-	dbConn, err := db.New(context.TODO())
+	dbConn, err := db.New()
 	if err != nil {
 		panic(err)
 	}

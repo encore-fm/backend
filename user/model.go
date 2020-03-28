@@ -6,14 +6,14 @@ import (
 )
 
 type Model struct {
-	Username string  `json:"username" bson:"username"`
+	Username string  `json:"username" bson:"_id"`
 	Secret   string  `json:"secret" bson:"secret"`
 	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
 	Score    float64 `json:"score" bson:"score"`
 }
 
 type ListElement struct {
-	Username string  `json:"username" bson:"username"`
+	Username string  `json:"username" bson:"_id"`
 	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
 	Score    float64 `json:"score" bson:"score"`
 }

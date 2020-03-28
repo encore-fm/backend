@@ -32,20 +32,23 @@ var _ UserHandler = (*handler)(nil)
 // Join adds user to session
 func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
+
+	msg := "[handler] join"
 	vars := mux.Vars(r)
 	username := vars["username"]
 
 	newUser, err := user.New(username)
 	if err != nil {
-		log.Errorf("creating new user [%v]: %v", username, err)
-		w.WriteHeader(http.StatusInternalServerError)
+		log.Errorf("%v: creating new user [%v]: %v", msg, username, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.UserCollection.AddUser(ctx, newUser); err != nil {
-		log.Infof("user [%v] tried to join but username is already taken", username)
-		w.WriteHeader(http.StatusConflict)
+		log.Errorf("%v: user [%v]: %v", msg, username, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+
 	}
 
 	log.Infof("user [%v] joined", username)
@@ -149,8 +152,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		scoreChange = -scoreChange
 	}
 
-	// todo: find better way to make `Vote` atomic
-	songInfo, err := h.SongCollection.Vote(ctx, songID, username, scoreChange)
+	songInfo, change, err := h.SongCollection.Vote(ctx, songID, username, scoreChange)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -158,7 +160,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// update score of user that suggested song
-	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, scoreChange); err != nil {
+	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, change); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

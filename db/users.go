@@ -24,6 +24,7 @@ type UserCollection interface {
 }
 
 type userCollection struct {
+	client     *mongo.Client
 	collection *mongo.Collection
 }
 
@@ -33,14 +34,17 @@ func NewUserCollection(client *mongo.Client) UserCollection {
 	collection := client.
 		Database(config.Conf.Database.DBName).
 		Collection(config.Conf.Database.UserCollectionName)
-	return &userCollection{collection}
+	return &userCollection{
+		client: client,
+		collection: collection,
+	}
 }
 
 // Get User returns a user struct is username exists
 // if username does not exist it returns nil
 func (h *userCollection) GetUser(ctx context.Context, username string) (*user.Model, error) {
-	errMsg := "get user: %v"
-	filter := bson.D{{"username", username}}
+	errMsg := "[db] get user: %v"
+	filter := bson.D{{"_id", username}}
 	var foundUser *user.Model
 	err := h.collection.FindOne(ctx, filter).Decode(&foundUser)
 	if err == mongo.ErrNoDocuments {
@@ -52,25 +56,16 @@ func (h *userCollection) GetUser(ctx context.Context, username string) (*user.Mo
 	return foundUser, nil
 }
 
-// todo make concurrency-save
 func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
-	errMsg := "add user: %v"
-	u, err := h.GetUser(ctx, newUser.Username)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-	if u != nil {
-		return fmt.Errorf(errMsg, ErrUsernameTaken)
-	}
-
-	if _, err = h.collection.InsertOne(ctx, newUser); err != nil {
+	errMsg := "[db] add user: %v"
+	if _, err := h.collection.InsertOne(ctx, newUser); err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
 	return nil
 }
 
 func (h *userCollection) ListUsers(ctx context.Context) ([]*user.ListElement, error) {
-	errMsg := "list users: %v"
+	errMsg := "[db] list users: %v"
 	var userList []*user.ListElement
 	cursor, err := h.collection.Find(ctx, bson.D{{}})
 	if err != nil {
@@ -91,8 +86,8 @@ func (h *userCollection) ListUsers(ctx context.Context) ([]*user.ListElement, er
 }
 
 func (h *userCollection) IncrementScore(ctx context.Context, username string, amount float64) error {
-	errMsg := "increment user score: %v"
-	filter := bson.D{{"username", username}}
+	errMsg := "[db] increment user score: %v"
+	filter := bson.D{{"_id", username}}
 	update := bson.D{
 		bson.E{
 			Key: "$inc",
