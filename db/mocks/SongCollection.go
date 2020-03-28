@@ -86,8 +86,8 @@ func (_m *SongCollection) RemoveSong(ctx context.Context, songID string) error {
 	return r0
 }
 
-// UpdateSong provides a mock function with given fields: ctx, updatedSong
-func (_m *SongCollection) UpdateSong(ctx context.Context, updatedSong *song.Model) error {
+// ReplaceSong provides a mock function with given fields: ctx, updatedSong
+func (_m *SongCollection) ReplaceSong(ctx context.Context, updatedSong *song.Model) error {
 	ret := _m.Called(ctx, updatedSong)
 
 	var r0 error
@@ -98,4 +98,27 @@ func (_m *SongCollection) UpdateSong(ctx context.Context, updatedSong *song.Mode
 	}
 
 	return r0
+}
+
+// Vote provides a mock function with given fields: ctx, songID, username, scoreChange
+func (_m *SongCollection) Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, error) {
+	ret := _m.Called(ctx, songID, username, scoreChange)
+
+	var r0 *song.Model
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, float64) *song.Model); ok {
+		r0 = rf(ctx, songID, username, scoreChange)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*song.Model)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, float64) error); ok {
+		r1 = rf(ctx, songID, username, scoreChange)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
