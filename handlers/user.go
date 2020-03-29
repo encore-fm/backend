@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 
+	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -46,10 +47,14 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.UserCollection.AddUser(ctx, newUser); err != nil {
+		if errors.Is(err, db.ErrUsernameTaken) {
+			log.Errorf("%v: user [%v]: %v", msg, username, err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 		log.Errorf("%v: user [%v]: %v", msg, username, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
-
 	}
 
 	log.Infof("user [%v] joined", username)

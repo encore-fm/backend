@@ -59,6 +59,9 @@ func (h *userCollection) GetUser(ctx context.Context, username string) (*user.Mo
 func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
 	errMsg := "[db] add user: %v"
 	if _, err := h.collection.InsertOne(ctx, newUser); err != nil {
+		if _, ok := err.(mongo.WriteException); ok {
+			return fmt.Errorf(errMsg, ErrUsernameTaken)
+		}
 		return fmt.Errorf(errMsg, err)
 	}
 	return nil
