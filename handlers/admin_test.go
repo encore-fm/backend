@@ -35,7 +35,7 @@ func TestHandler_Login(t *testing.T) {
 	}
 
 	userCollection.(*mocks.UserCollection).
-		On("GetUser", context.TODO(), "admin").
+		On("GetUserByUsername", context.TODO(), "admin").
 		Return(
 			userInfo,
 			nil,
@@ -86,7 +86,7 @@ func TestHandler_Login_UserNotInDB(t *testing.T) {
 	userCollection = &mocks.UserCollection{}
 
 	userCollection.(*mocks.UserCollection).
-		On("GetUser", context.TODO(), "admin").
+		On("GetUserByUsername", context.TODO(), "admin").
 		Return(
 			nil,
 			nil,

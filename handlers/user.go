@@ -33,17 +33,17 @@ var _ UserHandler = (*handler)(nil)
 
 // Join adds user to session
 func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
+	// - get session id
+	// todo: - check if session with this id exists
+	// todo: - generate random state (in user.New())
+	// todo: - create auth url
+	// todo: - maybe just store authenticator in database
 	ctx := context.Background()
 
 	msg := "[handler] join"
 	vars := mux.Vars(r)
 	username := vars["username"]
-
-	// todo: get session id
-	// todo: - check if session with this id exists
-	// todo: - generate random state
-	// todo: - create auth url
-	// todo: - maybe just store authenticator in database
+	sessionID := vars["session_id"]
 
 	newUser, err := user.New(username)
 	if err != nil {
@@ -159,7 +159,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userInfo, err := h.UserCollection.GetUser(ctx, username)
+	userInfo, err := h.UserCollection.GetUserByUsername(ctx, username)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

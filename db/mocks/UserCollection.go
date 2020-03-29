@@ -26,8 +26,8 @@ func (_m *UserCollection) AddUser(ctx context.Context, newUser *user.Model) erro
 	return r0
 }
 
-// GetUser provides a mock function with given fields: ctx, username
-func (_m *UserCollection) GetUser(ctx context.Context, username string) (*user.Model, error) {
+// GetUserByUsername provides a mock function with given fields: ctx, username
+func (_m *UserCollection) GetUserByUsername(ctx context.Context, username string) (*user.Model, error) {
 	ret := _m.Called(ctx, username)
 
 	var r0 *user.Model

@@ -47,7 +47,7 @@ func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	admin, err := h.UserCollection.GetUser(ctx, credentials.Username)
+	admin, err := h.UserCollection.GetUserByUsername(ctx, credentials.Username)
 	if err != nil {
 		log.Errorf("admin login: get user from db: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

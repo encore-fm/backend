@@ -28,6 +28,7 @@ db_port = 27017
 db_name = "spotify-jukebox"
 user_collection_name = "users"
 song_collection_name = "songs"
+session_collection_name = "sessions"
 
 
 

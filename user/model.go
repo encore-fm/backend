@@ -1,8 +1,7 @@
 package user
 
 import (
-	"crypto/rand"
-	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/util"
 )
 
 type Model struct {
@@ -18,18 +17,8 @@ type ListElement struct {
 	Score    float64 `json:"score" bson:"score"`
 }
 
-// returns a 128 char secret key
-func GenerateSecret() (string, error) {
-	key := make([]byte, 64)
-	_, err := rand.Read(key)
-	if err != nil {
-		return "", fmt.Errorf("generate secret: %v", err)
-	}
-	return fmt.Sprintf("%x", key), nil
-}
-
 func New(username string) (*Model, error) {
-	secret, err := GenerateSecret()
+	secret, err := util.GenerateSecret()
 	if err != nil {
 		return nil, err
 	}
@@ -37,13 +26,13 @@ func New(username string) (*Model, error) {
 		Username: username,
 		Secret:   secret,
 		IsAdmin:  false,
-		Score:    0,
+		Score:    1,
 	}
 	return model, nil
 }
 
 func NewAdmin(username string) (*Model, error) {
-	secret, err := GenerateSecret()
+	secret, err := util.GenerateSecret()
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +40,7 @@ func NewAdmin(username string) (*Model, error) {
 		Username: username,
 		Secret:   secret,
 		IsAdmin:  true,
-		Score:    0,
+		Score:    1,
 	}
 	return model, nil
 }

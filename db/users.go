@@ -17,7 +17,7 @@ var (
 )
 
 type UserCollection interface {
-	GetUser(ctx context.Context, username string) (*user.Model, error)
+	GetUserByUsername(ctx context.Context, username string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
 	ListUsers(ctx context.Context, ) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount float64) error
@@ -42,7 +42,7 @@ func NewUserCollection(client *mongo.Client) UserCollection {
 
 // Get User returns a user struct is username exists
 // if username does not exist it returns nil
-func (h *userCollection) GetUser(ctx context.Context, username string) (*user.Model, error) {
+func (h *userCollection) GetUserByUsername(ctx context.Context, username string) (*user.Model, error) {
 	errMsg := "[db] get user: %v"
 	filter := bson.D{{"_id", username}}
 	var foundUser *user.Model

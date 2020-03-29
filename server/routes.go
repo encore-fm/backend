@@ -15,7 +15,7 @@ func (s *Model) setupServerRoutes(r *mux.Router) {
 
 func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 	r.Handle(
-		"/users/join/{username}",
+		"/users/join/{session_id}/{username}",
 		http.HandlerFunc(s.UserHandler.Join),
 	).Methods(http.MethodPost)
 

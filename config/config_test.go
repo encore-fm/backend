@@ -38,13 +38,14 @@ func TestFromFile(t *testing.T) {
 
 	// test database config
 	dbConfig := &DBConfig{
-		DBUser:             "root",
-		DBPassword:         "root",
-		DBHost:             "127.0.0.1",
-		DBPort:             27017,
-		DBName:             "spotify-jukebox",
-		UserCollectionName: "users",
-		SongCollectionName: "songs",
+		DBUser:                "root",
+		DBPassword:            "root",
+		DBHost:                "127.0.0.1",
+		DBPort:                27017,
+		DBName:                "spotify-jukebox",
+		UserCollectionName:    "users",
+		SongCollectionName:    "songs",
+		SessionCollectionName: "sessions",
 	}
 	assert.Equal(t, dbConfig, result.Database)
 }

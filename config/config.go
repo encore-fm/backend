@@ -25,13 +25,14 @@ type ServerConfig struct {
 }
 
 type DBConfig struct {
-	DBUser             string `mapstructure:"db_user"`
-	DBPassword         string `mapstructure:"db_password"`
-	DBHost             string `mapstructure:"db_host"`
-	DBPort             int    `mapstructure:"db_port"`
-	DBName             string `mapstructure:"db_name"`
-	UserCollectionName string `mapstructure:"user_collection_name"`
-	SongCollectionName string `mapstructure:"song_collection_name"`
+	DBUser                string `mapstructure:"db_user"`
+	DBPassword            string `mapstructure:"db_password"`
+	DBHost                string `mapstructure:"db_host"`
+	DBPort                int    `mapstructure:"db_port"`
+	DBName                string `mapstructure:"db_name"`
+	UserCollectionName    string `mapstructure:"user_collection_name"`
+	SongCollectionName    string `mapstructure:"song_collection_name"`
+	SessionCollectionName string `mapstructure:"session_collection_name"`
 }
 
 type Config struct {

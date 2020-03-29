@@ -26,7 +26,7 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
 			vars := mux.Vars(r)
 			username := vars["username"]
 
-			u, err := userCollection.GetUser(ctx, username)
+			u, err := userCollection.GetUserByUsername(ctx, username)
 			// error while looking up user
 			if err != nil {
 				log.Errorf(msg, err)
