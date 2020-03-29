@@ -5,10 +5,6 @@ title = "Spotify-Jukebox Config File"
 # uncategorized options
 max_users = 1000
 
-[admin]
-username = "admin"
-password = "password"
-
 [spotify]
 client_id = "id"
 client_secret = "secret"

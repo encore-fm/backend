@@ -12,13 +12,6 @@ func TestFromFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1000, result.MaxUsers)
 
-	// test admin config
-	adminConfig := &AdminConfig{
-		Username: "admin",
-		Password: "password",
-	}
-	assert.Equal(t, adminConfig, result.Admin)
-
 	// test spotify config
 	spotifyConfig := &SpotifyConfig{
 		ClientID:     "id",

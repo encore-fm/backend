@@ -2,11 +2,11 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
@@ -18,64 +18,71 @@ var (
 )
 
 type AdminHandler interface {
-	Login(w http.ResponseWriter, r *http.Request)
+	CreateSession(w http.ResponseWriter, r *http.Request)
 	RemoveSong(w http.ResponseWriter, r *http.Request)
 }
 
 var _ AdminHandler = (*handler)(nil)
 
-// Log in checks credentials {username, password} in request.Body
-// if they match with configured admin credentials the admin-user
-// struct will be returned
-func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
-	// todo: rename -> CreateSession()
-	// todo: - create new session and save
-	// todo: - create admin
-	// todo: - create redirect link
-
+func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] create session"
 	ctx := context.Background()
-	var credentials config.AdminConfig
-	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
-		log.Errorf("admin login: decoding request body: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if credentials.Username != config.Conf.Admin.Username ||
-		credentials.Password != config.Conf.Admin.Password {
-		log.Errorf("admin login: %v", ErrWrongCredentials)
-		http.Error(w, ErrWrongCredentials.Error(), http.StatusForbidden)
-		return
-	}
 
-	admin, err := h.UserCollection.GetUserByUsername(ctx, credentials.Username)
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	// create new session (contains random session id)
+	sess, err := session.New()
 	if err != nil {
-		log.Errorf("admin login: get user from db: %v", err)
+		log.Errorf("%v: creating new session: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if admin != nil {
-		log.Infof("admin login: [%v] successfully logged in", credentials.Username)
-		jsonResponse(w, admin)
-		return
-	}
-
-	// if user does not exist in database -> create new user
-	admin, err = user.NewAdmin(credentials.Username)
+	// save session in db
+	err = h.SessionCollection.AddSession(ctx, sess)
 	if err != nil {
-		log.Errorf("admin login: create new user: %v", err)
+		if errors.Is(err, db.ErrSessionAlreadyExisting) {
+			log.Errorf("%v: saving session: %v", msg, err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		log.Errorf("%v: saving session: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// create admin user. contains
+	// - user secret
+	// - state for spotify authentication
+	admin, err := user.NewAdmin(username, sess.ID)
+	if err != nil {
+		log.Errorf("%v: create admin user: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// save admin user in db
 	if err := h.UserCollection.AddUser(ctx, admin); err != nil {
-		log.Errorf("admin login: add user to db: %v", err)
+		log.Errorf("%v: save admin user: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Infof("admin login: [%v] successfully logged in", credentials.Username)
-	jsonResponse(w, admin)
+	// create authentication url containing auth state
+	// auth state will later be used to link spotify callback to user
+	authUrl := h.spotifyAuthenticator.AuthURLWithDialog(admin.AuthState)
+
+	response := &struct {
+		UserInfo *user.Model `json:"user_info"`
+		AuthUrl  string      `json:"auth_url"`
+	}{
+		UserInfo: admin,
+		AuthUrl:  authUrl,
+	}
+
+	log.Infof("%v: [%v] successfully created session with id [%v]", msg, username, sess.ID)
+	jsonResponse(w, response)
 }
 
 func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {

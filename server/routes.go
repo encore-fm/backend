@@ -42,8 +42,8 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 
 func (s *Model) setupAdminRoutes(r *mux.Router, auth authFunc) {
 	r.Handle(
-		"/admin/login",
-		http.HandlerFunc(s.AdminHandler.Login),
+		"/admin/{username}/createSession",
+		http.HandlerFunc(s.AdminHandler.CreateSession),
 	).Methods(http.MethodPost)
 
 	r.Handle(
