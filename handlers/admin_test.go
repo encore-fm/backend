@@ -51,7 +51,7 @@ func TestHandler_Login(t *testing.T) {
 
 	// set up http request
 	req, err := http.NewRequest(
-		"GET",
+		"POST",
 		"/admin/login",
 		strings.NewReader(`{"username": "admin", "password": "password"}`),
 	)
@@ -110,7 +110,7 @@ func TestHandler_Login_UserNotInDB(t *testing.T) {
 
 	// set up http request
 	req, err := http.NewRequest(
-		"GET",
+		"POST",
 		"/admin/login",
 		strings.NewReader(`{"username": "admin", "password": "password"}`),
 	)
@@ -158,7 +158,7 @@ func TestHandler_Login_JsonCorrupted(t *testing.T) {
 
 	// set up http request
 	req, err := http.NewRequest(
-		"GET",
+		"POST",
 		"/admin/login",
 		strings.NewReader(`{"username": "admin", "password": "password"`),
 	)
@@ -193,7 +193,7 @@ func TestHandler_Login_WrongCredentials(t *testing.T) {
 
 	// set up http request
 	req, err := http.NewRequest(
-		"GET",
+		"POST",
 		"/admin/login",
 		strings.NewReader(`{"username": "user", "password": "12345"}`),
 	)
@@ -250,7 +250,7 @@ func TestHandler_RemoveSong(t *testing.T) {
 
 	// set up http request
 	req, err := http.NewRequest(
-		"GET",
+		"DELETE",
 		"/users/username/removeSong/id",
 		nil,
 	)
@@ -299,7 +299,7 @@ func TestHandler_RemoveSong_SongNotInDB(t *testing.T) {
 
 	// set up http request
 	req, err := http.NewRequest(
-		"GET",
+		"DELETE",
 		"/users/username/removeSong/id",
 		nil,
 	)
