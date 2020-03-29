@@ -20,7 +20,6 @@ type AdminHandler interface {
 
 var _ AdminHandler = (*handler)(nil)
 
-// todo make atomic :/
 func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] create session"
 	ctx := context.Background()

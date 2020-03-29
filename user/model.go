@@ -1,12 +1,15 @@
 package user
 
 import (
+	"fmt"
+
 	"github.com/antonbaumann/spotify-jukebox/util"
 	"golang.org/x/oauth2"
 )
 
 type Model struct {
-	Username          string  `json:"username" bson:"_id"`
+	ID                string  `json:"id" bson:"_id"`
+	Username          string  `json:"username" bson:"username"`
 	Secret            string  `json:"secret" bson:"secret"`
 	SessionID         string  `json:"session_id" bson:"session_id"`
 	IsAdmin           bool    `json:"is_admin" bson:"is_admin"`
@@ -18,12 +21,16 @@ type Model struct {
 }
 
 type ListElement struct {
-	Username string  `json:"username" bson:"_id"`
+	Username string  `json:"username" bson:"username"`
 	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
 	Score    float64 `json:"score" bson:"score"`
 }
 
-func New(username string, sessionID string) (*Model, error) {
+func GenerateUserID(username, userID string) string {
+	return fmt.Sprintf("%v@%v", username, userID)
+}
+
+func New(username, sessionID string) (*Model, error) {
 	secret, err := util.GenerateSecret()
 	if err != nil {
 		return nil, err
@@ -35,6 +42,7 @@ func New(username string, sessionID string) (*Model, error) {
 	}
 
 	model := &Model{
+		ID:                GenerateUserID(username, sessionID),
 		Username:          username,
 		Secret:            secret,
 		SessionID:         sessionID,
@@ -46,7 +54,7 @@ func New(username string, sessionID string) (*Model, error) {
 	return model, nil
 }
 
-func NewAdmin(username string, sessionID string) (*Model, error) {
+func NewAdmin(username, sessionID string) (*Model, error) {
 	admin, err := New(username, sessionID)
 	if err != nil {
 		return nil, err
