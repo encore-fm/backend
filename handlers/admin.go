@@ -13,10 +13,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	ErrWrongCredentials = errors.New("username and password do not match")
-)
-
 type AdminHandler interface {
 	CreateSession(w http.ResponseWriter, r *http.Request)
 	RemoveSong(w http.ResponseWriter, r *http.Request)
@@ -24,6 +20,7 @@ type AdminHandler interface {
 
 var _ AdminHandler = (*handler)(nil)
 
+// todo make atomic :/
 func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] create session"
 	ctx := context.Background()
