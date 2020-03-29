@@ -39,6 +39,12 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
+	// todo: get session id
+	// todo: - check if session with this id exists
+	// todo: - generate random state
+	// todo: - create auth url
+	// todo: - maybe just store authenticator in database
+
 	newUser, err := user.New(username)
 	if err != nil {
 		log.Errorf("%v: creating new user [%v]: %v", msg, username, err)

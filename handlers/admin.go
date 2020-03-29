@@ -28,6 +28,11 @@ var _ AdminHandler = (*handler)(nil)
 // if they match with configured admin credentials the admin-user
 // struct will be returned
 func (h *handler) Login(w http.ResponseWriter, r *http.Request) {
+	// todo: rename -> CreateSession()
+	// todo: - create new session and save
+	// todo: - create admin
+	// todo: - create redirect link
+
 	ctx := context.Background()
 	var credentials config.AdminConfig
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
