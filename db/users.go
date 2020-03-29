@@ -19,7 +19,7 @@ var (
 )
 
 type UserCollection interface {
-	GetUserByUsername(ctx context.Context, username string) (*user.Model, error)
+	GetUserByID(ctx context.Context, userID string) (*user.Model, error)
 	GetUserByState(ctx context.Context, username string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
 	ListUsers(ctx context.Context, ) ([]*user.ListElement, error)
@@ -61,9 +61,9 @@ func (h *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Mode
 
 // Get User returns a user struct if username exists
 // if username does not exist it returns nil
-func (h *userCollection) GetUserByUsername(ctx context.Context, username string) (*user.Model, error) {
+func (h *userCollection) GetUserByID(ctx context.Context, userID string) (*user.Model, error) {
 	errMsg := "[db] get user by username : %v"
-	filter := bson.D{{"_id", username}}
+	filter := bson.D{{"_id", userID}}
 	res, err := h.findOne(ctx, filter)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
@@ -142,9 +142,9 @@ func (h *userCollection) IncrementScore(ctx context.Context, username string, am
 // Set token
 // - sets spotify authorization token
 // - sets spotify_authorized field to true
-func (h *userCollection) SetToken(ctx context.Context, username string, token *oauth2.Token) error {
+func (h *userCollection) SetToken(ctx context.Context, userID string, token *oauth2.Token) error {
 	errMsg := "[db] set token: %v"
-	filter := bson.D{{"_id", username}}
+	filter := bson.D{{"_id", userID}}
 	update := bson.D{
 		{
 			Key: "$set",

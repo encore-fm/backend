@@ -55,7 +55,7 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	// save token in user struct in db
 	// this also sets the `SpotifyAuthorized` field to true
-	if err := h.UserCollection.SetToken(ctx, user.Username, token); err != nil {
+	if err := h.UserCollection.SetToken(ctx, user.ID, token); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

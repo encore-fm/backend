@@ -15,7 +15,7 @@ func (s *Model) setupServerRoutes(r *mux.Router) {
 
 func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 	r.Handle(
-		"/users/join/{session_id}/{username}",
+		"/users/{username}/join/{session_id}",
 		http.HandlerFunc(s.UserHandler.Join),
 	).Methods(http.MethodPost)
 
@@ -59,6 +59,7 @@ func (s *Model) setupSpotifyRoutes(r *mux.Router) {
 	)
 }
 
+// todo: authentication
 func (s *Model) setupEventRoutes(r *mux.Router) {
 	r.Handle(
 		"/events",
