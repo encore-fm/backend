@@ -19,14 +19,14 @@ go build .
 ## REST Api
 #### User related
 ##### join: 
-- `GET /users/join/{username}`
+- `POST /users/join/{username}`
 - response: `{"username": <username>, "secret": <secret>, "is_admin": false, "score": <score>}`
 ##### list:
 - `GET /users/{username}/list`
 - headers: `{"Authorization": <secret>}`
 - response: `[{"username": <username>, "is_admin": false, "score": <score>}]`
 ##### suggest song
-- `GET /users/{username}/suggest/{song_id}`
+- `POST /users/{username}/suggest/{song_id}`
 - headers: `{"Authorization": <secret>}`
 - response: `{
                  "duration_ms" : <duration>,
@@ -41,8 +41,8 @@ go build .
                  "artists" : []
                }`
 ##### vote up/down
-- `GET /users/{username}/vote/{song_id}/up`
-- `GET /users/{username}/vote/{song_id}/down`
+- `POST /users/{username}/vote/{song_id}/up`
+- `POST /users/{username}/vote/{song_id}/down`
 - headers: `{"Authorization": <secret>}`
 - response: `[SongInfo]`
 ##### list songs
@@ -65,8 +65,8 @@ go build .
 - `POST /admin/login` 
 - request: `{"username": <username>, "password": <password>}`
 - response: `{"username": <username>, "secret": <secret>, "is_admin": true, "score": <score>}`
-##### login: 
-- `GET /users/{username}/removeSong/{song_id}`
+##### remove song: 
+- `DELETE /users/{username}/removeSong/{song_id}`
 - headers: `{"Authorization": <secret>}`
 - response: `[{
                    "duration_ms" : <duration>,
@@ -80,6 +80,10 @@ go build .
                    "name" : <name>,
                    "artists" : []
                  }]`
+                 
+#### events
+- `GET /events`
+
 #### Server related
 ##### ping:
 - `GET /ping`
