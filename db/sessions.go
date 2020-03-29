@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,6 +26,16 @@ type sessionCollection struct {
 }
 
 var _ SessionCollection = (*sessionCollection)(nil)
+
+func NewSessionCollection(client *mongo.Client) SessionCollection {
+	collection := client.
+		Database(config.Conf.Database.DBName).
+		Collection(config.Conf.Database.SessionCollectionName)
+	return &sessionCollection{
+		client:     client,
+		collection: collection,
+	}
+}
 
 func (c *sessionCollection) AddSession(ctx context.Context, sess *session.Session) error {
 	errMsg := "[db] add session: %v"
