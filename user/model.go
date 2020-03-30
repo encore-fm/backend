@@ -1,57 +1,64 @@
 package user
 
 import (
-	"crypto/rand"
 	"fmt"
+
+	"github.com/antonbaumann/spotify-jukebox/util"
+	"golang.org/x/oauth2"
 )
 
 type Model struct {
-	Username string  `json:"username" bson:"_id"`
-	Secret   string  `json:"secret" bson:"secret"`
-	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
-	Score    float64 `json:"score" bson:"score"`
+	ID                string  `json:"id" bson:"_id"`
+	Username          string  `json:"username" bson:"username"`
+	Secret            string  `json:"secret" bson:"secret"`
+	SessionID         string  `json:"session_id" bson:"session_id"`
+	IsAdmin           bool    `json:"is_admin" bson:"is_admin"`
+	Score             float64 `json:"score" bson:"score"`
+	SpotifyAuthorized bool    `json:"spotify_authorized" bson:"spotify_authorized"`
+
+	AuthToken *oauth2.Token `json:"auth_token" bson:"auth_token"`
+	AuthState string        `json:"auth_state" bson:"auth_state"`
 }
 
 type ListElement struct {
-	Username string  `json:"username" bson:"_id"`
+	Username string  `json:"username" bson:"username"`
 	IsAdmin  bool    `json:"is_admin" bson:"is_admin"`
 	Score    float64 `json:"score" bson:"score"`
 }
 
-// returns a 128 char secret key
-func GenerateSecret() (string, error) {
-	key := make([]byte, 64)
-	_, err := rand.Read(key)
-	if err != nil {
-		return "", fmt.Errorf("generate secret: %v", err)
-	}
-	return fmt.Sprintf("%x", key), nil
+func GenerateUserID(username, userID string) string {
+	return fmt.Sprintf("%v@%v", username, userID)
 }
 
-func New(username string) (*Model, error) {
-	secret, err := GenerateSecret()
+func New(username, sessionID string) (*Model, error) {
+	secret, err := util.GenerateSecret()
 	if err != nil {
 		return nil, err
 	}
+
+	state, err := util.GenerateSecret()
+	if err != nil {
+		return nil, err
+	}
+
 	model := &Model{
-		Username: username,
-		Secret:   secret,
-		IsAdmin:  false,
-		Score:    0,
+		ID:                GenerateUserID(username, sessionID),
+		Username:          username,
+		Secret:            secret,
+		SessionID:         sessionID,
+		IsAdmin:           false,
+		Score:             1,
+		AuthState:         state,
+		SpotifyAuthorized: false,
 	}
 	return model, nil
 }
 
-func NewAdmin(username string) (*Model, error) {
-	secret, err := GenerateSecret()
+func NewAdmin(username, sessionID string) (*Model, error) {
+	admin, err := New(username, sessionID)
 	if err != nil {
 		return nil, err
 	}
-	model := &Model{
-		Username: username,
-		Secret:   secret,
-		IsAdmin:  true,
-		Score:    0,
-	}
-	return model, nil
+	admin.IsAdmin = true
+	return admin, nil
 }

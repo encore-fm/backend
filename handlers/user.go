@@ -6,7 +6,6 @@ import (
 	"math"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -19,6 +18,7 @@ var (
 	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
 	ErrSongNotInCollection     = errors.New("song with given ID not in db")
 	ErrUserNotExisting         = errors.New("user with given ID does not exist")
+	ErrSessionNotExisting      = errors.New("session with given ID does not exist")
 )
 
 type UserHandler interface {
@@ -32,44 +32,71 @@ type UserHandler interface {
 var _ UserHandler = (*handler)(nil)
 
 // Join adds user to session
+// - check if session with this id exists
+// - create new user and save in db
+// - create auth url
 func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] join"
 	ctx := context.Background()
 
-	msg := "[handler] join"
 	vars := mux.Vars(r)
 	username := vars["username"]
+	sessionID := vars["session_id"]
 
-	newUser, err := user.New(username)
+	// check if session with given id exists
+	sess, err := h.SessionCollection.GetSessionByID(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if sess == nil {
+		log.Warnf("%v: %v", msg, err)
+		http.Error(w, ErrSessionNotExisting.Error(), http.StatusBadRequest)
+		return
+	}
+
+	newUser, err := user.New(username, sessionID)
 	if err != nil {
 		log.Errorf("%v: creating new user [%v]: %v", msg, username, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// save user in db
 	if err := h.UserCollection.AddUser(ctx, newUser); err != nil {
-		if errors.Is(err, db.ErrUsernameTaken) {
-			log.Errorf("%v: user [%v]: %v", msg, username, err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		log.Errorf("%v: user [%v]: %v", msg, username, err)
+		log.Errorf("%v: save user: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Infof("user [%v] joined", username)
-	jsonResponse(w, newUser)
+	// create authentication url containing auth state
+	// auth state will later be used to link spotify callback to user
+	authUrl := h.spotifyAuthenticator.AuthURLWithDialog(newUser.AuthState)
+
+	response := &struct {
+		UserInfo *user.Model `json:"user_info"`
+		AuthUrl  string      `json:"auth_url"`
+	}{
+		UserInfo: newUser,
+		AuthUrl:  authUrl,
+	}
+
+	log.Infof("%v: [%v] successfully joined session with id [%v]", msg, username, sess.ID)
+	jsonResponse(w, response)
 }
 
 // ListUsers lists all users in the session
 func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] list users"
 	ctx := context.Background()
+
 	vars := mux.Vars(r)
 	username := vars["username"]
 
 	userList, err := h.UserCollection.ListUsers(ctx)
 	if err != nil {
-		log.Errorf("list users: %v", err)
+		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -79,31 +106,33 @@ func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] suggest song"
 	ctx := context.Background()
+
 	vars := mux.Vars(r)
 	username := vars["username"]
 	songID := vars["song_id"]
 
 	if !h.spotifyActivated {
-		log.Errorf("suggest song: %v", ErrSpotifyNotAuthenticated)
+		log.Errorf("%v: %v", msg, ErrSpotifyNotAuthenticated)
 		http.Error(w, ErrSpotifyNotAuthenticated.Error(), http.StatusInternalServerError)
 		return
 	}
 	fullTrack, err := h.Spotify.GetTrack(spotify.ID(songID))
 	if err != nil {
-		log.Errorf("suggest song: retrieving info from spotify: %v", err)
+		log.Errorf("%v: retrieving info from spotify: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	songInfo := song.New(username, 0, fullTrack)
 	if err := h.SongCollection.AddSong(ctx, songInfo); err != nil {
-		log.Errorf("suggest song: insert into songs collection: %v", err)
+		log.Errorf("%v: insert into songs collection: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Infof("suggest song: by [%v] songID [%v]", username, songID)
+	log.Infof("%v: by [%v] songID [%v]", msg, username, songID)
 	jsonResponse(w, songInfo)
 
 	// fetch songList and send event
@@ -120,9 +149,9 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] list songs"
 	ctx := context.Background()
 
-	msg := "[handler] list songs"
 	vars := mux.Vars(r)
 	username := vars["username"]
 
@@ -133,18 +162,21 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("user [%v] requested song list", username)
+	log.Infof("%v: user [%v]", msg, username)
 	jsonResponse(w, songList)
 }
 
 func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] vote"
 	ctx := context.Background()
 
-	msg := "vote"
 	vars := mux.Vars(r)
 	username := vars["username"]
 	songID := vars["song_id"]
 	voteAction := vars["vote_action"]
+
+	// get session id from headers
+	sessID := r.Header.Get("Session")
 
 	if voteAction != "up" && voteAction != "down" {
 		errMsg := `vote action must be in {"up", "down"}`
@@ -153,7 +185,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userInfo, err := h.UserCollection.GetUser(ctx, username)
+	userInfo, err := h.UserCollection.GetUserByID(ctx, user.GenerateUserID(username, sessID))
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

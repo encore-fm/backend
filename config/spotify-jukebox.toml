@@ -5,10 +5,6 @@ title = "Spotify-Jukebox Config File"
 # uncategorized options
 max_users = 1000
 
-[admin]
-username = "admin"
-password = "password"
-
 [spotify]
 client_id = "id"
 client_secret = "secret"
@@ -28,6 +24,7 @@ db_port = 27017
 db_name = "spotify-jukebox"
 user_collection_name = "users"
 song_collection_name = "songs"
+session_collection_name = "sessions"
 
 
 

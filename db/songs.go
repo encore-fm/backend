@@ -65,6 +65,9 @@ func (h *songCollection) GetSongByID(ctx context.Context, songID string) (*song.
 func (h *songCollection) AddSong(ctx context.Context, newSong *song.Model) error {
 	errMsg := "[db] add song: %v"
 	if _, err := h.collection.InsertOne(ctx, newSong); err != nil {
+		if _, ok := err.(mongo.WriteException); ok {
+			return fmt.Errorf(errMsg, ErrUsernameTaken)
+		}
 		return fmt.Errorf(errMsg, err)
 	}
 	return nil

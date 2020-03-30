@@ -12,13 +12,6 @@ func TestFromFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1000, result.MaxUsers)
 
-	// test admin config
-	adminConfig := &AdminConfig{
-		Username: "admin",
-		Password: "password",
-	}
-	assert.Equal(t, adminConfig, result.Admin)
-
 	// test spotify config
 	spotifyConfig := &SpotifyConfig{
 		ClientID:     "id",
@@ -38,13 +31,14 @@ func TestFromFile(t *testing.T) {
 
 	// test database config
 	dbConfig := &DBConfig{
-		DBUser:             "root",
-		DBPassword:         "root",
-		DBHost:             "127.0.0.1",
-		DBPort:             27017,
-		DBName:             "spotify-jukebox",
-		UserCollectionName: "users",
-		SongCollectionName: "songs",
+		DBUser:                "root",
+		DBPassword:            "root",
+		DBHost:                "127.0.0.1",
+		DBPort:                27017,
+		DBName:                "spotify-jukebox",
+		UserCollectionName:    "users",
+		SongCollectionName:    "songs",
+		SessionCollectionName: "sessions",
 	}
 	assert.Equal(t, dbConfig, result.Database)
 }

@@ -14,11 +14,6 @@ type Model struct {
 	Client   *mongo.Client
 }
 
-type collection struct {
-	client     *mongo.Client
-	collection *mongo.Collection
-}
-
 func New() (*Model, error) {
 	mongoURI := fmt.Sprintf(
 		"mongodb://%v:%v@%v:%v/?connect=direct",

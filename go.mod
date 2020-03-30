@@ -13,4 +13,5 @@ require (
 	github.com/vektra/mockery v0.0.0-20181123154057-e78b021dcbb5 // indirect
 	github.com/zmb3/spotify v0.0.0-20200112163645-71a4c67d18db
 	go.mongodb.org/mongo-driver v1.3.1
+	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
 )

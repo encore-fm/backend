@@ -12,12 +12,14 @@ type handler struct {
 	spotifyActivated     bool
 	UserCollection       db.UserCollection
 	SongCollection       db.SongCollection
+	SessionCollection    db.SessionCollection
 	Broker               *sse.Broker
 }
 
 func New(
 	userCollection db.UserCollection,
 	songCollection db.SongCollection,
+	sessCollection db.SessionCollection,
 	auth spotify.Authenticator,
 	broker *sse.Broker,
 ) *handler {
@@ -26,6 +28,7 @@ func New(
 		spotifyActivated:     false,
 		UserCollection:       userCollection,
 		SongCollection:       songCollection,
+		SessionCollection:    sessCollection,
 		Broker:               broker,
 	}
 }

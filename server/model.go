@@ -9,36 +9,40 @@ import (
 )
 
 type Model struct {
-	Port           int
-	UserCollection db.UserCollection
-	SongCollection db.SongCollection
-	AdminHandler   handlers.AdminHandler
-	UserHandler    handlers.UserHandler
-	ServerHandler  handlers.ServerHandler
-	SpotifyHandler handlers.SpotifyHandler
-	Broker         *sse.Broker
+	Port              int
+	UserCollection    db.UserCollection
+	SongCollection    db.SongCollection
+	SessionCollection db.SessionCollection
+	AdminHandler      handlers.AdminHandler
+	UserHandler       handlers.UserHandler
+	ServerHandler     handlers.ServerHandler
+	SpotifyHandler    handlers.SpotifyHandler
+	Broker            *sse.Broker
 }
 
 func New(dbConn *db.Model, spotifyAuth spotify.Authenticator, broker *sse.Broker) *Model {
 	userHandle := db.NewUserCollection(dbConn.Client)
 	songHandle := db.NewSongCollection(dbConn.Client)
+	sessHandle := db.NewSessionCollection(dbConn.Client)
 
 	handler := handlers.New(
 		userHandle,
 		songHandle,
+		sessHandle,
 		spotifyAuth,
 		broker,
 	)
 
 	server := &Model{
-		Port:           config.Conf.Server.Port,
-		UserCollection: userHandle,
-		SongCollection: songHandle,
-		AdminHandler:   handlers.AdminHandler(handler),
-		UserHandler:    handlers.UserHandler(handler),
-		ServerHandler:  handlers.ServerHandler(handler),
-		SpotifyHandler: handlers.SpotifyHandler(handler),
-		Broker:         broker,
+		Port:              config.Conf.Server.Port,
+		UserCollection:    userHandle,
+		SongCollection:    songHandle,
+		SessionCollection: sessHandle,
+		AdminHandler:      handlers.AdminHandler(handler),
+		UserHandler:       handlers.UserHandler(handler),
+		ServerHandler:     handlers.ServerHandler(handler),
+		SpotifyHandler:    handlers.SpotifyHandler(handler),
+		Broker:            broker,
 	}
 
 	return server
