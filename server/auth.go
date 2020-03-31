@@ -23,7 +23,13 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.Background()
-			msg := "authenticate admin request: %v"
+
+			userOrAdmin := "user"
+			if checkAdmin {
+				userOrAdmin = "admin"
+			}
+
+			msg := "[auth] authenticate " + userOrAdmin + " request: %v"
 			vars := mux.Vars(r)
 			username := vars["username"]
 

@@ -86,14 +86,15 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	msg := "remove song"
 	vars := mux.Vars(r)
 	songID := vars["song_id"]
+	sessionID := r.Header.Get("Session")
 
-	if err := h.SongCollection.RemoveSong(ctx, songID); err != nil {
+	if err := h.SessionCollection.RemoveSong(ctx, sessionID, songID); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	songList, err := h.SongCollection.ListSongs(ctx)
+	songList, err := h.SessionCollection.ListSongs(ctx)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

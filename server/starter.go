@@ -26,7 +26,7 @@ func (s *Model) Start() {
 	http.Handle("/", r)
 
 	log.Infof(
-		"server started at port %v, took %v",
+		"[startup] server started at port %v, took %v",
 		s.Port,
 		time.Since(start),
 	)
