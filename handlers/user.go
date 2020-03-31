@@ -124,7 +124,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songInfo)
 
 	// fetch songList and send event
-	songList, err := h.SessionCollection.ListSongs(ctx)
+	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		log.Errorf("suggest song: event: %v", err)
 	}
@@ -143,7 +143,9 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 
-	songList, err := h.SessionCollection.ListSongs(ctx)
+	sessionID := r.Header.Get("Session")
+
+	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
@@ -163,14 +165,14 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	voteAction := vars["vote_action"]
 
 	// get session id from headers
-	sessID := r.Header.Get("Session")
+	sessionID := r.Header.Get("Session")
 
 	if voteAction != "up" && voteAction != "down" {
 		HandleError(w, http.StatusBadRequest, log.ErrorLevel, msg, ErrBadVoteAction, BadVoteError)
 		return
 	}
 
-	userInfo, err := h.UserCollection.GetUserByID(ctx, user.GenerateUserID(username, sessID))
+	userInfo, err := h.UserCollection.GetUserByID(ctx, user.GenerateUserID(username, sessionID))
 	if err != nil {
 		if errors.Is(err, db.ErrNoUserWithID) {
 			HandleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, UserNotFoundError)
@@ -204,7 +206,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// return updated song list
-	songList, err := h.SessionCollection.ListSongs(ctx)
+	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return

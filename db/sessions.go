@@ -22,7 +22,7 @@ type SessionCollection interface {
 	GetSongByID(ctx context.Context, sessionID, songID string) (*song.Model, error)
 	AddSong(ctx context.Context, sessionID string, newSong *song.Model) error
 	RemoveSong(ctx context.Context, sessionID, songID string) error
-	ListSongs(ctx context.Context) ([]*song.Model, error)
+	ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error)
 	ReplaceSong(ctx context.Context, updatedSong *song.Model) error
 	Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, float64, error)
 }
@@ -113,30 +113,39 @@ func (c *sessionCollection) GetSongByID(ctx context.Context, sessionID string, s
 	return foundSong, nil
 }
 
-// AddSong adds a song to a session
+// AddSong adds a song to a session and sorts SongList
 // todo: write test
 func (c *sessionCollection) AddSong(ctx context.Context, sessionID string, newSong *song.Model) error {
 	errMsg := "[db] add song: %v"
 
 	filter := bson.D{
-		{Key: "_id", Value: sessionID},
+		{"_id", sessionID},
 		{
-			Key: "song_list.id",
-			Value: bson.D{
+			"song_list.id",
+			bson.D{
 				{
-					Key:   "$ne",
-					Value: newSong.ID,
+					"$ne",
+					newSong.ID,
 				},
 			},
 		},
 	}
 	update := bson.D{
 		{
-			Key: "$push",
-			Value: bson.D{
+			"$push",
+			bson.D{
 				{
-					Key:   "song_list",
-					Value: newSong,
+					"song_list",
+					bson.D{
+						{"$each", []*song.Model{newSong}},
+						{
+							"$sort",
+							bson.D{
+								{"score", -1},
+								{"time_added", 1},
+							},
+						},
+					},
 				},
 			},
 		},
@@ -202,29 +211,31 @@ func (c *sessionCollection) ReplaceSong(ctx context.Context, updatedSong *song.M
 	return nil
 }
 
-func (c *sessionCollection) ListSongs(ctx context.Context) ([]*song.Model, error) {
+// ListSongs returns a list of all songs in a session
+func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error) {
 	errMsg := "[db] list songs: %v"
-	opts := options.Find()
-	opts.SetSort(bson.D{
-		{"score", -1},
-		{"time_added", 1},
-	})
 
-	cursor, err := c.collection.Find(ctx, bson.D{}, opts)
+	filter := bson.D{
+		{"_id", sessionID},
+	}
+	projection := bson.D{
+		{"song_list", 1},
+	}
+
+	var sessionInfo *session.Session
+	err := c.collection.FindOne(
+		ctx,
+		filter,
+		options.FindOne().SetProjection(projection),
+	).Decode(&sessionInfo)
+
+	if err == mongo.ErrNoDocuments {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
-	defer cursor.Close(ctx)
-
-	var songList []*song.Model
-	for cursor.Next(ctx) {
-		var elem song.Model
-		if err := cursor.Decode(&elem); err != nil {
-			return songList, fmt.Errorf(errMsg, err)
-		}
-		songList = append(songList, &elem)
-	}
-	return songList, nil
+	return sessionInfo.SongList, nil
 }
 
 func (c *sessionCollection) Vote(

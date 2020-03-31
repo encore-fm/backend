@@ -8,8 +8,8 @@ import (
 // Session stores session information
 // todo: maybe save session options later
 type Session struct {
-	ID       string       `json:"id" bson:"_id"`
-	SongList []song.Model `json:"song_list" bson:"song_list"`
+	ID       string        `json:"id" bson:"_id"`
+	SongList []*song.Model `json:"song_list" bson:"song_list"`
 }
 
 func New() (*Session, error) {
@@ -19,6 +19,6 @@ func New() (*Session, error) {
 	}
 	return &Session{
 		ID:       sessionID,
-		SongList: []song.Model{},
+		SongList: make([]*song.Model, 0),
 	}, nil
 }
