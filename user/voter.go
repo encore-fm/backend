@@ -11,7 +11,7 @@ func (v Voters) Contains(username string) bool {
 	return ok
 }
 
-func (v Voters) Get(username string) (float64, bool){
+func (v Voters) Get(username string) (float64, bool) {
 	val, ok := v[username]
 	return val, ok
 }

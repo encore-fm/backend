@@ -40,8 +40,8 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	// check if session with given id exists
 	sess, err := h.SessionCollection.GetSessionByID(ctx, sessionID)
 	if err != nil {
-		if errors.Is(err, db.ErrNoSessionWithId) {
-			HandleError(w, http.StatusBadRequest, log.ErrorLevel, msg, err, SessionNotFoundError)
+		if errors.Is(err, db.ErrNoSessionWithID) {
+			HandleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, SessionNotFoundError)
 		} else {
 			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}

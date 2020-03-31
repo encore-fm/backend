@@ -16,5 +16,5 @@ var (
 
 	// Session collection errors
 	ErrSessionAlreadyExisting = errors.New("session with this id already exists")
-	ErrNoSessionWithId        = errors.New("no session with given id")
+	ErrNoSessionWithID        = errors.New("no session with given id")
 )

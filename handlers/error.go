@@ -7,8 +7,8 @@ import (
 )
 
 type FrontendError struct {
-	error       string
-	description string
+	Error       string `json:"error"`
+	Description string `json:"description"`
 }
 
 var (
@@ -19,36 +19,36 @@ var (
 
 	// Frontend errors
 	SessionNotFoundError = FrontendError{
-		error:       "Session not found",
-		description: "No session with the specified ID exists.",
+		Error:       "Session not found",
+		Description: "No session with the specified ID exists.",
 	}
 	UserConflictError = FrontendError{
-		error:       "Username already exists",
-		description: "A user with the given username already exists.",
+		Error:       "Username already exists",
+		Description: "A user with the given username already exists.",
 	}
 	SongConflictError = FrontendError{
-		error:       "Song already suggested",
-		description: "The song being requested has already been suggested in this session.",
+		Error:       "Song already suggested",
+		Description: "The song being requested has already been suggested in this session.",
 	}
 	BadVoteError = FrontendError{
-		error:       "Bad vote request",
-		description: `Vote action specified in vote request has to be either "up" or "down"`,
+		Error:       "Bad vote request",
+		Description: `Vote action specified in vote request has to be either "up" or "down"`,
 	}
 	UserNotFoundError = FrontendError{
-		error:       "User not found",
-		description: "No user with the specified ID exists.",
+		Error:       "User not found",
+		Description: "No user with the specified ID exists.",
 	}
 	VoteOnSuggestedSongError = FrontendError{
-		error:       "User suggested song",
-		description: "The user requesting the vote has suggested this song.",
+		Error:       "User suggested song",
+		Description: "The user requesting the vote has suggested this song.",
 	}
 	UserAlreadyVotedError = FrontendError{
-		error:       "User already voted",
-		description: "The user requesting the vote has already voted for this song.",
+		Error:       "User already voted",
+		Description: "The user requesting the vote has already voted for this song.",
 	}
 	InternalServerError = FrontendError{
-		error:       "Internal server error",
-		description: "An unexpected server error has occurred.",
+		Error:       "Internal server error",
+		Description: "An unexpected server error has occurred.",
 	}
 )
 
