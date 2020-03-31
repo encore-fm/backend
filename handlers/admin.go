@@ -94,7 +94,7 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songList, err := h.SessionCollection.ListSongs(ctx)
+	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
