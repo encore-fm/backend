@@ -212,6 +212,7 @@ func (c *sessionCollection) ReplaceSong(ctx context.Context, updatedSong *song.M
 }
 
 // ListSongs returns a list of all songs in a session
+// todo: test
 func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error) {
 	errMsg := "[db] list songs: %v"
 
