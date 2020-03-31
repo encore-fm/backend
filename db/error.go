@@ -17,4 +17,5 @@ var (
 	// Session collection errors
 	ErrSessionAlreadyExisting = errors.New("session with this id already exists")
 	ErrNoSessionWithID        = errors.New("no session with given id")
+	ErrSongAlreadyInSession   = errors.New("song with this ID already exists for this session")
 )
