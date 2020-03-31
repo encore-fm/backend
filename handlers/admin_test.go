@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -15,6 +16,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
+
+var ErrSongNotInCollection = errors.New("song with given id not in db")
 
 // - song exists in db
 func TestHandler_RemoveSong(t *testing.T) {

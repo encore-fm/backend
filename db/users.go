@@ -12,17 +12,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
-var (
-	ErrUsernameTaken              = errors.New("requested username already taken")
-	ErrIncrementScoreNoUserWithID = errors.New("increment score: no user with given ID")
-	ErrNothingModified            = errors.New("nothing modified")
-)
-
 type UserCollection interface {
 	GetUserByID(ctx context.Context, userID string) (*user.Model, error)
 	GetUserByState(ctx context.Context, username string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
-	ListUsers(ctx context.Context, ) ([]*user.ListElement, error)
+	ListUsers(ctx context.Context) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount float64) error
 	SetToken(ctx context.Context, username string, token *oauth2.Token) error
 }
@@ -50,9 +44,6 @@ func NewUserCollection(client *mongo.Client) UserCollection {
 func (h *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Model, error) {
 	var foundUser *user.Model
 	err := h.collection.FindOne(ctx, filter).Decode(&foundUser)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -62,10 +53,13 @@ func (h *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Mode
 // Get User returns a user struct if username exists
 // if username does not exist it returns nil
 func (h *userCollection) GetUserByID(ctx context.Context, userID string) (*user.Model, error) {
-	errMsg := "[db] get user by username : %v"
+	errMsg := "[db] get user by id : %v"
 	filter := bson.D{{"_id", userID}}
 	res, err := h.findOne(ctx, filter)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf(errMsg, ErrNoUserWithID)
+		}
 		return nil, fmt.Errorf(errMsg, err)
 	}
 	return res, nil
@@ -78,6 +72,9 @@ func (h *userCollection) GetUserByState(ctx context.Context, state string) (*use
 	filter := bson.D{{"auth_state", state}}
 	res, err := h.findOne(ctx, filter)
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf(errMsg, ErrNoUserWithState)
+		}
 		return nil, fmt.Errorf(errMsg, err)
 	}
 	return res, nil
@@ -134,7 +131,7 @@ func (h *userCollection) IncrementScore(ctx context.Context, username string, am
 		return fmt.Errorf(errMsg, err)
 	}
 	if result.ModifiedCount != 1 {
-		return fmt.Errorf(errMsg, ErrIncrementScoreNoUserWithID)
+		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 	return nil
 }
@@ -165,7 +162,7 @@ func (h *userCollection) SetToken(ctx context.Context, userID string, token *oau
 		return fmt.Errorf(errMsg, err)
 	}
 	if result.ModifiedCount == 0 {
-		return fmt.Errorf(errMsg, ErrNothingModified)
+		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 	return nil
 }

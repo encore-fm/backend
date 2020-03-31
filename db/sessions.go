@@ -11,10 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-var (
-	ErrSessionAlreadyExisting = errors.New("session with this id already exists")
-)
-
 type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
@@ -56,10 +52,10 @@ func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string
 
 	var foundSess *session.Session
 	err := c.collection.FindOne(ctx, filter).Decode(&foundSess)
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
-	}
 	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf(errMsg, ErrNoSessionWithId)
+		}
 		return nil, fmt.Errorf(errMsg, err)
 	}
 	return foundSess, nil
