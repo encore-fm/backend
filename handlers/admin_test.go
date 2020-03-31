@@ -88,7 +88,7 @@ func TestHandler_RemoveSong_SongNotInDB(t *testing.T) {
 	songCollection.(*mocks.SongCollection).
 		On("RemoveSong", context.TODO(), "id").
 		Return(
-			ErrSongNotInCollection,
+			db.ErrNoSongWithID,
 		)
 
 	// create handler with mock collections
@@ -121,5 +121,5 @@ func TestHandler_RemoveSong_SongNotInDB(t *testing.T) {
 	}
 
 	// Check the response body is what we expect
-	assert.Equal(t, fmt.Sprintf("%v\n", ErrSongNotInCollection.Error()), rr.Body.String())
+	assert.Equal(t, fmt.Sprintf("%v\n", db.ErrNoSongWithID.Error()), rr.Body.String())
 }

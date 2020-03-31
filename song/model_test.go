@@ -86,9 +86,8 @@ func TestNew2(t *testing.T) {
 			PreviewURL: expected.PreviewUrl,
 		},
 		Album: spotify.SimpleAlbum{
-			Name: expected.AlbumName,
-			Images: []spotify.Image{
-			},
+			Name:   expected.AlbumName,
+			Images: []spotify.Image{},
 		},
 	}
 

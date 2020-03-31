@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/db"
 	"math"
 	"net/http"
 
@@ -12,13 +13,6 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
-)
-
-var (
-	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
-	ErrSongNotInCollection     = errors.New("song with given ID not in db")
-	ErrUserNotExisting         = errors.New("user with given ID does not exist")
-	ErrSessionNotExisting      = errors.New("session with given ID does not exist")
 )
 
 type UserHandler interface {
@@ -46,27 +40,27 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	// check if session with given id exists
 	sess, err := h.SessionCollection.GetSessionByID(ctx, sessionID)
 	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if sess == nil {
-		log.Warnf("%v: %v", msg, err)
-		http.Error(w, ErrSessionNotExisting.Error(), http.StatusBadRequest)
+		if errors.Is(err, db.ErrNoSessionWithID) {
+			HandleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, SessionNotFoundError)
+		} else {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
 		return
 	}
 
 	newUser, err := user.New(username, sessionID)
 	if err != nil {
-		log.Errorf("%v: creating new user [%v]: %v", msg, username, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
 	// save user in db
 	if err := h.UserCollection.AddUser(ctx, newUser); err != nil {
-		log.Errorf("%v: save user: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.Is(err, db.ErrUsernameTaken) {
+			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, UserConflictError)
+		} else {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
 		return
 	}
 
@@ -96,8 +90,7 @@ func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	userList, err := h.UserCollection.ListUsers(ctx)
 	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -114,21 +107,22 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	songID := vars["song_id"]
 
 	if !h.spotifyActivated {
-		log.Errorf("%v: %v", msg, ErrSpotifyNotAuthenticated)
-		http.Error(w, ErrSpotifyNotAuthenticated.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, ErrSpotifyNotAuthenticated, InternalServerError)
 		return
 	}
 	fullTrack, err := h.Spotify.GetTrack(spotify.ID(songID))
 	if err != nil {
-		log.Errorf("%v: retrieving info from spotify: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
 	songInfo := song.New(username, 0, fullTrack)
 	if err := h.SongCollection.AddSong(ctx, songInfo); err != nil {
-		log.Errorf("%v: insert into songs collection: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.Is(err, db.ErrSongAlreadySuggested) {
+			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, SongConflictError)
+		} else {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
 		return
 	}
 
@@ -157,8 +151,7 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 
 	songList, err := h.SongCollection.ListSongs(ctx)
 	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -179,21 +172,17 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	sessID := r.Header.Get("Session")
 
 	if voteAction != "up" && voteAction != "down" {
-		errMsg := `vote action must be in {"up", "down"}`
-		log.Errorf("%v: %v", msg, errMsg)
-		http.Error(w, errMsg, http.StatusBadRequest)
+		HandleError(w, http.StatusBadRequest, log.ErrorLevel, msg, ErrBadVoteAction, BadVoteError)
 		return
 	}
 
 	userInfo, err := h.UserCollection.GetUserByID(ctx, user.GenerateUserID(username, sessID))
 	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if userInfo == nil {
-		log.Errorf("%v: %v", msg, ErrUserNotExisting)
-		http.Error(w, ErrUserNotExisting.Error(), http.StatusBadRequest)
+		if errors.Is(err, db.ErrNoUserWithID) {
+			HandleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, UserNotFoundError)
+		} else {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
 		return
 	}
 
@@ -204,23 +193,26 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 
 	songInfo, change, err := h.SongCollection.Vote(ctx, songID, username, scoreChange)
 	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.Is(err, db.ErrVoteOnSuggestedSong) {
+			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, VoteOnSuggestedSongError)
+		} else if errors.Is(err, db.ErrUserAlreadyVoted) {
+			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, UserAlreadyVotedError)
+		} else {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
 		return
 	}
 
 	// update score of user that suggested song
 	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, change); err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
 	// return updated song list
 	songList, err := h.SongCollection.ListSongs(ctx)
 	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 

@@ -46,9 +46,9 @@ func TestVoters_Find(t *testing.T) {
 func TestVoters_Remove(t *testing.T) {
 	voters := NewVoters()
 
-	 _ = voters.Add("1", 123)
-	 _ = voters.Add("2", 123)
-	 _ = voters.Add("3", 123)
+	_ = voters.Add("1", 123)
+	_ = voters.Add("2", 123)
+	_ = voters.Add("3", 123)
 	assert.Equal(t, 3, voters.Size())
 
 	ok := voters.Remove("not in voters")

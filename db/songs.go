@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
@@ -29,12 +28,6 @@ type songCollection struct {
 }
 
 var _ SongCollection = (*songCollection)(nil)
-
-var (
-	ErrNoSongWithID        = errors.New("no song with this ID")
-	ErrVoteOnSuggestedSong = errors.New("cannot vote on suggested song")
-	ErrUserAlreadyVoted    = errors.New("user already voted")
-)
 
 func NewSongCollection(client *mongo.Client) SongCollection {
 	collection := client.
@@ -66,7 +59,7 @@ func (h *songCollection) AddSong(ctx context.Context, newSong *song.Model) error
 	errMsg := "[db] add song: %v"
 	if _, err := h.collection.InsertOne(ctx, newSong); err != nil {
 		if _, ok := err.(mongo.WriteException); ok {
-			return fmt.Errorf(errMsg, ErrUsernameTaken)
+			return fmt.Errorf(errMsg, ErrSongAlreadySuggested)
 		}
 		return fmt.Errorf(errMsg, err)
 	}

@@ -11,7 +11,7 @@ import (
 )
 
 type Model struct {
-	Client   *mongo.Client
+	Client *mongo.Client
 }
 
 func New() (*Model, error) {
