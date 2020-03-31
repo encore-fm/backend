@@ -54,7 +54,7 @@ func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string
 	err := c.collection.FindOne(ctx, filter).Decode(&foundSess)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, fmt.Errorf(errMsg, ErrNoSessionWithId)
+			return nil, fmt.Errorf(errMsg, ErrNoSessionWithID)
 		}
 		return nil, fmt.Errorf(errMsg, err)
 	}
