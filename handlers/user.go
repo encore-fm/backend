@@ -3,10 +3,9 @@ package handlers
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"math"
 	"net/http"
 
+	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -109,6 +108,8 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 
 	fullTrack, err := h.Spotify.GetTrack(spotify.ID(songID))
 	if err != nil {
+		// fixme: return useful error: song_id is wrong?
+		// fixme: pass format string
 		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
@@ -172,22 +173,12 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userInfo, err := h.UserCollection.GetUserByID(ctx, user.GenerateUserID(username, sessionID))
-	if err != nil {
-		if errors.Is(err, db.ErrNoUserWithID) {
-			HandleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, UserNotFoundError)
-		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-		}
-		return
-	}
-
-	scoreChange := math.Max(userInfo.Score, 1)
+	scoreChange := +1
 	if voteAction == "down" {
 		scoreChange = -scoreChange
 	}
 
-	songInfo, change, err := h.SessionCollection.Vote(ctx, songID, username, scoreChange)
+	change, err := h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
 	if err != nil {
 		if errors.Is(err, db.ErrVoteOnSuggestedSong) {
 			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, VoteOnSuggestedSongError)
@@ -199,8 +190,18 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	songInfo, err := h.SessionCollection.GetSongByID(ctx, sessionID, songID)
+	if err != nil {
+		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
 	// update score of user that suggested song
-	if err := h.UserCollection.IncrementScore(ctx, songInfo.SuggestedBy, change); err != nil {
+	if err := h.UserCollection.IncrementScore(
+		ctx,
+		user.GenerateUserID(songInfo.SuggestedBy, sessionID),
+		change,
+	); err != nil {
 		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}

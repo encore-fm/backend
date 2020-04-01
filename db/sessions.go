@@ -8,11 +8,10 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readconcern"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 type SessionCollection interface {
@@ -24,7 +23,7 @@ type SessionCollection interface {
 	RemoveSong(ctx context.Context, sessionID, songID string) error
 	ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error)
 	ReplaceSong(ctx context.Context, updatedSong *song.Model) error
-	Vote(ctx context.Context, songID string, username string, scoreChange float64) (*song.Model, float64, error)
+	VoteUp(ctx context.Context, sessionID, songID, username string) (user.Score, error)
 }
 
 type sessionCollection struct {
@@ -84,33 +83,28 @@ func (c *sessionCollection) GetSongByID(ctx context.Context, sessionID string, s
 
 	filter := bson.D{
 		{"_id", sessionID},
+		{"song_list.id", songID},
 	}
 	projection := bson.D{
-		{
-			Key: "songList",
-			Value: bson.D{
-				{
-					Key:   "$elemMatch",
-					Value: bson.E{Key: "_id", Value: songID},
-				},
-			},
-		},
+		{"_id", 0},
+		{"song_list.$", 1},
 	}
 
-	var foundSong *song.Model
+	var sess *session.Session
 	err := c.collection.FindOne(
 		ctx,
 		filter,
 		options.FindOne().SetProjection(projection),
-	).Decode(&foundSong)
-
-	if err == mongo.ErrNoDocuments {
-		return nil, nil
-	}
+	).Decode(&sess)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
-	return foundSong, nil
+
+	if len(sess.SongList) == 0 {
+		return nil, fmt.Errorf(errMsg, ErrNoSongWithID)
+	}
+
+	return sess.SongList[0], nil
 }
 
 // AddSong adds a song to a session and sorts SongList
@@ -239,89 +233,161 @@ func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]
 	return sessionInfo.SongList, nil
 }
 
-func (c *sessionCollection) Vote(
+func (c *sessionCollection) VoteUp(
 	ctx context.Context,
+	sessionID string,
 	songID string,
 	username string,
-	scoreChange float64,
-) (*song.Model, float64, error) {
-	errMsg := "[db] vote: %v"
+) (user.Score, error) {
+	// case 1: 	user not in Upvoters && user not in Downvoters
+	//		   	-> add user to Upvoters
+	// 			-> increment score by 1
+	// case 2: 	user in Upvoters 	&& user not in Downvoters
+	//		   	-> remove user from Upvoters
+	// 			-> decrement score by 1
+	// case 3: 	user not in Upvoters && user in Downvoters
+	//		   	-> remove user from Downvoters
+	// 			-> add user to Upvoters
+	// 			-> increment score by 2
 
-	// start server session
-	opts := options.Session().SetDefaultReadConcern(readconcern.Majority())
-	sess, err := c.client.StartSession(opts)
+	// case 1: filters for
+	// - _id: sessionID
+	// - song_list must contain a song with
+	// 		- id = songID
+	//		- user not in upvoters
+	//      - user not in downvoters
+	scoreChange := user.Score(+1)
+	filter := bson.D{
+		{"_id", sessionID},
+		{
+			"song_list",
+			bson.D{
+				{
+					"$elemMatch",
+					bson.D{
+						{"id", songID},
+						{"upvoters", bson.D{{Key: "$ne", Value: username}}},
+						{"downvoters", bson.D{{Key: "$ne", Value: username}}},
+					},
+				},
+			},
+		},
+	}
+	update := bson.D{
+		{
+			"$inc",
+			bson.D{{"song_list.$[song].score", 1}},
+		},
+		{
+			"$push",
+			bson.D{{"song_list.$[song].upvoters", username}},
+		},
+	}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"song.id": songID}},
+	})
+	result, err := c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return nil, 0, fmt.Errorf(errMsg, err)
+		return 0, err
 	}
-	defer sess.EndSession(ctx)
+	// check if modified
+	if result.ModifiedCount > 0 {
+		return scoreChange, nil
+	}
 
-	txnOpts := options.Transaction().SetReadPreference(readpref.Primary())
-	result, err := sess.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
-		songInfo, err := c.GetSongByID(sessCtx, "session_id", songID)
-		if err != nil {
-			_ = sessCtx.AbortTransaction(sessCtx)
-			return nil, err
-		}
-		if songInfo == nil {
-			_ = sessCtx.AbortTransaction(sessCtx)
-			return nil, ErrNoSongWithID
-		}
-		// make sure users dont vote on songs they suggested
-		if songInfo.SuggestedBy == username {
-			_ = sessCtx.AbortTransaction(sessCtx)
-			return nil, ErrVoteOnSuggestedSong
-		}
-
-		if scoreChange > 0 {
-			// check if user did already vote up and insert if not
-			if ok := songInfo.Upvoters.Add(username, scoreChange); !ok {
-				_ = sessCtx.AbortTransaction(sessCtx)
-				return nil, ErrUserAlreadyVoted
-			}
-			// if user downvoted song
-			// - add score back
-			// - remove user from downvoters
-			if downvoteScore, ok := songInfo.Downvoters.Get(username); ok {
-				scoreChange += downvoteScore
-				songInfo.Downvoters.Remove(username)
-			}
-		}
-
-		if scoreChange < 0 {
-			// check if user did already vote down and insert if not
-			if ok := songInfo.Downvoters.Add(username, -scoreChange); !ok {
-				_ = sessCtx.AbortTransaction(sessCtx)
-				return nil, ErrUserAlreadyVoted
-			}
-			// if user voted song up
-			// - remove score
-			// - remove user from upvoters
-			if upvoteScore, ok := songInfo.Upvoters.Get(username); ok {
-				scoreChange -= upvoteScore
-				songInfo.Upvoters.Remove(username)
-			}
-		}
-
-		// apply change and save song info in db
-		songInfo.Score += scoreChange
-		if err := c.ReplaceSong(sessCtx, songInfo); err != nil {
-			_ = sessCtx.AbortTransaction(sessCtx)
-			return nil, err
-		}
-
-		if err := sessCtx.CommitTransaction(sessCtx); err != nil {
-			return nil, fmt.Errorf("commit transaction: %v", err)
-		}
-		return songInfo, nil
-	}, txnOpts)
+	// case 2: filters for
+	// - _id: sessionID
+	// - song_list must contain a song with
+	// 		- id = songID
+	//		- user in upvoters
+	//      - user not in downvoters
+	scoreChange = -1
+	filter = bson.D{
+		{"_id", sessionID},
+		{
+			"song_list",
+			bson.D{
+				{
+					"$elemMatch",
+					bson.D{
+						{"id", songID},
+						{"upvoters", bson.D{{Key: "$eq", Value: username}}},
+						{"downvoters", bson.D{{Key: "$ne", Value: username}}},
+					},
+				},
+			},
+		},
+	}
+	update = bson.D{
+		{
+			"$inc",
+			bson.D{{"song_list.$[song].score", scoreChange}},
+		},
+		{
+			"$pull",
+			bson.D{{"song_list.$[song].upvoters", username}},
+		},
+	}
+	opts = options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"song.id": songID}},
+	})
+	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return nil, 0, fmt.Errorf(errMsg, err)
+		return 0, err
+	}
+	// check if modified
+	if result.ModifiedCount > 0 {
+		return scoreChange, nil
 	}
 
-	songInfo, ok := result.(*song.Model)
-	if !ok {
-		return nil, 0, fmt.Errorf(errMsg, "cannot cast result into `*song.Model`")
+	// case 3: filters for
+	// - _id: sessionID
+	// - song_list must contain a song with
+	// 		- id = songID
+	//		- user not in upvoters
+	//      - user in downvoters
+	scoreChange = +2
+	filter = bson.D{
+		{"_id", sessionID},
+		{
+			"song_list",
+			bson.D{
+				{
+					"$elemMatch",
+					bson.D{
+						{"id", songID},
+						{"upvoters", bson.D{{Key: "$ne", Value: username}}},
+						{"downvoters", bson.D{{Key: "$eq", Value: username}}},
+					},
+				},
+			},
+		},
+	}
+	update = bson.D{
+		{
+			"$inc",
+			bson.D{{"song_list.$[song].score", scoreChange}},
+		},
+		{
+			"$pull",
+			bson.D{{"song_list.$[song].downvoters", username}},
+		},
+		{
+			"$push",
+			bson.D{{"song_list.$[song].upvoters", username}},
+		},
+	}
+	opts = options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"song.id": songID}},
+	})
+	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return 0, err
+	}
+	// check if modified
+	if result.ModifiedCount > 0 {
+		return scoreChange, nil
 	}
 
-	return songInfo, scoreChange, nil
+	return 0, ErrIllegalState
 }
