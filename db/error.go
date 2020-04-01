@@ -3,6 +3,8 @@ package db
 import "errors"
 
 var (
+	ErrIllegalState = errors.New("illegal state in database")
+
 	// User collection errors
 	ErrUsernameTaken   = errors.New("requested username already taken")
 	ErrNoUserWithID    = errors.New("no user with given id")
