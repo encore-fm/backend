@@ -22,6 +22,14 @@ var (
 		Error:       "Session not found",
 		Description: "No session with the specified ID exists.",
 	}
+	SongNotFoundError = FrontendError{
+		Error:       "Song not found",
+		Description: "No song with the specified ID exists.",
+	}
+	SessionConflictError = FrontendError{
+		Error:       "Session already exists",
+		Description: "A session with the given ID already exists.",
+	}
 	UserConflictError = FrontendError{
 		Error:       "Username already exists",
 		Description: "A user with the given username already exists.",
