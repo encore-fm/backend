@@ -114,7 +114,10 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songInfo := song.New(username, 0, fullTrack)
+	// if user suggest's song he automatically votes up
+	songInfo := song.New(username, 1, fullTrack)
+	songInfo.Upvoters = append(songInfo.Upvoters, username)
+
 	if err := h.SessionCollection.AddSong(ctx, sessionID, songInfo); err != nil {
 		log.Errorf("%v: insert song into collection: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -178,16 +181,21 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		scoreChange = -scoreChange
 	}
 
-	change, err := h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
-	if err != nil {
-		if errors.Is(err, db.ErrVoteOnSuggestedSong) {
-			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, VoteOnSuggestedSongError)
-		} else if errors.Is(err, db.ErrUserAlreadyVoted) {
-			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, UserAlreadyVotedError)
-		} else {
+	var change user.Score
+	var err error
+
+	if voteAction == "up" {
+		change, err = h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
+		if err != nil {
 			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			return
 		}
-		return
+	} else {
+		change, err = h.SessionCollection.VoteDown(ctx, sessionID, songID, username)
+		if err != nil {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			return
+		}
 	}
 
 	songInfo, err := h.SessionCollection.GetSongByID(ctx, sessionID, songID)
