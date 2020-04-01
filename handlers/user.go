@@ -176,22 +176,18 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	scoreChange := +1
-	if voteAction == "down" {
-		scoreChange = -scoreChange
-	}
-
-	var change user.Score
+	// the scoreChange of the song score has to be applied to the user score
+	var scoreChange user.Score
 	var err error
 
 	if voteAction == "up" {
-		change, err = h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
+		scoreChange, err = h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
 		if err != nil {
 			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
 	} else {
-		change, err = h.SessionCollection.VoteDown(ctx, sessionID, songID, username)
+		scoreChange, err = h.SessionCollection.VoteDown(ctx, sessionID, songID, username)
 		if err != nil {
 			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
@@ -208,7 +204,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	if err := h.UserCollection.IncrementScore(
 		ctx,
 		user.GenerateUserID(songInfo.SuggestedBy, sessionID),
-		change,
+		scoreChange,
 	); err != nil {
 		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
