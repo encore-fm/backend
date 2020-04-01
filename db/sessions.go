@@ -219,7 +219,7 @@ func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]
 	).Decode(&sessionInfo)
 
 	if err == mongo.ErrNoDocuments {
-		return nil, nil
+		return nil, fmt.Errorf(errMsg, ErrNoSessionWithID)
 	}
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
