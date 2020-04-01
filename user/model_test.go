@@ -14,7 +14,7 @@ func TestNew(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, username, result.Username)
 	assert.Equal(t, sessionID, result.SessionID)
-	assert.Equal(t, float64(1), result.Score)
+	assert.Equal(t, 1, result.Score)
 	assert.False(t, result.IsAdmin)
 	assert.False(t, result.SpotifyAuthorized)
 	assert.Equal(t, 128, len(result.Secret))
@@ -29,7 +29,7 @@ func TestNewAdmin(t *testing.T) {
 	assert.Equal(t, username, result.Username)
 	assert.Equal(t, sessionID, result.SessionID)
 
-	assert.Equal(t, float64(1), result.Score)
+	assert.Equal(t, 1, result.Score)
 	assert.True(t, result.IsAdmin)
 	assert.False(t, result.SpotifyAuthorized)
 	assert.Equal(t, 128, len(result.Secret))

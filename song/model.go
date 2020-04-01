@@ -15,7 +15,7 @@ type Model struct {
 	AlbumName   string    `json:"album_name" bson:"album_name"`
 	PreviewUrl  string    `json:"preview_url" bson:"preview_url"`
 	SuggestedBy string    `json:"suggested_by" bson:"suggested_by"`
-	Score       float64   `json:"score" bson:"score"`
+	Score       int   `json:"score" bson:"score"`
 	TimeAdded   time.Time `json:"time_added" bson:"time_added"`
 	Upvoters    []string  `json:"upvoters" bson:"upvoters"`
 	Downvoters  []string  `json:"downvoters" bson:"downvoters"`
@@ -23,7 +23,7 @@ type Model struct {
 
 func New(
 	suggestingUser string,
-	score float64,
+	score int,
 	info *spotify.FullTrack,
 ) *Model {
 	albumUrl := ""

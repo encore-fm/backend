@@ -8,7 +8,6 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/song"
-	"github.com/antonbaumann/spotify-jukebox/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -22,8 +21,8 @@ type SessionCollection interface {
 	AddSong(ctx context.Context, sessionID string, newSong *song.Model) error
 	RemoveSong(ctx context.Context, sessionID, songID string) error
 	ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error)
-	VoteUp(ctx context.Context, sessionID, songID, username string) (user.Score, error)
-	VoteDown(ctx context.Context, sessionID, songID, username string) (user.Score, error)
+	VoteUp(ctx context.Context, sessionID, songID, username string) (int, error)
+	VoteDown(ctx context.Context, sessionID, songID, username string) (int, error)
 }
 
 type sessionCollection struct {
@@ -232,7 +231,7 @@ func (c *sessionCollection) VoteUp(
 	sessionID string,
 	songID string,
 	username string,
-) (user.Score, error) {
+) (int, error) {
 	errMsg := "[db] vote up: %v"
 
 	// case 1: 	user not in Upvoters && user not in Downvoters
@@ -252,7 +251,7 @@ func (c *sessionCollection) VoteUp(
 	// 		- id = songID
 	//		- user not in upvoters
 	//      - user not in downvoters
-	scoreChange := user.Score(+1)
+	scoreChange := +1
 	filter := bson.D{
 		{"_id", sessionID},
 		{
@@ -393,7 +392,7 @@ func (c *sessionCollection) VoteDown(
 	sessionID string,
 	songID string,
 	username string,
-) (user.Score, error) {
+) (int, error) {
 	errMsg := "[db] vote down: %v"
 
 	// case 1: 	user not in Upvoters && user not in Downvoters
@@ -413,7 +412,7 @@ func (c *sessionCollection) VoteDown(
 	// 		- id = songID
 	//		- user not in upvoters
 	//      - user not in downvoters
-	scoreChange := user.Score(-1)
+	scoreChange := -1
 	filter := bson.D{
 		{"_id", sessionID},
 		{
