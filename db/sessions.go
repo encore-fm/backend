@@ -22,7 +22,6 @@ type SessionCollection interface {
 	AddSong(ctx context.Context, sessionID string, newSong *song.Model) error
 	RemoveSong(ctx context.Context, sessionID, songID string) error
 	ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error)
-	ReplaceSong(ctx context.Context, updatedSong *song.Model) error
 	VoteUp(ctx context.Context, sessionID, songID, username string) (user.Score, error)
 	VoteDown(ctx context.Context, sessionID, songID, username string) (user.Score, error)
 }
@@ -190,20 +189,6 @@ func (c *sessionCollection) RemoveSong(ctx context.Context, sessionID, songID st
 		return fmt.Errorf(errMsg, ErrNoSessionWithID)
 	}
 	if result.ModifiedCount == 0 {
-		return fmt.Errorf(errMsg, ErrNoSongWithID)
-	}
-	return nil
-}
-
-func (c *sessionCollection) ReplaceSong(ctx context.Context, updatedSong *song.Model) error {
-	errMsg := "[db] replace song: %v"
-	filter := bson.D{{"_id", updatedSong.ID}}
-
-	result, err := c.collection.ReplaceOne(ctx, filter, updatedSong)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-	if result.ModifiedCount != 1 {
 		return fmt.Errorf(errMsg, ErrNoSongWithID)
 	}
 	return nil
