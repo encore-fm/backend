@@ -216,7 +216,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("user [%v] %vvoted song [%v]", username, voteAction, songID)
+	log.Infof("user [%v] %voted song [%v]", username, voteAction, songID)
 	jsonResponse(w, songList)
 
 	// send new playlist to broker
