@@ -233,6 +233,8 @@ func (c *sessionCollection) VoteUp(
 	songID string,
 	username string,
 ) (user.Score, error) {
+	errMsg := "[db] vote up: %v"
+
 	// case 1: 	user not in Upvoters && user not in Downvoters
 	//		   	-> add user to Upvoters
 	// 			-> increment score by 1
@@ -282,7 +284,7 @@ func (c *sessionCollection) VoteUp(
 	})
 	result, err := c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	// check if modified
 	if result.ModifiedCount > 0 {
@@ -327,7 +329,7 @@ func (c *sessionCollection) VoteUp(
 	})
 	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	// check if modified
 	if result.ModifiedCount > 0 {
@@ -376,14 +378,14 @@ func (c *sessionCollection) VoteUp(
 	})
 	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	// check if modified
 	if result.ModifiedCount > 0 {
 		return scoreChange, nil
 	}
 
-	return 0, ErrIllegalState
+	return 0, fmt.Errorf(errMsg, ErrIllegalState)
 }
 
 func (c *sessionCollection) VoteDown(
@@ -392,6 +394,8 @@ func (c *sessionCollection) VoteDown(
 	songID string,
 	username string,
 ) (user.Score, error) {
+	errMsg := "[db] vote down: %v"
+
 	// case 1: 	user not in Upvoters && user not in Downvoters
 	//		   	-> add user to Downvoters
 	// 			-> decrement score by 1
@@ -441,7 +445,7 @@ func (c *sessionCollection) VoteDown(
 	})
 	result, err := c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	// check if modified
 	if result.ModifiedCount > 0 {
@@ -486,7 +490,7 @@ func (c *sessionCollection) VoteDown(
 	})
 	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	// check if modified
 	if result.ModifiedCount > 0 {
@@ -535,12 +539,12 @@ func (c *sessionCollection) VoteDown(
 	})
 	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf(errMsg, err)
 	}
 	// check if modified
 	if result.ModifiedCount > 0 {
 		return scoreChange, nil
 	}
 
-	return 0, ErrIllegalState
+	return 0, fmt.Errorf(errMsg, ErrIllegalState)
 }
