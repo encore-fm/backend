@@ -200,14 +200,17 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// update score of user that suggested song
-	if err := h.UserCollection.IncrementScore(
-		ctx,
-		user.GenerateUserID(songInfo.SuggestedBy, sessionID),
-		scoreChange,
-	); err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-		return
+	// if user updates his vote on own song -> dont update his score
+	if songInfo.SuggestedBy != username {
+		// update score of user that suggested song
+		if err := h.UserCollection.IncrementScore(
+			ctx,
+			user.GenerateUserID(songInfo.SuggestedBy, sessionID),
+			scoreChange,
+		); err != nil {
+			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			return
+		}
 	}
 
 	// return updated song list
