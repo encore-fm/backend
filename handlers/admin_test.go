@@ -131,5 +131,5 @@ func TestHandler_RemoveSong_NoSessionWithID(t *testing.T) {
 	}
 
 	// Check the response body is what we expect
-	assert.Equal(t, fmt.Sprintf("%v\n", db.ErrNoSongWithID.Error()), rr.Body.String())
+	assert.Equal(t, fmt.Sprintf("%v\n", db.ErrNoSessionWithID.Error()), rr.Body.String())
 }
