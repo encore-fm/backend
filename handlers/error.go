@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 )
@@ -55,13 +56,13 @@ var (
 func HandleError(w http.ResponseWriter, status int, logLevel log.Level, msg string, err error, frontendError FrontendError) {
 	switch logLevel {
 	case log.WarnLevel:
-		log.Warnf(msg, err)
+		log.Warn(msg + fmt.Sprintf(": %v", err))
 		break
 	case log.ErrorLevel:
-		log.Errorf(msg, err)
+		log.Error(msg + fmt.Sprintf(": %v", err))
 		break
 	default:
-		log.Infof(msg, err)
+		log.Info(msg + fmt.Sprintf(": %v", err))
 		break
 	}
 
