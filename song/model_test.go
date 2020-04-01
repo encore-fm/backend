@@ -4,14 +4,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/zmb3/spotify"
 )
 
 func TestNew1(t *testing.T) {
 	username := "username"
-	songScore := float64(42)
+	songScore := 42
 
 	expected := &Model{
 		ID:          "song_id",
@@ -24,8 +23,8 @@ func TestNew1(t *testing.T) {
 		SuggestedBy: username,
 		Score:       songScore,
 		TimeAdded:   time.Time{},
-		Upvoters:    user.NewVoters(),
-		Downvoters:  user.NewVoters(),
+		Upvoters:    make([]string, 0),
+		Downvoters:  make([]string, 0),
 	}
 	info := &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{
@@ -57,7 +56,7 @@ func TestNew1(t *testing.T) {
 
 func TestNew2(t *testing.T) {
 	username := "username"
-	songScore := float64(42)
+	songScore := 42
 
 	expected := &Model{
 		ID:          "song_id",
@@ -70,8 +69,8 @@ func TestNew2(t *testing.T) {
 		SuggestedBy: username,
 		Score:       songScore,
 		TimeAdded:   time.Time{},
-		Upvoters:    user.NewVoters(),
-		Downvoters:  user.NewVoters(),
+		Upvoters:    make([]string, 0),
+		Downvoters:  make([]string, 0),
 	}
 	info := &spotify.FullTrack{
 		SimpleTrack: spotify.SimpleTrack{

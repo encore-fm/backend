@@ -177,7 +177,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// the scoreChange of the song score has to be applied to the user score
-	var scoreChange user.Score
+	var scoreChange int
 	var err error
 
 	if voteAction == "up" {

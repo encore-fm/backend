@@ -17,7 +17,7 @@ type UserCollection interface {
 	GetUserByState(ctx context.Context, username string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
 	ListUsers(ctx context.Context) ([]*user.ListElement, error)
-	IncrementScore(ctx context.Context, username string, amount user.Score) error
+	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, username string, token *oauth2.Token) error
 }
 
@@ -112,7 +112,7 @@ func (h *userCollection) ListUsers(ctx context.Context) ([]*user.ListElement, er
 	return userList, nil
 }
 
-func (h *userCollection) IncrementScore(ctx context.Context, userID string, amount user.Score) error {
+func (h *userCollection) IncrementScore(ctx context.Context, userID string, amount int) error {
 	errMsg := "[db] increment user score: %v"
 
 	filter := bson.D{{"_id", userID}}

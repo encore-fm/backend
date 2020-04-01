@@ -18,18 +18,22 @@ import (
 
 // - song exists in db
 func TestHandler_RemoveSong(t *testing.T) {
-	// set up userCollection mock
-	var songCollection db.SongCollection
-	songCollection = &mocks.SongCollection{}
+	sessionID := "session_id"
+	songID := "song_id"
+	username := "username"
 
-	songCollection.(*mocks.SongCollection).
-		On("RemoveSong", context.TODO(), "id").
+	// set up userCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("RemoveSong", context.TODO(), sessionID, songID).
 		Return(
 			nil,
 		)
 
-	songCollection.(*mocks.SongCollection).
-		On("ListSongs", context.TODO()).
+	sessionCollection.(*mocks.SessionCollection).
+		On("ListSongs", context.TODO(), sessionID).
 		Return(
 			[]*song.Model{},
 			nil,
@@ -43,24 +47,25 @@ func TestHandler_RemoveSong(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
-		Broker:         &sse.Broker{Notifier: ch},
+		SessionCollection: sessionCollection,
+		Broker:            &sse.Broker{Notifier: ch},
 	}
 	adminHandler := AdminHandler(handler)
 
 	// set up http request
 	req, err := http.NewRequest(
 		"DELETE",
-		"/users/username/removeSong/id",
+		fmt.Sprintf("/users/username/removeSong/%v", songID),
 		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req = mux.SetURLVars(req, map[string]string{
-		"username": "username",
-		"song_id":  "id",
+		"username": username,
+		"song_id":  songID,
 	})
+	req.Header.Set("Session", sessionID)
 	rr := httptest.NewRecorder()
 
 	// call handler func
@@ -80,36 +85,41 @@ func TestHandler_RemoveSong(t *testing.T) {
 	assert.Equal(t, expected, result)
 }
 
-func TestHandler_RemoveSong_SongNotInDB(t *testing.T) {
-	// set up userCollection mock
-	var songCollection db.SongCollection
-	songCollection = &mocks.SongCollection{}
+func TestHandler_RemoveSong_NoSessionWithID(t *testing.T) {
+	sessionID := "session_id"
+	songID := "song_id"
+	username := "username"
 
-	songCollection.(*mocks.SongCollection).
-		On("RemoveSong", context.TODO(), "id").
+	// set up sessionCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("RemoveSong", context.TODO(), sessionID, songID).
 		Return(
-			db.ErrNoSongWithID,
+			db.ErrNoSessionWithID,
 		)
 
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
+		SessionCollection: sessionCollection,
 	}
 	adminHandler := AdminHandler(handler)
 
 	// set up http request
 	req, err := http.NewRequest(
 		"DELETE",
-		"/users/username/removeSong/id",
+		fmt.Sprintf("/users/username/removeSong/%v", songID),
 		nil,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 	req = mux.SetURLVars(req, map[string]string{
-		"username": "username",
-		"song_id":  "id",
+		"username": username,
+		"song_id":  songID,
 	})
+	req.Header.Set("Session", sessionID)
 	rr := httptest.NewRecorder()
 
 	// call handler func

@@ -74,11 +74,11 @@ func (_m *UserCollection) GetUserByState(ctx context.Context, username string) (
 }
 
 // IncrementScore provides a mock function with given fields: ctx, username, amount
-func (_m *UserCollection) IncrementScore(ctx context.Context, username string, amount float64) error {
+func (_m *UserCollection) IncrementScore(ctx context.Context, username string, amount user.Score) error {
 	ret := _m.Called(ctx, username, amount)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, float64) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, user.Score) error); ok {
 		r0 = rf(ctx, username, amount)
 	} else {
 		r0 = ret.Error(0)
