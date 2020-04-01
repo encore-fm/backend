@@ -24,6 +24,7 @@ type SessionCollection interface {
 	ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error)
 	ReplaceSong(ctx context.Context, updatedSong *song.Model) error
 	VoteUp(ctx context.Context, sessionID, songID, username string) (user.Score, error)
+	VoteDown(ctx context.Context, sessionID, songID, username string) (user.Score, error)
 }
 
 type sessionCollection struct {
@@ -124,6 +125,9 @@ func (c *sessionCollection) AddSong(ctx context.Context, sessionID string, newSo
 			},
 		},
 	}
+
+	// todo: dont sort on insert
+	// or sort on insert and update but dont on find
 	update := bson.D{
 		{
 			"$push",
@@ -205,7 +209,7 @@ func (c *sessionCollection) ReplaceSong(ctx context.Context, updatedSong *song.M
 	return nil
 }
 
-// ListSongs returns a list of all songs in a session
+// ListSongs returns a sorted list of all songs in a session
 // todo: test
 func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error) {
 	errMsg := "[db] list songs: %v"
@@ -216,6 +220,11 @@ func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]
 	projection := bson.D{
 		{"song_list", 1},
 	}
+
+	options.FindOne().SetSort(bson.D{
+		{"score", -1},
+		{"time_added", 1},
+	})
 
 	var sessionInfo *session.Session
 	err := c.collection.FindOne(
@@ -375,6 +384,165 @@ func (c *sessionCollection) VoteUp(
 		{
 			"$push",
 			bson.D{{"song_list.$[song].upvoters", username}},
+		},
+	}
+	opts = options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"song.id": songID}},
+	})
+	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return 0, err
+	}
+	// check if modified
+	if result.ModifiedCount > 0 {
+		return scoreChange, nil
+	}
+
+	return 0, ErrIllegalState
+}
+
+func (c *sessionCollection) VoteDown(
+	ctx context.Context,
+	sessionID string,
+	songID string,
+	username string,
+) (user.Score, error) {
+	// case 1: 	user not in Upvoters && user not in Downvoters
+	//		   	-> add user to Downvoters
+	// 			-> decrement score by 1
+	// case 2: 	user not in Upvoters && user in Downvoters
+	//		   	-> remove user from Downvoters
+	// 			-> increment score by 1
+	// case 3: 	user in Upvoters && user not in Downvoters
+	//		   	-> remove user from Upvoters
+	// 			-> add user to Downvoters
+	// 			-> decrement score by 2
+
+	// case 1: filters for
+	// - _id: sessionID
+	// - song_list must contain a song with
+	// 		- id = songID
+	//		- user not in upvoters
+	//      - user not in downvoters
+	scoreChange := user.Score(-1)
+	filter := bson.D{
+		{"_id", sessionID},
+		{
+			"song_list",
+			bson.D{
+				{
+					"$elemMatch",
+					bson.D{
+						{"id", songID},
+						{"upvoters", bson.D{{Key: "$ne", Value: username}}},
+						{"downvoters", bson.D{{Key: "$ne", Value: username}}},
+					},
+				},
+			},
+		},
+	}
+	update := bson.D{
+		{
+			"$inc",
+			bson.D{{"song_list.$[song].score", scoreChange}},
+		},
+		{
+			"$push",
+			bson.D{{"song_list.$[song].downvoters", username}},
+		},
+	}
+	opts := options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"song.id": songID}},
+	})
+	result, err := c.collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return 0, err
+	}
+	// check if modified
+	if result.ModifiedCount > 0 {
+		return scoreChange, nil
+	}
+
+	// case 2: filters for
+	// - _id: sessionID
+	// - song_list must contain a song with
+	// 		- id = songID
+	//		- user not in upvoters
+	//      - user in downvoters
+	scoreChange = +1
+	filter = bson.D{
+		{"_id", sessionID},
+		{
+			"song_list",
+			bson.D{
+				{
+					"$elemMatch",
+					bson.D{
+						{"id", songID},
+						{"upvoters", bson.D{{Key: "$ne", Value: username}}},
+						{"downvoters", bson.D{{Key: "$eq", Value: username}}},
+					},
+				},
+			},
+		},
+	}
+	update = bson.D{
+		{
+			"$inc",
+			bson.D{{"song_list.$[song].score", scoreChange}},
+		},
+		{
+			"$pull",
+			bson.D{{"song_list.$[song].downvoters", username}},
+		},
+	}
+	opts = options.Update().SetArrayFilters(options.ArrayFilters{
+		Filters: []interface{}{bson.M{"song.id": songID}},
+	})
+	result, err = c.collection.UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return 0, err
+	}
+	// check if modified
+	if result.ModifiedCount > 0 {
+		return scoreChange, nil
+	}
+
+	// case 3: filters for
+	// - _id: sessionID
+	// - song_list must contain a song with
+	// 		- id = songID
+	//		- user in upvoters
+	//      - user not in downvoters
+	scoreChange = -2
+	filter = bson.D{
+		{"_id", sessionID},
+		{
+			"song_list",
+			bson.D{
+				{
+					"$elemMatch",
+					bson.D{
+						{"id", songID},
+						{"upvoters", bson.D{{Key: "$eq", Value: username}}},
+						{"downvoters", bson.D{{Key: "$ne", Value: username}}},
+					},
+				},
+			},
+		},
+	}
+	update = bson.D{
+		{
+			"$inc",
+			bson.D{{"song_list.$[song].score", scoreChange}},
+		},
+		{
+			"$pull",
+			bson.D{{"song_list.$[song].upvoters", username}},
+		},
+		{
+			"$push",
+			bson.D{{"song_list.$[song].downvoters", username}},
 		},
 	}
 	opts = options.Update().SetArrayFilters(options.ArrayFilters{
