@@ -30,7 +30,7 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	// create new session (contains random session id)
 	sess, err := session.New()
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -38,9 +38,9 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	err = h.SessionCollection.AddSession(ctx, sess)
 	if err != nil {
 		if errors.Is(err, db.ErrSessionAlreadyExisting) {
-			HandleError(w, http.StatusConflict, log.WarnLevel, msg, err, SessionConflictError)
+			handleError(w, http.StatusConflict, log.WarnLevel, msg, err, SessionConflictError)
 		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
 		return
 	}
@@ -50,16 +50,16 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	// - state for spotify authentication
 	admin, err := user.NewAdmin(username, sess.ID)
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
 	// save admin user in db
 	if err := h.UserCollection.AddUser(ctx, admin); err != nil {
 		if errors.Is(err, db.ErrUsernameTaken) {
-			HandleError(w, http.StatusConflict, log.WarnLevel, msg, err, UserConflictError)
+			handleError(w, http.StatusConflict, log.WarnLevel, msg, err, UserConflictError)
 		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
 		return
 	}
@@ -89,11 +89,11 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.SessionCollection.RemoveSong(ctx, sessionID, songID); err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
-			HandleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
+			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
 		} else if errors.Is(err, db.ErrNoSongWithID) {
-			HandleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SongNotFoundError)
+			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SongNotFoundError)
 		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
 		return
 	}
@@ -101,9 +101,9 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
-			HandleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
+			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
 		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
 		return
 	}

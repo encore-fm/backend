@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"errors"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type FrontendError struct {
@@ -60,7 +61,7 @@ var (
 	}
 )
 
-func HandleError(w http.ResponseWriter, status int, logLevel log.Level, msg string, err error, frontendError FrontendError) {
+func handleError(w http.ResponseWriter, status int, logLevel log.Level, msg string, err error, frontendError FrontendError) {
 	switch logLevel {
 	case log.WarnLevel:
 		log.Warnf(msg, err)

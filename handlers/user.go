@@ -40,25 +40,25 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	sess, err := h.SessionCollection.GetSessionByID(ctx, sessionID)
 	if err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
-			HandleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, SessionNotFoundError)
+			handleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, SessionNotFoundError)
 		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
 		return
 	}
 
 	newUser, err := user.New(username, sessionID)
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
 	// save user in db
 	if err := h.UserCollection.AddUser(ctx, newUser); err != nil {
 		if errors.Is(err, db.ErrUsernameTaken) {
-			HandleError(w, http.StatusConflict, log.ErrorLevel, msg, err, UserConflictError)
+			handleError(w, http.StatusConflict, log.ErrorLevel, msg, err, UserConflictError)
 		} else {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
 		return
 	}
@@ -86,10 +86,11 @@ func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	username := vars["username"]
+	sessionID := r.Header.Get("Session")
 
-	userList, err := h.UserCollection.ListUsers(ctx)
+	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -108,9 +109,8 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 
 	fullTrack, err := h.Spotify.GetTrack(spotify.ID(songID))
 	if err != nil {
-		// fixme: return useful error: song_id is wrong?
-		// fixme: pass format string
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		// todo: should mostly be UserError -> better checks
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -119,8 +119,11 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	songInfo.Upvoters = append(songInfo.Upvoters, username)
 
 	if err := h.SessionCollection.AddSong(ctx, sessionID, songInfo); err != nil {
-		log.Errorf("%v: insert song into collection: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if errors.Is(err, db.ErrSongAlreadyInSession) {
+			handleError(w, http.StatusConflict, log.WarnLevel, msg, err, SongConflictError)
+		} else {
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
 		return
 	}
 
@@ -130,7 +133,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	// fetch songList and send event
 	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
-		log.Errorf("suggest song: event: %v", err)
+		log.Errorf("%v: event: %v", msg, err)
 	}
 	// send new playlist to broker
 	event := sse.Event{
@@ -151,7 +154,7 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 
 	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -172,7 +175,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Header.Get("Session")
 
 	if voteAction != "up" && voteAction != "down" {
-		HandleError(w, http.StatusBadRequest, log.ErrorLevel, msg, ErrBadVoteAction, BadVoteError)
+		handleError(w, http.StatusBadRequest, log.ErrorLevel, msg, ErrBadVoteAction, BadVoteError)
 		return
 	}
 
@@ -183,20 +186,20 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	if voteAction == "up" {
 		scoreChange, err = h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
 		if err != nil {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
 	} else {
 		scoreChange, err = h.SessionCollection.VoteDown(ctx, sessionID, songID, username)
 		if err != nil {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
 	}
 
 	songInfo, err := h.SessionCollection.GetSongByID(ctx, sessionID, songID)
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
@@ -208,7 +211,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 			user.GenerateUserID(songInfo.SuggestedBy, sessionID),
 			scoreChange,
 		); err != nil {
-			HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
 	}
@@ -216,7 +219,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	// return updated song list
 	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
 	if err != nil {
-		HandleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
