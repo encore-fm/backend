@@ -98,6 +98,7 @@ func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, userList)
 }
 
+// ListUsers add's a new song to the song_list
 func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] suggest song"
 	ctx := context.Background()
@@ -143,6 +144,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	h.Broker.Notifier <- event
 }
 
+// ListSongs returns all songs in one session
 func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] list songs"
 	ctx := context.Background()
@@ -162,6 +164,7 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songList)
 }
 
+// Vote handles user votes on songs
 func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] vote"
 	ctx := context.Background()
