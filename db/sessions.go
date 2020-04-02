@@ -57,7 +57,7 @@ func (c *sessionCollection) AddSession(ctx context.Context, sess *session.Sessio
 }
 
 // GetSessionByID returns a session struct if sessionID exists
-// if sessionID does not exist it returns nil
+// if sessionID does not exist it returns ErrNoSessionWithID
 // todo: write test
 func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error) {
 	errMsg := "[db] get session by id: %v"
@@ -107,7 +107,8 @@ func (c *sessionCollection) GetSongByID(ctx context.Context, sessionID string, s
 }
 
 // AddSong adds a song to a session and sorts SongList
-// todo: write test
+// Errors:
+// - ErrSongAlreadyInSession
 func (c *sessionCollection) AddSong(ctx context.Context, sessionID string, newSong *song.Model) error {
 	errMsg := "[db] add song: %v"
 
