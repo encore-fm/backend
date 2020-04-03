@@ -40,9 +40,8 @@ type Config struct {
 
 var Conf *Config
 
-// init sets default configuration file settings such as
-// path look up values
-func init() {
+// sets default configuration settings
+func Setup() {
 	// parse optional config flag
 	path := flag.String("config", "", "Path of config file")
 	flag.Parse()

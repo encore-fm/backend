@@ -25,6 +25,7 @@ func spotifyAuthSetup() spotify.Authenticator {
 }
 
 func main() {
+	config.Setup()
 	// connect to database
 	dbConn, err := db.New()
 	if err != nil {

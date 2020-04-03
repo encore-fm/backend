@@ -53,7 +53,7 @@ func (h *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Mode
 // Get User returns a user struct if username exists
 // if username does not exist it returns nil
 func (h *userCollection) GetUserByID(ctx context.Context, userID string) (*user.Model, error) {
-	errMsg := "[db] get user by id : %v"
+	errMsg := "[db] get user by id : %w"
 	filter := bson.D{{"_id", userID}}
 	res, err := h.findOne(ctx, filter)
 	if err != nil {
@@ -68,7 +68,7 @@ func (h *userCollection) GetUserByID(ctx context.Context, userID string) (*user.
 // Get User returns a user struct if user with `state` exists
 // if `state` does not exist it returns nil
 func (h *userCollection) GetUserByState(ctx context.Context, state string) (*user.Model, error) {
-	errMsg := "[db] get user by state: %v"
+	errMsg := "[db] get user by state: %w"
 	filter := bson.D{{"auth_state", state}}
 	res, err := h.findOne(ctx, filter)
 	if err != nil {
@@ -81,7 +81,7 @@ func (h *userCollection) GetUserByState(ctx context.Context, state string) (*use
 }
 
 func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
-	errMsg := "[db] add user: %v"
+	errMsg := "[db] add user: %w"
 	if _, err := h.collection.InsertOne(ctx, newUser); err != nil {
 		if _, ok := err.(mongo.WriteException); ok {
 			return fmt.Errorf(errMsg, ErrUsernameTaken)
@@ -92,7 +92,7 @@ func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error
 }
 
 func (h *userCollection) ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error) {
-	errMsg := "[db] list users: %v"
+	errMsg := "[db] list users: %w"
 	var userList []*user.ListElement
 	cursor, err := h.collection.Find(ctx, bson.D{{"session_id", sessionID}})
 	if err != nil {
@@ -113,7 +113,7 @@ func (h *userCollection) ListUsers(ctx context.Context, sessionID string) ([]*us
 }
 
 func (h *userCollection) IncrementScore(ctx context.Context, userID string, amount int) error {
-	errMsg := "[db] increment user score: %v"
+	errMsg := "[db] increment user score: %w"
 
 	filter := bson.D{{"_id", userID}}
 	update := bson.D{
@@ -141,7 +141,7 @@ func (h *userCollection) IncrementScore(ctx context.Context, userID string, amou
 // - sets spotify authorization token
 // - sets spotify_authorized field to true
 func (h *userCollection) SetToken(ctx context.Context, userID string, token *oauth2.Token) error {
-	errMsg := "[db] set token: %v"
+	errMsg := "[db] set token: %w"
 	filter := bson.D{{"_id", userID}}
 	update := bson.D{
 		{

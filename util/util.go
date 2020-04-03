@@ -15,11 +15,11 @@ func GenerateSecret() (string, error) {
 	return fmt.Sprintf("%x", key), nil
 }
 
-func Contains(a []string, x string) bool {
-	for _, n := range a {
-		if x == n {
-			return true
+func Find(limit int, predicate func(i int) bool) int {
+	for i := 0; i < limit; i++ {
+		if predicate(i) {
+			return i
 		}
 	}
-	return false
+	return -1
 }
