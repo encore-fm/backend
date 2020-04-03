@@ -314,6 +314,30 @@ func Test_UserSuggestSong_GoodID(t *testing.T) {
 	assert.Equal(t, count+1, newCount)
 }
 
+func Test_UserSuggestSong_ExistingSong(t *testing.T) {
+	username := TestUserName
+	secret := TestUserSecret
+	sessionID := TestSessionID
+	songID := SkiFoanID
+
+	resp, err := UserSuggestSong(username, secret, sessionID, songID)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+
+	// 409 expected when username exists
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
+
+	// deserialize response body and assert expected results
+	body, err := ioutil.ReadAll(resp.Body)
+	assert.NoError(t, err)
+
+	response := &handlers.FrontendError{}
+
+	err = json.Unmarshal(body, response)
+	assert.NoError(t, err)
+	assert.Equal(t, handlers.SongConflictError, *response)
+}
+
 func Test_UserSuggestSong_BadID(t *testing.T) {
 	username := TestAdminUsername
 	secret := TestAdminSecret
