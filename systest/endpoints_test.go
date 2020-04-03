@@ -161,12 +161,13 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 
 	err = json.Unmarshal(body, response)
 	assert.NoError(t, err)
-	assert.Equal(t, username, response.UserInfo.Username)       // make sure username matches
-	assert.Equal(t, TestSessionID, response.UserInfo.SessionID) // make sure session id matches
-	assert.Equal(t, 1, response.UserInfo.Score)                 // make sure score is initialized with 1
-	assert.Equal(t, false, response.UserInfo.IsAdmin)           // make sure user is not admin
+	// make sure username und session id match, user is not admin and score is initialized with 1
+	assert.Equal(t, username, response.UserInfo.Username)
+	assert.Equal(t, TestSessionID, response.UserInfo.SessionID)
+	assert.Equal(t, 1, response.UserInfo.Score)
+	assert.Equal(t, false, response.UserInfo.IsAdmin)
 
-	// make sure db is written into db
+	// make sure data is written into db
 	foundUser := &user.Model{}
 	err = userCollection.FindOne(context.Background(), response.UserInfo).Decode(foundUser)
 	assert.NoError(t, err)
@@ -175,7 +176,8 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 	// get new count
 	newCount, err := userCollection.CountDocuments(context.Background(), bson.D{})
 	assert.NoError(t, err)
-	assert.Equal(t, count+1, newCount) // make sure the db only added one document to usercollection
+	// make sure the db only added one document to usercollection
+	assert.Equal(t, count+1, newCount)
 }
 
 func Test_UserJoin_NonExistingSession(t *testing.T) {
@@ -201,12 +203,14 @@ func Test_UserJoin_NonExistingSession(t *testing.T) {
 
 	err = json.Unmarshal(body, response)
 	assert.NoError(t, err)
-	assert.Equal(t, handlers.SessionNotFoundError, *response) // make sure the correct frontenderror is returned
+	// make sure the correct frontenderror is returned
+	assert.Equal(t, handlers.SessionNotFoundError, *response)
 
 	// get new count
 	newCount, err := userCollection.CountDocuments(context.Background(), bson.D{})
 	assert.NoError(t, err)
-	assert.Equal(t, count, newCount) // make sure no new documents were added to usercollection
+	// make sure no new documents were added to usercollection
+	assert.Equal(t, count, newCount)
 }
 
 func Test_UserJoin_ExistingUser(t *testing.T) {
@@ -221,7 +225,8 @@ func Test_UserJoin_ExistingUser(t *testing.T) {
 	resp, err := UserJoin(username, sessionID)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusConflict, resp.StatusCode) // 409 expected when username exists
+	// 409 expected when username exists
+	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// deserialize response body and assert expected results
 	body, err := ioutil.ReadAll(resp.Body)
@@ -236,7 +241,8 @@ func Test_UserJoin_ExistingUser(t *testing.T) {
 	// get new count
 	newCount, err := userCollection.CountDocuments(context.Background(), bson.D{})
 	assert.NoError(t, err)
-	assert.Equal(t, count, newCount) // make sure no new documents were added to usercollection
+	// make sure no new documents were added to usercollection
+	assert.Equal(t, count, newCount)
 }
 
 func Test_UserList(t *testing.T) {
@@ -250,6 +256,7 @@ func Test_UserList(t *testing.T) {
 	resp, err := UserList(username, secret, sessionID)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
+	// expect http status OK
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	body, err := ioutil.ReadAll(resp.Body)
@@ -289,7 +296,8 @@ func Test_UserSuggestSong_GoodID(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, songID, response.ID)
-	assert.Equal(t, 1, response.Score) // song score should be 1 after being suggested
+	// song score should be 1 after being suggested
+	assert.Equal(t, 1, response.Score)
 	assert.Equal(t, 1, len(response.Upvoters))
 	// make sure user is in upvoters
 	index := util.Find(
@@ -299,7 +307,7 @@ func Test_UserSuggestSong_GoodID(t *testing.T) {
 		},
 	)
 	assert.NotEqual(t, -1, index)
-
+	// make sure song is written to db
 	err = sessionCollection.FindOne(context.Background(), bson.D{{"_id", sessionID}}).Decode(&foundSession)
 	assert.NoError(t, err)
 	newCount := len(foundSession.SongList)
@@ -334,7 +342,7 @@ func Test_UserSuggestSong_BadID(t *testing.T) {
 
 // this function implicitly tests the user auth function associated with the user handlers
 func Test_UserSuggestSong_BadUser(t *testing.T) {
-	username := ""
+	username := "baumanto"
 	secret := ""
 	sessionID := TestSessionID
 	songID := NotRickRollSongID
