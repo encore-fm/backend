@@ -1,14 +1,14 @@
 # test config file example
 
-title = "Spotify-Jukebox Config File"
+title = "Spotify-Jukebox Test Config File"
 
 # uncategorized options
 max_users = 1000
 
 [spotify]
-client_id = "id"
-client_secret = "secret"
-redirect_url = "redirect.url"
+client_id = "client_id"
+client_secret = "client_secret"
+redirect_url = "http://127.0.0.1:8080/redirect"
 state = "state"
 open_browser = true
 
@@ -20,8 +20,7 @@ frontend_base_url = "http://localhost:3000"
 db_user = "root"
 db_password = "root"
 db_host = "127.0.0.1"
-db_port = 27017
-db_name = "spotify-jukebox"
+db_port = 53272
+db_name = "spotify-jukebox-test"
 user_collection_name = "users"
-song_collection_name = "songs"
 session_collection_name = "sessions"

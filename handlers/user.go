@@ -3,8 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"net/http"
-
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
@@ -12,6 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
+	"net/http"
 )
 
 type UserHandler interface {

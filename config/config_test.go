@@ -7,6 +7,7 @@ import (
 )
 
 func TestFromFile(t *testing.T) {
+	Setup()
 	result, err := FromFile()
 
 	assert.Nil(t, err)
@@ -37,7 +38,6 @@ func TestFromFile(t *testing.T) {
 		DBPort:                27017,
 		DBName:                "spotify-jukebox",
 		UserCollectionName:    "users",
-		SongCollectionName:    "songs",
 		SessionCollectionName: "sessions",
 	}
 	assert.Equal(t, dbConfig, result.Database)

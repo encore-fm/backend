@@ -249,7 +249,7 @@ func TestHandler_Vote(t *testing.T) {
 	go func() {
 		<-ch
 	}()
-	
+
 	// create handler with mock collections
 	handler := &handler{
 		SessionCollection: sessionCollection,

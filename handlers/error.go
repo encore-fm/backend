@@ -2,13 +2,13 @@ package handlers
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
 )
 
 type FrontendError struct {
+	Code        string `json:"code"`
 	Error       string `json:"error"`
 	Description string `json:"description"`
 }
@@ -65,15 +65,14 @@ var (
 func handleError(w http.ResponseWriter, status int, logLevel log.Level, msg string, err error, frontendError FrontendError) {
 	switch logLevel {
 	case log.WarnLevel:
-		log.Warn(msg + fmt.Sprintf(": %v", err))
+		log.Warnf("%v: %v", msg, err)
 		break
 	case log.ErrorLevel:
-		log.Error(msg + fmt.Sprintf(": %v", err))
+		log.Errorf("%v: %v", msg, err)
 		break
 	default:
-		log.Info(msg + fmt.Sprintf(": %v", err))
+		log.Infof("%v: %v", msg, err)
 		break
 	}
-
 	jsonResponseWithStatus(w, status, frontendError)
 }

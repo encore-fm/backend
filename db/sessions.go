@@ -46,7 +46,7 @@ func NewSessionCollection(client *mongo.Client) SessionCollection {
 // AddSession inserts a new session into session collection
 // if session with this id already exists it returns `ErrSessionAlreadyExisting`
 func (c *sessionCollection) AddSession(ctx context.Context, sess *session.Session) error {
-	errMsg := "[db] add session: %v"
+	errMsg := "[db] add session: %w"
 	if _, err := c.collection.InsertOne(ctx, sess); err != nil {
 		if _, ok := err.(mongo.WriteException); ok {
 			return fmt.Errorf(errMsg, ErrSessionAlreadyExisting)
@@ -60,7 +60,7 @@ func (c *sessionCollection) AddSession(ctx context.Context, sess *session.Sessio
 // if sessionID does not exist it returns ErrNoSessionWithID
 // todo: write test
 func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error) {
-	errMsg := "[db] get session by id: %v"
+	errMsg := "[db] get session by id: %w"
 	filter := bson.D{{"_id", sessionID}}
 
 	var foundSess *session.Session
@@ -78,7 +78,8 @@ func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string
 // if songID does not exist it returns nil
 // todo: write test
 func (c *sessionCollection) GetSongByID(ctx context.Context, sessionID string, songID string) (*song.Model, error) {
-	errMsg := "[db] get song by id: %v"
+
+	errMsg := "[db] get song by id: %w"
 
 	filter := bson.D{
 		{"_id", sessionID},
@@ -110,7 +111,7 @@ func (c *sessionCollection) GetSongByID(ctx context.Context, sessionID string, s
 // Errors:
 // - ErrSongAlreadyInSession
 func (c *sessionCollection) AddSong(ctx context.Context, sessionID string, newSong *song.Model) error {
-	errMsg := "[db] add song: %v"
+	errMsg := "[db] add song: %w"
 
 	filter := bson.D{
 		{"_id", sessionID},
@@ -165,7 +166,7 @@ func (c *sessionCollection) AddSong(ctx context.Context, sessionID string, newSo
 // RemoveSong removes a song from collection
 // todo: write test
 func (c *sessionCollection) RemoveSong(ctx context.Context, sessionID, songID string) error {
-	errMsg := "[db] remove song: %v"
+	errMsg := "[db] remove song: %w"
 	filter := bson.D{{"_id", sessionID}}
 	update := bson.D{
 		{
@@ -197,7 +198,7 @@ func (c *sessionCollection) RemoveSong(ctx context.Context, sessionID, songID st
 // ListSongs returns a sorted list of all songs in a session
 // todo: test
 func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error) {
-	errMsg := "[db] list songs: %v"
+	errMsg := "[db] list songs: %w"
 
 	filter := bson.D{
 		{"_id", sessionID},
@@ -233,7 +234,7 @@ func (c *sessionCollection) VoteUp(
 	songID string,
 	username string,
 ) (int, error) {
-	errMsg := "[db] vote up: %v"
+	errMsg := "[db] vote up: %w"
 
 	// case 1: 	user not in Upvoters && user not in Downvoters
 	//		   	-> add user to Upvoters
@@ -394,7 +395,7 @@ func (c *sessionCollection) VoteDown(
 	songID string,
 	username string,
 ) (int, error) {
-	errMsg := "[db] vote down: %v"
+	errMsg := "[db] vote down: %w"
 
 	// case 1: 	user not in Upvoters && user not in Downvoters
 	//		   	-> add user to Downvoters

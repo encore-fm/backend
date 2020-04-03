@@ -12,7 +12,6 @@ var (
 
 	// Song collection errors
 	ErrNoSongWithID         = errors.New("no song with given id")
-	ErrVoteOnSuggestedSong  = errors.New("cannot vote on self-suggested song")
 	ErrUserAlreadyVoted     = errors.New("user already voted for this song")
 	ErrSongAlreadySuggested = errors.New("song has already been suggested")
 
