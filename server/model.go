@@ -11,7 +11,6 @@ import (
 type Model struct {
 	Port              int
 	UserCollection    db.UserCollection
-	SongCollection    db.SongCollection
 	SessionCollection db.SessionCollection
 	AdminHandler      handlers.AdminHandler
 	UserHandler       handlers.UserHandler
@@ -20,23 +19,26 @@ type Model struct {
 	Broker            *sse.Broker
 }
 
-func New(dbConn *db.Model, spotifyAuth spotify.Authenticator, broker *sse.Broker) *Model {
+func New(
+	dbConn *db.Model,
+	spotifyAuth spotify.Authenticator,
+	spotifyClient spotify.Client,
+	broker *sse.Broker,
+) *Model {
 	userHandle := db.NewUserCollection(dbConn.Client)
-	songHandle := db.NewSongCollection(dbConn.Client)
 	sessHandle := db.NewSessionCollection(dbConn.Client)
 
 	handler := handlers.New(
 		userHandle,
-		songHandle,
 		sessHandle,
 		spotifyAuth,
+		spotifyClient,
 		broker,
 	)
 
 	server := &Model{
 		Port:              config.Conf.Server.Port,
 		UserCollection:    userHandle,
-		SongCollection:    songHandle,
 		SessionCollection: sessHandle,
 		AdminHandler:      handlers.AdminHandler(handler),
 		UserHandler:       handlers.UserHandler(handler),

@@ -14,11 +14,11 @@ import (
 
 type UserCollection interface {
 	GetUserByID(ctx context.Context, userID string) (*user.Model, error)
-	GetUserByState(ctx context.Context, username string) (*user.Model, error)
+	GetUserByState(ctx context.Context, state string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
-	ListUsers(ctx context.Context) ([]*user.ListElement, error)
-	IncrementScore(ctx context.Context, username string, amount float64) error
-	SetToken(ctx context.Context, username string, token *oauth2.Token) error
+	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
+	IncrementScore(ctx context.Context, username string, amount int) error
+	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
 }
 
 type userCollection struct {
@@ -91,10 +91,10 @@ func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error
 	return nil
 }
 
-func (h *userCollection) ListUsers(ctx context.Context) ([]*user.ListElement, error) {
+func (h *userCollection) ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error) {
 	errMsg := "[db] list users: %v"
 	var userList []*user.ListElement
-	cursor, err := h.collection.Find(ctx, bson.D{{}})
+	cursor, err := h.collection.Find(ctx, bson.D{{"session_id", sessionID}})
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
@@ -112,14 +112,15 @@ func (h *userCollection) ListUsers(ctx context.Context) ([]*user.ListElement, er
 	return userList, nil
 }
 
-func (h *userCollection) IncrementScore(ctx context.Context, username string, amount float64) error {
+func (h *userCollection) IncrementScore(ctx context.Context, userID string, amount int) error {
 	errMsg := "[db] increment user score: %v"
-	filter := bson.D{{"_id", username}}
+
+	filter := bson.D{{"_id", userID}}
 	update := bson.D{
-		bson.E{
+		{
 			Key: "$inc",
 			Value: bson.D{
-				bson.E{
+				{
 					Key:   "score",
 					Value: amount,
 				},
@@ -130,7 +131,7 @@ func (h *userCollection) IncrementScore(ctx context.Context, username string, am
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
-	if result.ModifiedCount != 1 {
+	if result.ModifiedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 	return nil

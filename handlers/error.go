@@ -3,8 +3,9 @@ package handlers
 import (
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type FrontendError struct {
@@ -22,6 +23,14 @@ var (
 	SessionNotFoundError = FrontendError{
 		Error:       "Session not found",
 		Description: "No session with the specified ID exists.",
+	}
+	SongNotFoundError = FrontendError{
+		Error:       "Song not found",
+		Description: "No song with the specified ID exists.",
+	}
+	SessionConflictError = FrontendError{
+		Error:       "Session already exists",
+		Description: "A session with the given ID already exists.",
 	}
 	UserConflictError = FrontendError{
 		Error:       "Username already exists",
@@ -53,7 +62,7 @@ var (
 	}
 )
 
-func HandleError(w http.ResponseWriter, status int, logLevel log.Level, msg string, err error, frontendError FrontendError) {
+func handleError(w http.ResponseWriter, status int, logLevel log.Level, msg string, err error, frontendError FrontendError) {
 	switch logLevel {
 	case log.WarnLevel:
 		log.Warn(msg + fmt.Sprintf(": %v", err))

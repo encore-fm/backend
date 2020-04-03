@@ -3,6 +3,8 @@ package db
 import "errors"
 
 var (
+	ErrIllegalState = errors.New("illegal state in database")
+
 	// User collection errors
 	ErrUsernameTaken   = errors.New("requested username already taken")
 	ErrNoUserWithID    = errors.New("no user with given id")
@@ -17,4 +19,5 @@ var (
 	// Session collection errors
 	ErrSessionAlreadyExisting = errors.New("session with this id already exists")
 	ErrNoSessionWithID        = errors.New("no session with given id")
+	ErrSongAlreadyInSession   = errors.New("song with this ID already exists for this session")
 )

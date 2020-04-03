@@ -102,7 +102,7 @@ func (b *Broker) Start() {
 	}()
 }
 
-// This Broker method handles and HTTP request at the "/events/" URL.
+// This Broker method handles and HTTP request at the "/events" URL.
 //
 func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -124,7 +124,7 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// receive updates
 	b.newClients <- messageChan
 
-	// Listen to the closing of the http connection via the CloseNotifier
+	// Listen to the closing of the http connection
 	go func() {
 		<-ctx.Done()
 		// Remove this client from the map of attached clients

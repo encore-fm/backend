@@ -50,13 +50,13 @@ func (_m *UserCollection) GetUserByID(ctx context.Context, userID string) (*user
 	return r0, r1
 }
 
-// GetUserByState provides a mock function with given fields: ctx, username
-func (_m *UserCollection) GetUserByState(ctx context.Context, username string) (*user.Model, error) {
-	ret := _m.Called(ctx, username)
+// GetUserByState provides a mock function with given fields: ctx, state
+func (_m *UserCollection) GetUserByState(ctx context.Context, state string) (*user.Model, error) {
+	ret := _m.Called(ctx, state)
 
 	var r0 *user.Model
 	if rf, ok := ret.Get(0).(func(context.Context, string) *user.Model); ok {
-		r0 = rf(ctx, username)
+		r0 = rf(ctx, state)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*user.Model)
@@ -65,7 +65,7 @@ func (_m *UserCollection) GetUserByState(ctx context.Context, username string) (
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, username)
+		r1 = rf(ctx, state)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -74,11 +74,11 @@ func (_m *UserCollection) GetUserByState(ctx context.Context, username string) (
 }
 
 // IncrementScore provides a mock function with given fields: ctx, username, amount
-func (_m *UserCollection) IncrementScore(ctx context.Context, username string, amount float64) error {
+func (_m *UserCollection) IncrementScore(ctx context.Context, username string, amount int) error {
 	ret := _m.Called(ctx, username, amount)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, float64) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) error); ok {
 		r0 = rf(ctx, username, amount)
 	} else {
 		r0 = ret.Error(0)
@@ -87,13 +87,13 @@ func (_m *UserCollection) IncrementScore(ctx context.Context, username string, a
 	return r0
 }
 
-// ListUsers provides a mock function with given fields: ctx
-func (_m *UserCollection) ListUsers(ctx context.Context) ([]*user.ListElement, error) {
-	ret := _m.Called(ctx)
+// ListUsers provides a mock function with given fields: ctx, sessionID
+func (_m *UserCollection) ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error) {
+	ret := _m.Called(ctx, sessionID)
 
 	var r0 []*user.ListElement
-	if rf, ok := ret.Get(0).(func(context.Context) []*user.ListElement); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*user.ListElement); ok {
+		r0 = rf(ctx, sessionID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*user.ListElement)
@@ -101,8 +101,8 @@ func (_m *UserCollection) ListUsers(ctx context.Context) ([]*user.ListElement, e
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, sessionID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -110,13 +110,13 @@ func (_m *UserCollection) ListUsers(ctx context.Context) ([]*user.ListElement, e
 	return r0, r1
 }
 
-// SetToken provides a mock function with given fields: ctx, username, token
-func (_m *UserCollection) SetToken(ctx context.Context, username string, token *oauth2.Token) error {
-	ret := _m.Called(ctx, username, token)
+// SetToken provides a mock function with given fields: ctx, userID, token
+func (_m *UserCollection) SetToken(ctx context.Context, userID string, token *oauth2.Token) error {
+	ret := _m.Called(ctx, userID, token)
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *oauth2.Token) error); ok {
-		r0 = rf(ctx, username, token)
+		r0 = rf(ctx, userID, token)
 	} else {
 		r0 = ret.Error(0)
 	}
