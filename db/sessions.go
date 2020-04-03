@@ -78,6 +78,7 @@ func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string
 // if songID does not exist it returns nil
 // todo: write test
 func (c *sessionCollection) GetSongByID(ctx context.Context, sessionID string, songID string) (*song.Model, error) {
+
 	errMsg := "[db] get song by id: %w"
 
 	filter := bson.D{

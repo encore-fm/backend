@@ -85,7 +85,6 @@ func (h *handler) ListUsers(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	username := vars["username"]
-	// todo: handle error better if header not specified
 	sessionID := r.Header.Get("Session")
 
 	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
