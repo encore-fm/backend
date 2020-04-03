@@ -1,6 +1,6 @@
 # test config file example
 
-title = "Spotify-Jukebox Test Config File"
+title = "Spotify-Jukebox Config File"
 
 # uncategorized options
 max_users = 1000

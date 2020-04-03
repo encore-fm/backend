@@ -43,7 +43,7 @@ func UserSuggestSong(username string, secret string, sessionID string, songID st
 	return client.Do(req)
 }
 
-func UserlistSongs(username string, secret string, sessionID string) (resp *http.Response, err error) {
+func UserListSongs(username string, secret string, sessionID string) (resp *http.Response, err error) {
 	endpointUrl := fmt.Sprintf("%v/users/%v/listSongs", BackendBaseUrl, username)
 
 	client := &http.Client{}

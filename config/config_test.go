@@ -7,6 +7,7 @@ import (
 )
 
 func TestFromFile(t *testing.T) {
+	Setup()
 	result, err := FromFile()
 
 	assert.Nil(t, err)

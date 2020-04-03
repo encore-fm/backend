@@ -6,8 +6,8 @@ title = "Spotify-Jukebox Test Config File"
 max_users = 1000
 
 [spotify]
-client_id = "d36aba7793284dd2a3544835c0be73a6"
-client_secret = "573dfc80b40c487282fd6df42f742366"
+client_id = "client_id"
+client_secret = "client_secret"
 redirect_url = "http://127.0.0.1:8080/redirect"
 state = "state"
 open_browser = true

@@ -15,7 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"testing"
@@ -151,16 +150,13 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// deserialize response body and assert expected results
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-
 	response := &struct {
 		UserInfo *user.Model `json:"user_info"`
 		AuthUrl  string      `json:"auth_url"`
 	}{}
-
-	err = json.Unmarshal(body, response)
+	err = json.NewDecoder(resp.Body).Decode(response)
 	assert.NoError(t, err)
+
 	// make sure username und session id match, user is not admin and score is initialized with 1
 	assert.Equal(t, username, response.UserInfo.Username)
 	assert.Equal(t, TestSessionID, response.UserInfo.SessionID)
@@ -196,13 +192,11 @@ func Test_UserJoin_NonExistingSession(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode) // expect 404 when session is not found
 
 	// deserialize response body and assert expected results
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-
 	response := &handlers.FrontendError{}
 
-	err = json.Unmarshal(body, response)
+	err = json.NewDecoder(resp.Body).Decode(response)
 	assert.NoError(t, err)
+
 	// make sure the correct frontenderror is returned
 	assert.Equal(t, handlers.SessionNotFoundError, *response)
 
@@ -229,12 +223,9 @@ func Test_UserJoin_ExistingUser(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// deserialize response body and assert expected results
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-
 	response := &handlers.FrontendError{}
 
-	err = json.Unmarshal(body, response)
+	err = json.NewDecoder(resp.Body).Decode(response)
 	assert.NoError(t, err)
 	assert.Equal(t, handlers.UserConflictError, *response)
 
@@ -257,14 +248,9 @@ func Test_UserList(t *testing.T) {
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 	// expect http status OK
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	var response []*user.ListElement
 
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-
-	response := make([]*user.ListElement, 0)
-
-	err = json.Unmarshal(body, &response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 	assert.Equal(t, int(count), len(response))
 }
@@ -287,12 +273,9 @@ func Test_UserSuggestSong_GoodID(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	response := song.Model{}
 
-	response := &song.Model{}
-
-	err = json.Unmarshal(body, response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 
 	assert.Equal(t, songID, response.ID)
@@ -328,12 +311,9 @@ func Test_UserSuggestSong_ExistingSong(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// deserialize response body and assert expected results
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
-
 	response := &handlers.FrontendError{}
 
-	err = json.Unmarshal(body, response)
+	err = json.NewDecoder(resp.Body).Decode(response)
 	assert.NoError(t, err)
 	assert.Equal(t, handlers.SongConflictError, *response)
 }
@@ -378,7 +358,7 @@ func Test_UserSuggestSong_BadUser(t *testing.T) {
 	assert.NotEqual(t, http.StatusOK, resp.StatusCode)
 }
 
-func Test_UserlistSongs(t *testing.T) {
+func Test_UserListSongs(t *testing.T) {
 	username := TestAdminUsername
 	secret := TestAdminSecret
 	sessionID := TestSessionID
@@ -394,19 +374,16 @@ func Test_UserlistSongs(t *testing.T) {
 	assert.NoError(t, err)
 	count := len(foundSession.SongList)
 
-	resp, err := UserlistSongs(username, secret, sessionID)
+	resp, err := UserListSongs(username, secret, sessionID)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 
 	// make sure response code is OK
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	body, err := ioutil.ReadAll(resp.Body)
-	assert.NoError(t, err)
+	var response []*song.Model
 
-	response := make([]*song.Model, 0)
-
-	err = json.Unmarshal(body, &response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 
 	// make sure count matches response
