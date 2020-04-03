@@ -12,7 +12,6 @@ services:
       - 53272:53272
     volumes:
       - mongodb_test_data_container:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
 
 volumes:
   mongodb_test_data_container:

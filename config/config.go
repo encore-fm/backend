@@ -52,7 +52,7 @@ func init() {
 	viper.SetConfigName("spotify-jukebox")
 
 	if *path != "" {
-		viper.SetConfigFile("../systest/spotify-jukebox-test.toml")
+		viper.SetConfigFile(*path)
 	} else {
 		// default lookup locations
 		viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
