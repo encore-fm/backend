@@ -14,3 +14,12 @@ func GenerateSecret() (string, error) {
 	}
 	return fmt.Sprintf("%x", key), nil
 }
+
+func Contains(a []string, x string) bool {
+	for _, n := range a {
+		if x == n {
+			return true
+		}
+	}
+	return false
+}

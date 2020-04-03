@@ -1,6 +1,7 @@
 package config
 
 import (
+	"flag"
 	"fmt"
 
 	"github.com/spf13/viper"
@@ -42,14 +43,23 @@ var Conf *Config
 // init sets default configuration file settings such as
 // path look up values
 func init() {
-	// Config file lookup locations
+	// parse optional config flag
+	path := flag.String("config", "", "Path of config file")
+	flag.Parse()
+
+	// setup viper
 	viper.SetConfigType("toml")
 	viper.SetConfigName("spotify-jukebox")
-	viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
-	viper.AddConfigPath("./")      // this is only the example file with dummy values
-	viper.AddConfigPath("config/") // this is only the example file with dummy values
 
-	viper.AddConfigPath("../config/") // todo: find better way to make tests work
+	if *path != "" {
+		viper.SetConfigFile("../systest/spotify-jukebox-test.toml")
+	} else {
+		// default lookup locations
+		viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
+		viper.AddConfigPath("./")         // this is only the example file with dummy values
+		viper.AddConfigPath("config/")    // this is only the example file with dummy values
+		viper.AddConfigPath("../config/") // todo: find better way to make tests work
+	}
 
 	c, err := FromFile()
 	if err != nil {

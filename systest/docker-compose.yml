@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+  mongodb_container:
+    image: mongo:latest
+    command: --replSet rs1 --port 53272
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: spotify-jukebox-test
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root
+    ports:
+      - 53272:53272
+    volumes:
+      - mongodb_test_data_container:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+
+volumes:
+  mongodb_test_data_container:
