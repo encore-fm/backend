@@ -38,7 +38,6 @@ func TestFromFile(t *testing.T) {
 		DBPort:                27017,
 		DBName:                "spotify-jukebox",
 		UserCollectionName:    "users",
-		SongCollectionName:    "songs",
 		SessionCollectionName: "sessions",
 	}
 	assert.Equal(t, dbConfig, result.Database)

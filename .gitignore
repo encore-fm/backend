@@ -3,3 +3,6 @@
 
 # binary
 spotify-jukebox
+
+# config file
+systest/spotify-jukebox-test.toml

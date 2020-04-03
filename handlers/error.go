@@ -71,7 +71,7 @@ func handleError(w http.ResponseWriter, status int, logLevel log.Level, msg stri
 		log.Errorf("%v: %v", msg, err)
 		break
 	default:
-		log.Info("%v: %v", msg, err)
+		log.Infof("%v: %v", msg, err)
 		break
 	}
 	jsonResponseWithStatus(w, status, frontendError)

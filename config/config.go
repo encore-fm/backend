@@ -27,8 +27,7 @@ type DBConfig struct {
 	DBPort                int    `mapstructure:"db_port"`
 	DBName                string `mapstructure:"db_name"`
 	UserCollectionName    string `mapstructure:"user_collection_name"`
-	SongCollectionName    string `mapstructure:"song_collection_name"`
-	SessionCollectionName string `mapstructure:"session_collection_name"`
+	SessionCollectionName string `mapstructure:"session_collection_namqe"`
 }
 
 type Config struct {
