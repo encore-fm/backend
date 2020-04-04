@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/gorilla/handlers"
+	"github.com/antonbaumann/spotify-jukebox/handlers"
+	muxh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -19,9 +20,9 @@ func (s *Model) Start() {
 	// setup routes
 	s.setupServerRoutes(r)
 	s.setupSpotifyRoutes(r)
-	s.setupUserRoutes(r, userAuth(s.UserCollection))
-	s.setupAdminRoutes(r, adminAuth(s.UserCollection))
-	s.setupEventRoutes(r)
+	s.setupUserRoutes(r, handlers.UserAuth(s.UserCollection))
+	s.setupAdminRoutes(r, handlers.AdminAuth(s.UserCollection))
+	s.setupEventRoutes(r, handlers.UserAuth(s.UserCollection))
 
 	http.Handle("/", r)
 
@@ -36,10 +37,10 @@ func (s *Model) Start() {
 
 func (s *Model) listenAndServe(r *mux.Router) {
 	addr := fmt.Sprintf(":%v", s.Port)
-	allowedOrigins := handlers.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
-	allowedHeaders := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization", "Session"})
-	allowedMethods := handlers.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"})
-	err := http.ListenAndServe(addr, handlers.CORS(allowedOrigins, allowedHeaders, allowedMethods)(r))
+	allowedOrigins := muxh.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
+	allowedHeaders := muxh.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization, Session"})
+	allowedMethods := muxh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"})
+	err := http.ListenAndServe(addr, muxh.CORS(allowedOrigins, allowedHeaders, allowedMethods)(r))
 	if err != nil {
 		log.Errorf("server error: %v", err)
 	}
