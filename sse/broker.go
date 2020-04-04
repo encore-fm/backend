@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -131,7 +132,8 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	msg := "[broker] serve http: %v"
 
-	sessionID := r.Header.Get("Session")
+	vars := mux.Vars(r)
+	sessionID := vars["session_id"]
 
 	// Make sure that the writer supports flushing.
 	//
