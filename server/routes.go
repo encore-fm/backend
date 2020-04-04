@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/antonbaumann/spotify-jukebox/handlers"
 	"github.com/gorilla/mux"
 )
 
@@ -13,7 +14,7 @@ func (s *Model) setupServerRoutes(r *mux.Router) {
 	)
 }
 
-func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
+func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	r.Handle(
 		"/users/{username}/join/{session_id}",
 		http.HandlerFunc(s.UserHandler.Join),
@@ -40,7 +41,7 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth authFunc) {
 	).Methods(http.MethodPost)
 }
 
-func (s *Model) setupAdminRoutes(r *mux.Router, auth authFunc) {
+func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	r.Handle(
 		"/admin/{username}/createSession",
 		http.HandlerFunc(s.AdminHandler.CreateSession),
@@ -59,10 +60,9 @@ func (s *Model) setupSpotifyRoutes(r *mux.Router) {
 	)
 }
 
-// todo: authentication
 func (s *Model) setupEventRoutes(r *mux.Router) {
 	r.Handle(
-		"/events",
+		"/events/{username}/{session_id}",
 		http.HandlerFunc(s.Broker.ServeHTTP),
 	)
 }
