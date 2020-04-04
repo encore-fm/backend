@@ -94,7 +94,12 @@ func (b *Broker) Start() {
 				// There is a new client attached and we
 				// want to start sending them Notifier.
 				b.AddConnection(s)
-				log.Infof("[sse] added new client to GroupID: [%v]", s.GroupID)
+				log.Infof("[sse] added new client to GroupID [%v]", s.GroupID)
+				log.Infof(
+					"[sse] %v clients subscribed to GroupID [%v]",
+					len(b.clients[s.GroupID]),
+					s.GroupID,
+				)
 
 			case s := <-b.defunctClients:
 
@@ -126,11 +131,11 @@ func (b *Broker) Start() {
 	}()
 }
 
-// This Broker method handles and HTTP request at the "/users/{username}/events" URL.
+// This Broker method handles and HTTP request at the "/users/{session_id}" URL.
 //
 func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	msg := "[broker] serve http: %v"
+	msg := "[sse] serve http: %v"
 
 	vars := mux.Vars(r)
 	sessionID := vars["session_id"]
@@ -145,10 +150,10 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Create a new channel, over which the broker can
 	// send this client Notifier.
-	messageChan := make(chan Event)
+	eventChan := make(chan Event)
 	conn := clientConn{
 		GroupID:      sessionID,
-		EventChannel: messageChan,
+		EventChannel: eventChan,
 	}
 
 	// Add this client to the map of those that should
@@ -161,7 +166,7 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Remove this client from the map of attached clients
 		// when `EventHandler` exits.
 		b.defunctClients <- conn
-		log.Info("HTTP connection just closed.")
+		log.Info("[sse] HTTP connection just closed")
 	}()
 
 	// Set the headers related to event streaming.
@@ -172,9 +177,8 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Don't close the connection, instead loop endlessly.
 	for {
-
 		// Read from our messageChan.
-		event, open := <-messageChan
+		event, open := <-eventChan
 
 		if !open {
 			// If our messageChan was closed, this means that the client has
@@ -198,6 +202,5 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		f.Flush()
 	}
 
-	// Done.
 	log.Infof(msg, r.URL.Path)
 }
