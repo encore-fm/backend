@@ -21,43 +21,43 @@ var (
 
 	// Frontend errors
 	SessionNotFoundError = FrontendError{
-		Error:       "Session not found",
+		Error:       "SessionNotFoundError",
 		Description: "No session with the specified ID exists.",
 	}
 	SongNotFoundError = FrontendError{
-		Error:       "Song not found",
+		Error:       "SongNotFoundError",
 		Description: "No song with the specified ID exists.",
 	}
 	SessionConflictError = FrontendError{
-		Error:       "Session already exists",
+		Error:       "SessionConflictError",
 		Description: "A session with the given ID already exists.",
 	}
 	UserConflictError = FrontendError{
-		Error:       "Username already exists",
+		Error:       "UserConflictError",
 		Description: "A user with the given username already exists.",
 	}
 	SongConflictError = FrontendError{
-		Error:       "Song already suggested",
+		Error:       "SongConflictError",
 		Description: "The song being requested has already been suggested in this session.",
 	}
 	BadVoteError = FrontendError{
-		Error:       "Bad vote request",
+		Error:       "BadVoteError",
 		Description: `Vote action specified in vote request has to be either "up" or "down"`,
 	}
 	UserNotFoundError = FrontendError{
-		Error:       "User not found",
+		Error:       "UserNotFoundError",
 		Description: "No user with the specified ID exists.",
 	}
 	VoteOnSuggestedSongError = FrontendError{
-		Error:       "User suggested song",
+		Error:       "VoteOnSuggestedSongError",
 		Description: "The user requesting the vote has suggested this song.",
 	}
 	UserAlreadyVotedError = FrontendError{
-		Error:       "User already voted",
+		Error:       "UserAlreadyVotedError",
 		Description: "The user requesting the vote has already voted for this song.",
 	}
 	InternalServerError = FrontendError{
-		Error:       "Internal server error",
+		Error:       "InternalServerError",
 		Description: "An unexpected server error has occurred.",
 	}
 )
