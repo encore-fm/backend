@@ -108,7 +108,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	songID := vars["song_id"]
 	sessionID := r.Header.Get("Session")
 
-	fullTrack, err := h.Spotify.GetTrack(spotify.ID(songID))
+	fullTrack, err := h.Spotify.Client.GetTrack(spotify.ID(songID))
 	if err != nil {
 		// todo: should mostly be UserError -> better checks
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)

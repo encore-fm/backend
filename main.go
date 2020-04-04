@@ -1,15 +1,13 @@
 package main
 
 import (
-	"context"
-
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/server"
+	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 func spotifyAuthSetup() spotify.Authenticator {
@@ -37,21 +35,16 @@ func main() {
 		config.Conf.Database.DBPort,
 	)
 
+	// create spotify client
+	spotifyClient, err := spotifycl.New(config.Conf.Spotify.ClientID, config.Conf.Spotify.ClientSecret)
+	if err != nil {
+		log.Fatalf("[startup] creating spotify client: %v", err)
+	}
+	spotifyClient.Start()
+	log.Info("[startup] successfully connected to spotify api")
+
 	// create spotify authenticator
 	spotifyAuth := spotifyAuthSetup()
-
-	// create spotify client
-	spotifyConf := &clientcredentials.Config{
-		ClientID:     config.Conf.Spotify.ClientID,
-		ClientSecret: config.Conf.Spotify.ClientSecret,
-		TokenURL:     spotify.TokenURL,
-	}
-	token, err := spotifyConf.Token(context.Background())
-	if err != nil {
-		log.Fatalf("[startup] couldn't get spotify authentication token: %v", err)
-	}
-	spotifyClient := spotify.Authenticator{}.NewClient(token)
-	log.Info("[startup] successfully connected to spotify api")
 
 	// create broker
 	sseBroker := sse.NewBroker()
