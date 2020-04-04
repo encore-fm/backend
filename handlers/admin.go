@@ -110,8 +110,9 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 
 	// send new playlist to broker
 	event := sse.Event{
-		Event: sse.PlaylistChange,
-		Data:  songList,
+		GroupID: sessionID,
+		Event:   sse.PlaylistChange,
+		Data:    songList,
 	}
 	h.Broker.Notifier <- event
 

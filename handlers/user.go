@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"errors"
+	"net/http"
+
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
@@ -10,7 +12,6 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
-	"net/http"
 )
 
 type UserHandler interface {
@@ -137,8 +138,9 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	}
 	// send new playlist to broker
 	event := sse.Event{
-		Event: sse.PlaylistChange,
-		Data:  songList,
+		GroupID: sessionID,
+		Event:   sse.PlaylistChange,
+		Data:    songList,
 	}
 	h.Broker.Notifier <- event
 }
@@ -230,8 +232,9 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 
 	// send new playlist to broker
 	event := sse.Event{
-		Event: sse.PlaylistChange,
-		Data:  songList,
+		GroupID: sessionID,
+		Event:   sse.PlaylistChange,
+		Data:    songList,
 	}
 	h.Broker.Notifier <- event
 }

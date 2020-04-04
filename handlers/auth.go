@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
@@ -22,8 +23,8 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) AuthFunc {
 			if checkAdmin {
 				userOrAdmin = "admin"
 			}
+			msg := fmt.Sprintf("[auth] authenticate %v request", userOrAdmin)
 
-			msg := "[auth] authenticate " + userOrAdmin + " request: %v"
 			vars := mux.Vars(r)
 			username := vars["username"]
 
