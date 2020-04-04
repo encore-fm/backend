@@ -108,13 +108,7 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// send new playlist to broker
-	event := sse.Event{
-		GroupID: sessionID,
-		Event:   sse.PlaylistChange,
-		Data:    songList,
-	}
-	h.Broker.Notifier <- event
+	h.SendEvent(sessionID, sse.PlaylistChange, songList)
 
 	log.Infof("%v: admin removed song [%v]", msg, songID)
 	jsonResponse(w, songList)

@@ -136,13 +136,8 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Errorf("%v: event: %v", msg, err)
 	}
-	// send new playlist to broker
-	event := sse.Event{
-		GroupID: sessionID,
-		Event:   sse.PlaylistChange,
-		Data:    songList,
-	}
-	h.Broker.Notifier <- event
+
+	h.SendEvent(sessionID, sse.PlaylistChange, songList)
 }
 
 // ListSongs returns all songs in one session
@@ -230,11 +225,5 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	log.Infof("user [%v] %vvoted song [%v]", username, voteAction, songID)
 	jsonResponse(w, songList)
 
-	// send new playlist to broker
-	event := sse.Event{
-		GroupID: sessionID,
-		Event:   sse.PlaylistChange,
-		Data:    songList,
-	}
-	h.Broker.Notifier <- event
+	h.SendEvent(sessionID, sse.PlaylistChange, songList)
 }
