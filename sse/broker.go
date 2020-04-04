@@ -60,6 +60,16 @@ type Broker struct {
 	Notifier chan Event
 }
 
+func (b *Broker) AddConnection(conn clientConn) {
+	group, ok := b.clients[conn.GroupID]
+	if ok {
+		group[conn.EventChannel] = true
+	} else {
+		b.clients[conn.GroupID] = make(map[chan Event]bool)
+		b.clients[conn.GroupID][conn.EventChannel] = true
+	}
+}
+
 // This Broker method starts a new goroutine.  It handles
 // the addition & removal of clients, as well as the broadcasting
 // of Notifier out to clients that are currently attached.
@@ -82,7 +92,7 @@ func (b *Broker) Start() {
 
 				// There is a new client attached and we
 				// want to start sending them Notifier.
-				b.clients[s.GroupID][s.EventChannel] = true
+				b.AddConnection(s)
 				log.Infof("[sse] added new client to GroupID: [%v]", s.GroupID)
 
 			case s := <-b.defunctClients:
@@ -92,15 +102,18 @@ func (b *Broker) Start() {
 				delete(b.clients[s.GroupID], s.EventChannel)
 				close(s.EventChannel)
 
-				log.Info("[sse] removed client from GroupID: [%v]", s.GroupID)
+				log.Infof("[sse] removed client from GroupID: [%v]", s.GroupID)
 
 			case msg := <-b.Notifier:
 
 				// There is a new message to send.  For each
 				// attached client, push the new message
 				// into the client's message channel.
-				for s := range b.clients[msg.GroupID] {
-					s <- msg
+				group, ok := b.clients[msg.GroupID]
+				if ok {
+					for s := range group {
+						s <- msg
+					}
 				}
 				log.Infof(
 					"[sse] broadcast message to %d clients in GroupID [%v]",
@@ -112,7 +125,7 @@ func (b *Broker) Start() {
 	}()
 }
 
-// This Broker method handles and HTTP request at the "/events" URL.
+// This Broker method handles and HTTP request at the "/users/{username}/events" URL.
 //
 func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
