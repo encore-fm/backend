@@ -38,7 +38,9 @@ func (s *Model) Start() {
 func (s *Model) listenAndServe(r *mux.Router) {
 	addr := fmt.Sprintf(":%v", s.Port)
 	allowedOrigins := muxh.AllowedOrigins([]string{config.Conf.Server.FrontendBaseUrl})
-	allowedHeaders := muxh.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization, Session"})
+	allowedHeaders := muxh.AllowedHeaders([]string{
+		"X-Requested-With", "Content-Type", "Authorization", "Session",
+	})
 	allowedMethods := muxh.AllowedMethods([]string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"})
 	err := http.ListenAndServe(addr, muxh.CORS(allowedOrigins, allowedHeaders, allowedMethods)(r))
 	if err != nil {
