@@ -170,8 +170,14 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 
 	// make sure data is written into db
 	var foundUser *user.Model
-	err = userCollection.FindOne(context.Background(), response.UserInfo).Decode(&foundUser)
+	err = userCollection.
+		FindOne(context.Background(), bson.D{{"_id", response.UserInfo.ID}}).
+		Decode(&foundUser)
 	assert.NoError(t, err)
+
+	// set fields that are not in response to nil
+	foundUser.AuthState = ""
+	foundUser.AuthToken = nil
 	assert.Equal(t, response.UserInfo, foundUser)
 
 	// get new count
