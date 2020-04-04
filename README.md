@@ -24,72 +24,85 @@ docker-compose -f systest/docker-compose.yml up -d
 go build && ./spotify-jukebox -config <test_config_path>
 go test ./systest/... -config <test_config_path>
 ```
+## Models
+#### Song
+```js
+Song = {
+  "id": "7unF2ARDGldwWxZWCmlwDM",
+  "name": "A Love Supreme, Pt. II - Resolution",
+  "artists": ["list", "of", "artists"],
+  "duration_ms": 1337,
+  "cover_url": "https://i.scdn.co/image/ab67616d0000b2737fe4eca2f931b806a9c9a9dc",
+  "album_name": "A Love Supreme",
+  "preview_url": "url to 30 second song preview",
+  "suggested_by": "anton",
+  "score": 3,
+  "time_added": "time string",
+  "upvoters": ["omar", "cybotter", "anton"],
+  "downvoters": []
+}
+```
+#### User 
+```js
+User = {
+  "id": "omar@sessionID",
+  "username": "omar",
+  "secret": "secret",
+  "session_id": "128 character random alphanumerical string",
+  "is_admin": nope, //bool
+  "score": 9001,
+  "spotify_authorized": true,
+}
+```
+
+#### User List Element
+```js
+UserListElement = {
+  "username": "omar", 
+  "is_admin": false,
+  "score": 9001
+}
+```
 
 ## REST Api
 #### User related
 ##### join: 
-- `POST /users/join/{username}`
-- response: `{"username": <username>, "secret": <secret>, "is_admin": false, "score": <score>}`
+- `POST /users/join/{username}/session/{sessionID}`
+- response: `{"user_info": User, "auth_url": "spotify authorization url"}`
+- errors: `[SessionNotFoundError, UserConflictError, InternalServerError]`
 ##### list:
 - `GET /users/{username}/list`
-- headers: `{"Authorization": <secret>}`
-- response: `[{"username": <username>, "is_admin": false, "score": <score>}]`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `[UserListElement]`
+- errors: `[InternalServerError]`
 ##### suggest song
 - `POST /users/{username}/suggest/{song_id}`
-- headers: `{"Authorization": <secret>}`
-- response: `{
-                 "duration_ms" : <duration>,
-                 "preview_url" : <url>,
-                 "cover_url": <url>,
-                 "album_name": <name>,
-                 "score" : <score>,
-                 "id" : <id>,
-                 "time_added" : <time string>,
-                 "suggested_by" : <user>,
-                 "name" : <name>,
-                 "artists" : []
-               }`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `Song`
+- errors: `[InternalServerError]`
 ##### vote up/down
 - `POST /users/{username}/vote/{song_id}/up`
 - `POST /users/{username}/vote/{song_id}/down`
-- headers: `{"Authorization": <secret>}`
-- response: `[SongInfo]`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `[Song]`
+- errors: `[BadVoteError, InternalServerError]`
 ##### list songs
 - `GET /users/{username}/listSongs`
-- headers: `{"Authorization": <secret>}`
-- response: `[{
-                 "duration_ms" : <duration>,
-                 "preview_url" : <url>,
-                 "cover_url": <url>,
-                 "album_name": <name>,
-                 "score" : <score>,
-                 "id" : <id>,
-                 "time_added" : <time string>,
-                 "suggested_by" : <user>,
-                 "name" : <name>,
-                 "artists" : []
-               }]`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `[Song]`
+- errors: `[InternalServerError]`
+
 #### Admin related
-##### login: 
-- `POST /admin/login` 
-- request: `{"username": <username>, "password": <password>}`
-- response: `{"username": <username>, "secret": <secret>, "is_admin": true, "score": <score>}`
+##### Create Session: 
+- `POST /admin/{username}/createSession` 
+- response: `{"user_info": User, "auth_url": "spotify authorization url"}`
+- errors: `[SessionConflictError, UserConflictError, InternalServerError]`
 ##### remove song: 
 - `DELETE /users/{username}/removeSong/{song_id}`
-- headers: `{"Authorization": <secret>}`
-- response: `[{
-                   "duration_ms" : <duration>,
-                   "preview_url" : <url>,
-                   "cover_url": <url>,
-                   "album_name": <name>,
-                   "score" : <score>,
-                   "id" : <id>,
-                   "time_added" : <time string>,
-                   "suggested_by" : <user>,
-                   "name" : <name>,
-                   "artists" : []
-                 }]`
-                 
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `[Song]`
+- errors: `[SessionConflictError, SongNotFoundError, InternalServerError]`
+       
 #### events
 - `GET /events`
 
