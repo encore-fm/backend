@@ -10,9 +10,9 @@ import (
 
 func NewBroker() *Broker {
 	return &Broker{
-		clients:        make(map[chan Event]bool),
-		newClients:     make(chan (chan Event)),
-		defunctClients: make(chan (chan Event)),
+		clients:        make(map[string]map[chan Event]bool),
+		newClients:     make(chan clientConn),
+		defunctClients: make(chan clientConn),
 		Notifier:       make(chan Event),
 	}
 }
@@ -24,8 +24,14 @@ const (
 )
 
 type Event struct {
-	Event EventType
-	Data  interface{}
+	GroupID string
+	Event   EventType
+	Data    interface{}
+}
+
+type clientConn struct {
+	GroupID      string
+	EventChannel chan Event
 }
 
 // A single Broker will be created in this program. It is responsible
@@ -38,15 +44,15 @@ type Broker struct {
 	// over which we can push Notifier to attached clients.  (The values
 	// are just booleans and are meaningless.)
 	//
-	clients map[chan Event]bool
+	clients map[string]map[chan Event]bool
 
 	// Channel into which new clients can be pushed
 	//
-	newClients chan chan Event
+	newClients chan clientConn
 
 	// Channel into which disconnected clients should be pushed
 	//
-	defunctClients chan chan Event
+	defunctClients chan clientConn
 
 	// Channel into which messages are pushed to be broadcast out
 	// to attached clients.
@@ -76,27 +82,31 @@ func (b *Broker) Start() {
 
 				// There is a new client attached and we
 				// want to start sending them Notifier.
-				b.clients[s] = true
-				log.Info("Added new client")
+				b.clients[s.GroupID][s.EventChannel] = true
+				log.Infof("[sse] added new client to GroupID: [%v]", s.GroupID)
 
 			case s := <-b.defunctClients:
 
 				// A client has detached and we want to
 				// stop sending them Notifier.
-				delete(b.clients, s)
-				close(s)
+				delete(b.clients[s.GroupID], s.EventChannel)
+				close(s.EventChannel)
 
-				log.Info("Removed client")
+				log.Info("[sse] removed client from GroupID: [%v]", s.GroupID)
 
 			case msg := <-b.Notifier:
 
 				// There is a new message to send.  For each
 				// attached client, push the new message
 				// into the client's message channel.
-				for s := range b.clients {
+				for s := range b.clients[msg.GroupID] {
 					s <- msg
 				}
-				log.Infof("Broadcast message to %d clients", len(b.clients))
+				log.Infof(
+					"[sse] broadcast message to %d clients in GroupID [%v]",
+					len(b.clients[msg.GroupID]),
+					msg.GroupID,
+				)
 			}
 		}
 	}()
@@ -107,6 +117,8 @@ func (b *Broker) Start() {
 func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	msg := "[broker] serve http: %v"
+
+	sessionID := r.Header.Get("Session")
 
 	// Make sure that the writer supports flushing.
 	//
@@ -119,17 +131,21 @@ func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Create a new channel, over which the broker can
 	// send this client Notifier.
 	messageChan := make(chan Event)
+	conn := clientConn{
+		GroupID:      sessionID,
+		EventChannel: messageChan,
+	}
 
 	// Add this client to the map of those that should
 	// receive updates
-	b.newClients <- messageChan
+	b.newClients <- conn
 
 	// Listen to the closing of the http connection
 	go func() {
 		<-ctx.Done()
 		// Remove this client from the map of attached clients
 		// when `EventHandler` exits.
-		b.defunctClients <- messageChan
+		b.defunctClients <- conn
 		log.Info("HTTP connection just closed.")
 	}()
 

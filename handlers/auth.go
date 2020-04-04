@@ -1,4 +1,4 @@
-package server
+package handlers
 
 import (
 	"context"
@@ -11,15 +11,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var (
-	ErrUserNotFound    = errors.New("user not found")
-	ErrWrongUserSecret = errors.New("wrong user secret")
-	ErrUserNotAdmin    = errors.New("user not an admin")
-)
+type AuthFunc = func(http.Handler) http.Handler
 
-type authFunc = func(http.Handler) http.Handler
-
-func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
+func authenticate(userCollection db.UserCollection, checkAdmin bool) AuthFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := context.Background()
@@ -39,27 +33,22 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
 
 			u, err := userCollection.GetUserByID(ctx, userID)
 			// error while looking up user
-			if err != nil {
-				log.Errorf(msg, err)
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+			if errors.Is(err, db.ErrNoUserWithID) {
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorized)
 				return
 			}
-			// combination of username and session does not exist
-			if u == nil {
-				log.Warnf(msg, ErrUserNotFound)
-				http.Error(w, ErrUserNotFound.Error(), http.StatusUnauthorized)
+			if err != nil {
+				handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 				return
 			}
 
 			if secret != u.Secret {
-				log.Warnf(msg, ErrWrongUserSecret)
-				http.Error(w, ErrWrongUserSecret.Error(), http.StatusUnauthorized)
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrWrongUserSecret, RequestNotAuthorized)
 				return
 			}
 
 			if checkAdmin && !u.IsAdmin {
-				log.Warnf(msg, ErrUserNotAdmin)
-				http.Error(w, ErrUserNotAdmin.Error(), http.StatusUnauthorized)
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrUserNotAdmin, RequestNotAuthorized)
 				return
 			}
 
@@ -68,10 +57,10 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) authFunc {
 	}
 }
 
-func userAuth(userCollection db.UserCollection) authFunc {
+func UserAuth(userCollection db.UserCollection) AuthFunc {
 	return authenticate(userCollection, false)
 }
 
-func adminAuth(userCollection db.UserCollection) authFunc {
+func AdminAuth(userCollection db.UserCollection) AuthFunc {
 	return authenticate(userCollection, true)
 }

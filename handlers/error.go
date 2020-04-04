@@ -8,7 +8,6 @@ import (
 )
 
 type FrontendError struct {
-	Code        string `json:"code"`
 	Error       string `json:"error"`
 	Description string `json:"description"`
 }
@@ -18,8 +17,15 @@ var (
 	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
 	// Vote errors
 	ErrBadVoteAction = errors.New(`vote action must be in {"up", "down"}`)
+	// Authentication Errors
+	ErrWrongUserSecret = errors.New("user secret wrong")
+	ErrUserNotAdmin    = errors.New("user not an admin")
 
 	// Frontend errors
+	RequestNotAuthorized = FrontendError{
+		Error:       "Request not authorized",
+		Description: "Combination of username, sessionID and user secret is wrong",
+	}
 	SessionNotFoundError = FrontendError{
 		Error:       "Session not found",
 		Description: "No session with the specified ID exists.",
