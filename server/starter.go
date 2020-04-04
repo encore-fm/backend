@@ -22,7 +22,7 @@ func (s *Model) Start() {
 	s.setupSpotifyRoutes(r)
 	s.setupUserRoutes(r, handlers.UserAuth(s.UserCollection))
 	s.setupAdminRoutes(r, handlers.AdminAuth(s.UserCollection))
-	s.setupEventRoutes(r, handlers.UserAuth(s.UserCollection))
+	s.setupEventRoutes(r)
 
 	http.Handle("/", r)
 

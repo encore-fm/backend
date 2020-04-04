@@ -60,9 +60,9 @@ func (s *Model) setupSpotifyRoutes(r *mux.Router) {
 	)
 }
 
-func (s *Model) setupEventRoutes(r *mux.Router, auth handlers.AuthFunc) {
+func (s *Model) setupEventRoutes(r *mux.Router) {
 	r.Handle(
 		"/events/{sessionID}",
-		auth(http.HandlerFunc(s.Broker.ServeHTTP)),
+		http.HandlerFunc(s.Broker.ServeHTTP),
 	)
 }
