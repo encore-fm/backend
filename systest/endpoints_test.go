@@ -6,6 +6,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"os"
+	"testing"
+
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/handlers"
@@ -17,9 +21,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"net/http"
-	"os"
-	"testing"
 )
 
 const (
@@ -42,7 +43,9 @@ var (
 
 	sessionCollection *mongo.Collection
 	userCollection    *mongo.Collection
+)
 
+var (
 	testSession = &session.Session{
 		ID: TestSessionID,
 		SongList: []*song.Model{{
@@ -152,11 +155,11 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 	// deserialize response body and assert expected results
-	response := &struct {
+	var response struct {
 		UserInfo *user.Model `json:"user_info"`
 		AuthUrl  string      `json:"auth_url"`
-	}{}
-	err = json.NewDecoder(resp.Body).Decode(response)
+	}
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 
 	// make sure username und session id match, user is not admin and score is initialized with 1
@@ -166,8 +169,8 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 	assert.Equal(t, false, response.UserInfo.IsAdmin)
 
 	// make sure data is written into db
-	foundUser := &user.Model{}
-	err = userCollection.FindOne(context.Background(), response.UserInfo).Decode(foundUser)
+	var foundUser *user.Model
+	err = userCollection.FindOne(context.Background(), response.UserInfo).Decode(&foundUser)
 	assert.NoError(t, err)
 	assert.Equal(t, response.UserInfo, foundUser)
 
@@ -194,13 +197,13 @@ func Test_UserJoin_NonExistingSession(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, resp.StatusCode) // expect 404 when session is not found
 
 	// deserialize response body and assert expected results
-	response := &handlers.FrontendError{}
+	var response handlers.FrontendError
 
-	err = json.NewDecoder(resp.Body).Decode(response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 
 	// make sure the correct frontenderror is returned
-	assert.Equal(t, handlers.SessionNotFoundError, *response)
+	assert.Equal(t, handlers.SessionNotFoundError, response)
 
 	// get new count
 	newCount, err := userCollection.CountDocuments(context.Background(), bson.D{})
@@ -225,11 +228,11 @@ func Test_UserJoin_ExistingUser(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// deserialize response body and assert expected results
-	response := &handlers.FrontendError{}
+	var response handlers.FrontendError
 
-	err = json.NewDecoder(resp.Body).Decode(response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, handlers.UserConflictError, *response)
+	assert.Equal(t, handlers.UserConflictError, response)
 
 	// get new count
 	newCount, err := userCollection.CountDocuments(context.Background(), bson.D{})
@@ -275,8 +278,7 @@ func Test_UserSuggestSong_GoodID(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	response := song.Model{}
-
+	var response song.Model
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 
@@ -313,11 +315,11 @@ func Test_UserSuggestSong_ExistingSong(t *testing.T) {
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// deserialize response body and assert expected results
-	response := &handlers.FrontendError{}
+	var response handlers.FrontendError
 
-	err = json.NewDecoder(resp.Body).Decode(response)
+	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
-	assert.Equal(t, handlers.SongConflictError, *response)
+	assert.Equal(t, handlers.SongConflictError, response)
 }
 
 func Test_UserSuggestSong_BadID(t *testing.T) {

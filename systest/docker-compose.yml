@@ -2,7 +2,7 @@ version: '3.7'
 services:
   mongodb_container:
     image: mongo:latest
-    command: --replSet rs1 --port 53272
+    command: --port 53272
     restart: always
     environment:
       MONGO_INITDB_DATABASE: spotify-jukebox-test

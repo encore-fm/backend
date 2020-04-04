@@ -6,14 +6,23 @@
 #### Build and run
 ```sh
 docker-compose up -d
+go build . && ./spotify-jukebox
+```
+#### Run Component Tests
+```sh
+docker-compose up -d
 
-# on first time building docker image
-# initialize mongo db replication
-mongo admin -u root -p root
-rs.initiate()
+# start backend with test configuration
+go test ./... -tags ci
+```
+#### Run System Tests
+```sh
+# start mongodb container containing test db
+docker-compose -f systest/docker-compose.yml up -d
 
-go build .
-./spotify-jukebox
+# start backend with test configuration
+go build && ./spotify-jukebox -config <test_config_path>
+go test ./systest/... -config <test_config_path>
 ```
 
 ## REST Api
