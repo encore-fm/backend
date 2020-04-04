@@ -16,8 +16,8 @@ type Model struct {
 	Score             int    `json:"score" bson:"score"`
 	SpotifyAuthorized bool   `json:"spotify_authorized" bson:"spotify_authorized"`
 
-	AuthToken *oauth2.Token `json:"auth_token" bson:"auth_token"`
-	AuthState string        `json:"auth_state" bson:"auth_state"`
+	AuthToken *oauth2.Token `json:"-" bson:"auth_token"`
+	AuthState string        `json:"-" bson:"auth_state"`
 }
 
 type ListElement struct {
