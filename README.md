@@ -104,7 +104,9 @@ UserListElement = {
 - errors: `[SessionConflictError, SongNotFoundError, InternalServerError]`
        
 #### events
-- `GET /events`
+- `GET /users/{username}/events`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `event stream`
 
 #### Server related
 ##### ping:
