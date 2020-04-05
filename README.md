@@ -100,6 +100,12 @@ UserListElement = {
 - `GET /users/{username}/clientToken`
 - headers: `{"Authorization": <secret>, "Session": <sessionID>}`
 - response `{"access_token": "...", "token_type": "...", "expiry": Time`}
+- errors: `[InternalServerError]`
+#### auth token
+- `GET /users/{username}/authToken`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response `{"access_token": "...", "token_type": "...", "expiry": Time`}
+- errors: `[RequestNotAuthorized, SpotifyNotAuthenticated, InternalServerError]`
 
 #### Admin related
 ##### Create Session: 
