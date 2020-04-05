@@ -272,8 +272,8 @@ func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
 
-	id := user.GenerateUserID(username, sessionID)
-	usr, err := h.UserCollection.GetUserByID(ctx, id)
+	userID := user.GenerateUserID(username, sessionID)
+	usr, err := h.UserCollection.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, db.ErrNoUserWithID) {
 			handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorized)
