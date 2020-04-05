@@ -1,10 +1,8 @@
 package systest
 
 import (
+	"fmt"
 	"net/http"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func UserPing(username, secret, sessionID string) (resp *http.Response, err error) {
