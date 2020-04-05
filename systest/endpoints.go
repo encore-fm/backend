@@ -15,6 +15,19 @@ func UserJoin(username string, sessionID string) (resp *http.Response, err error
 	return http.Post(endpointUrl, "", nil)
 }
 
+func UserPing(username, secret, sessionID string) (resp *http.Response, err error) {
+	endpointUrl := fmt.Sprintf("%v/users/%v/ping", BackendBaseUrl, username)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", endpointUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Session", sessionID)
+	req.Header.Set("Authorization", secret)
+	return client.Do(req)
+}
+
 func UserList(username string, secret string, sessionID string) (resp *http.Response, err error) {
 	endpointUrl := fmt.Sprintf("%v/users/%v/list", BackendBaseUrl, username)
 

@@ -21,6 +21,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	).Methods(http.MethodPost)
 
 	r.Handle(
+		"/users/{username}/ping",
+		auth(http.HandlerFunc(s.UserHandler.UserPing)),
+	)
+
+	r.Handle(
 		"/users/{username}/list",
 		auth(http.HandlerFunc(s.UserHandler.ListUsers)),
 	).Methods(http.MethodGet)
