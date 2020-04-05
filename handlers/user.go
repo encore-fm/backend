@@ -16,6 +16,7 @@ import (
 
 type UserHandler interface {
 	Join(w http.ResponseWriter, r *http.Request)
+	UserPing(w http.ResponseWriter, r *http.Request)
 	ListUsers(w http.ResponseWriter, r *http.Request)
 	SuggestSong(w http.ResponseWriter, r *http.Request)
 	ListSongs(w http.ResponseWriter, r *http.Request)
@@ -77,6 +78,20 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("%v: [%v] successfully joined session with id [%v]", msg, username, sess.ID)
 	jsonResponse(w, response)
+}
+
+func (h *handler) UserPing(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] ping"
+	vars := mux.Vars(r)
+	username := vars["username"]
+
+	response := &struct {
+		Message string `json:"message"`
+	}{
+		Message: "pong",
+	}
+	jsonResponse(w, response)
+	log.Infof("%v: %v", msg, username)
 }
 
 // ListUsers lists all users in the session

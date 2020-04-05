@@ -70,6 +70,11 @@ UserListElement = {
 - `POST /users/join/{username}/session/{sessionID}`
 - response: `{"user_info": User, "auth_url": "spotify authorization url"}`
 - errors: `[SessionNotFoundError, UserConflictError, InternalServerError]`
+##### ping: 
+- `POST /users/{username}/ping`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response: `{"message": "pong"}`
+- errors: `[InternalServerError]`
 ##### list:
 - `GET /users/{username}/list`
 - headers: `{"Authorization": <secret>, "Session": <sessionID>}`
