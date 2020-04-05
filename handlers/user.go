@@ -21,6 +21,7 @@ type UserHandler interface {
 	SuggestSong(w http.ResponseWriter, r *http.Request)
 	ListSongs(w http.ResponseWriter, r *http.Request)
 	Vote(w http.ResponseWriter, r *http.Request)
+	ClientToken(w http.ResponseWriter, r *http.Request)
 }
 
 var _ UserHandler = (*handler)(nil)
@@ -241,4 +242,23 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songList)
 
 	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+}
+
+// returns client token
+func (h *handler) ClientToken(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] get client token"
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+
+	token, err := h.Spotify.Client.Token()
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	// don't return refresh token to frontend
+	token.RefreshToken = ""
+	jsonResponse(w, token)
+	log.Infof("%v: user=[%v], session=[%v]", msg, username, sessionID)
 }
