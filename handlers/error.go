@@ -13,6 +13,8 @@ type FrontendError struct {
 }
 
 var (
+	// Spotify errors
+	ErrSpotifyNotAuthenticated = errors.New("spotify not authenticated")
 	// Vote errors
 	ErrBadVoteAction = errors.New(`vote action must be in {"up", "down"}`)
 	// Authentication Errors
@@ -22,7 +24,7 @@ var (
 	// Frontend errors
 	SpotifyNotAuthenticated = FrontendError{
 		Error:       "Spotify not authenticated",
-		Description: "The Spotify authentication token has been generated for the requested user.",
+		Description: "No Spotify authentication token has been generated for the requested user.",
 	}
 
 	RequestNotAuthorized = FrontendError{

@@ -285,7 +285,7 @@ func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !usr.SpotifyAuthorized {
-		handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, SpotifyNotAuthenticated)
+		handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrSpotifyNotAuthenticated, SpotifyNotAuthenticated)
 		return
 	}
 
