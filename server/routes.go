@@ -44,6 +44,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/vote/{song_id}/{vote_action}",
 		auth(http.HandlerFunc(s.UserHandler.Vote)),
 	).Methods(http.MethodPost)
+
+	r.Handle(
+		"/users/{username}/clientToken",
+		auth(http.HandlerFunc(s.UserHandler.ClientToken)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {
