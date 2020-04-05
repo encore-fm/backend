@@ -2,6 +2,8 @@ package systest
 
 import (
 	"fmt"
+	"golang.org/x/oauth2"
+	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/song"
@@ -63,9 +65,14 @@ var (
 		SessionID:         TestSessionID,
 		IsAdmin:           true,
 		Score:             1,
-		SpotifyAuthorized: false,
-		AuthToken:         nil,
-		AuthState:         fmt.Sprintf("%v:%v", TestAdminUsername, TestAdminSecret),
+		SpotifyAuthorized: true,
+		AuthToken: &oauth2.Token{
+			AccessToken:  "1234",
+			TokenType:    "Bearer",
+			RefreshToken: "1234",
+			Expiry:       time.Time{},
+		},
+		AuthState: fmt.Sprintf("%v:%v", TestAdminUsername, TestAdminSecret),
 	}
 	testUser = &user.Model{
 		ID:                fmt.Sprintf("%v@%v", TestUserName, TestSessionID),

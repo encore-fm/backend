@@ -22,6 +22,11 @@ var (
 	ErrUserNotAdmin    = errors.New("user not an admin")
 
 	// Frontend errors
+	SpotifyNotAuthenticated = FrontendError{
+		Error:       "Spotify not authenticated",
+		Description: "No Spotify authentication token has been generated for the requested user.",
+	}
+
 	RequestNotAuthorized = FrontendError{
 		Error:       "Request not authorized",
 		Description: "Combination of username, sessionID and user secret is wrong",
