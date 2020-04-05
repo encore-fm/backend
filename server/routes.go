@@ -49,6 +49,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/clientToken",
 		auth(http.HandlerFunc(s.UserHandler.ClientToken)),
 	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/authToken",
+		auth(http.HandlerFunc(s.UserHandler.AuthToken)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {

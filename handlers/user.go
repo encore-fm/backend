@@ -22,6 +22,7 @@ type UserHandler interface {
 	ListSongs(w http.ResponseWriter, r *http.Request)
 	Vote(w http.ResponseWriter, r *http.Request)
 	ClientToken(w http.ResponseWriter, r *http.Request)
+	AuthToken(w http.ResponseWriter, r *http.Request)
 }
 
 var _ UserHandler = (*handler)(nil)
@@ -259,6 +260,39 @@ func (h *handler) ClientToken(w http.ResponseWriter, r *http.Request) {
 
 	// don't return refresh token to frontend
 	token.RefreshToken = ""
+	jsonResponse(w, token)
+	log.Infof("%v: user=[%v], session=[%v]", msg, username, sessionID)
+}
+
+func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] get auth token"
+	ctx := context.Background()
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+
+	id := user.GenerateUserID(username, sessionID)
+	usr, err := h.UserCollection.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, db.ErrNoUserWithID) {
+			handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorized)
+			return
+		} else {
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+			return
+		}
+	}
+
+	if !usr.SpotifyAuthorized {
+		handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, SpotifyNotAuthenticated)
+		return
+	}
+
+	token := usr.AuthToken
+	// don't send refresh token
+	token.RefreshToken = ""
+
 	jsonResponse(w, token)
 	log.Infof("%v: user=[%v], session=[%v]", msg, username, sessionID)
 }

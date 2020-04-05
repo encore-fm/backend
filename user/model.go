@@ -26,8 +26,8 @@ type ListElement struct {
 	Score    int    `json:"score" bson:"score"`
 }
 
-func GenerateUserID(username, userID string) string {
-	return fmt.Sprintf("%v@%v", username, userID)
+func GenerateUserID(username, sessionID string) string {
+	return fmt.Sprintf("%v@%v", username, sessionID)
 }
 
 func New(username, sessionID string) (*Model, error) {
