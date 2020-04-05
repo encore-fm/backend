@@ -9,6 +9,8 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+const RefreshWaitTime = time.Minute * 50
+
 type SpotifyClient struct {
 	Client spotify.Client
 	config *clientcredentials.Config
@@ -31,7 +33,7 @@ func New(clientID, clientSecret string) (*SpotifyClient, error) {
 	return &SpotifyClient{
 		Client: client,
 		config: config,
-		ticker: time.NewTicker(55 * time.Minute),
+		ticker: time.NewTicker(RefreshWaitTime),
 		quit:   make(chan struct{}),
 	}, nil
 }
