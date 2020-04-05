@@ -91,6 +91,10 @@ UserListElement = {
 - headers: `{"Authorization": <secret>, "Session": <sessionID>}`
 - response: `[Song]`
 - errors: `[InternalServerError]`
+##### client token
+- `GET /users/{username}/clientToken`
+- headers: `{"Authorization": <secret>, "Session": <sessionID>}`
+- response `{"access_token": "...", "token_type": "...", "expiry": Time`}
 
 #### Admin related
 ##### Create Session: 
