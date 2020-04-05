@@ -13,6 +13,9 @@ import (
 func spotifyAuthSetup() spotify.Authenticator {
 	spotifyAuth := spotify.NewAuthenticator(
 		config.Conf.Spotify.RedirectUrl,
+		spotify.ScopeStreaming,
+		spotify.ScopeUserReadEmail,
+		spotify.ScopeUserModifyPlaybackState,
 		spotify.ScopeUserReadPrivate,
 	)
 	spotifyAuth.SetAuthInfo(
