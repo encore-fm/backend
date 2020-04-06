@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	"github.com/antonbaumann/spotify-jukebox/sse"
@@ -32,6 +33,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	userHandle := db.NewUserCollection(dbConn.Client)
+	sessHandle := db.NewSessionCollection(dbConn.Client)
 	log.Infof(
 		"[startup] successfully connected to database at %v:%v",
 		config.Conf.Database.DBHost,
@@ -54,7 +57,14 @@ func main() {
 	sseBroker.Start()
 	log.Info("[startup] successfully started SSE broker")
 
+	// create controller
+	playerCtrl := player.NewController(sessHandle, userHandle, spotifyAuth)
+	if err := playerCtrl.Start(); err != nil {
+		log.Fatalf("[startup] staring player controller: %v", err)
+	}
+	log.Info("[startup] successfully started player controller")
+
 	// start server
-	svr := server.New(dbConn, spotifyAuth, spotifyClient, sseBroker)
+	svr := server.New(userHandle, sessHandle, spotifyAuth, spotifyClient, sseBroker, playerCtrl)
 	svr.Start()
 }

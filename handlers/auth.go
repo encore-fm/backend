@@ -35,7 +35,7 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) AuthFunc {
 			u, err := userCollection.GetUserByID(ctx, userID)
 			// error while looking up user
 			if errors.Is(err, db.ErrNoUserWithID) {
-				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorized)
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorizedError)
 				return
 			}
 			if err != nil {
@@ -44,12 +44,12 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) AuthFunc {
 			}
 
 			if secret != u.Secret {
-				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrWrongUserSecret, RequestNotAuthorized)
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrWrongUserSecret, RequestNotAuthorizedError)
 				return
 			}
 
 			if checkAdmin && !u.IsAdmin {
-				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrUserNotAdmin, RequestNotAuthorized)
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrUserNotAdmin, RequestNotAuthorizedError)
 				return
 			}
 

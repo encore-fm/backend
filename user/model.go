@@ -16,6 +16,8 @@ type Model struct {
 	Score             int    `json:"score" bson:"score"`
 	SpotifyAuthorized bool   `json:"spotify_authorized" bson:"spotify_authorized"`
 
+	SpotifySynchronized bool `json:"spotify_synchronized" bson:"spotify_synchronized"`
+
 	AuthToken *oauth2.Token `json:"-" bson:"auth_token"`
 	AuthState string        `json:"-" bson:"auth_state"`
 }
@@ -24,6 +26,14 @@ type ListElement struct {
 	Username string `json:"username" bson:"username"`
 	IsAdmin  bool   `json:"is_admin" bson:"is_admin"`
 	Score    int    `json:"score" bson:"score"`
+}
+
+type SpotifyClient struct {
+	ID        string        `bson:"_id"`
+	Username  string        `bson:"username"`
+	SessionID string        `bson:"session_id"`
+	IsAdmin   bool          `bson:"is_admin"`
+	AuthToken *oauth2.Token `bson:"auth_token"`
 }
 
 func GenerateUserID(username, sessionID string) string {
@@ -42,14 +52,15 @@ func New(username, sessionID string) (*Model, error) {
 	}
 
 	model := &Model{
-		ID:                GenerateUserID(username, sessionID),
-		Username:          username,
-		Secret:            secret,
-		SessionID:         sessionID,
-		IsAdmin:           false,
-		Score:             1,
-		AuthState:         state,
-		SpotifyAuthorized: false,
+		ID:                  GenerateUserID(username, sessionID),
+		Username:            username,
+		Secret:              secret,
+		SessionID:           sessionID,
+		IsAdmin:             false,
+		Score:               1,
+		AuthState:           state,
+		SpotifyAuthorized:   false,
+		SpotifySynchronized: true,
 	}
 	return model, nil
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/stretchr/testify/assert"
@@ -16,6 +17,7 @@ func TestNew(t *testing.T) {
 	userCol := db.UserCollection(nil)
 	sessCol := db.SessionCollection(nil)
 	broker := &sse.Broker{}
+	ctrl := &player.Controller{}
 
 	expected := &handler{
 		spotifyAuthenticator: auth,
@@ -23,9 +25,10 @@ func TestNew(t *testing.T) {
 		UserCollection:       userCol,
 		SessionCollection:    sessCol,
 		Broker:               broker,
+		PlayerCtrl:           ctrl,
 	}
 
-	result := New(userCol, sessCol, auth, cli, broker)
+	result := New(userCol, sessCol, auth, cli, broker, ctrl)
 
 	assert.Equal(t, expected, result)
 }

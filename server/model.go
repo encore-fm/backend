@@ -4,6 +4,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/handlers"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/zmb3/spotify"
@@ -21,13 +22,14 @@ type Model struct {
 }
 
 func New(
-	dbConn *db.Model,
+	userHandle db.UserCollection,
+	sessHandle db.SessionCollection,
 	spotifyAuth spotify.Authenticator,
 	spotifyClient *spotifycl.SpotifyClient,
 	broker *sse.Broker,
+	playerCtrl *player.Controller,
 ) *Model {
-	userHandle := db.NewUserCollection(dbConn.Client)
-	sessHandle := db.NewSessionCollection(dbConn.Client)
+
 
 	handler := handlers.New(
 		userHandle,
@@ -35,6 +37,7 @@ func New(
 		spotifyAuth,
 		spotifyClient,
 		broker,
+		playerCtrl,
 	)
 
 	server := &Model{

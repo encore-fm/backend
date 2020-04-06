@@ -48,5 +48,5 @@ func Test_UserGetAuthToken_NotAuthorized(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	assert.NoError(t, err)
 
-	assert.Equal(t, handlers.SpotifyNotAuthenticated, response)
+	assert.Equal(t, handlers.SpotifyNotAuthenticatedError, response)
 }

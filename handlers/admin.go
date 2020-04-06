@@ -78,6 +78,9 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("%v: [%v] successfully created session with id [%v]", msg, username, sess.ID)
 	jsonResponse(w, response)
+
+	// register session at playerController
+	h.PlayerCtrl.Clients <- sess.ID
 }
 
 func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
