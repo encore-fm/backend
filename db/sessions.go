@@ -18,6 +18,7 @@ type SessionCollection interface {
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 
 	ListSessionIDs(ctx context.Context) ([]string, error)
+	GetAndDeleteNextSong(ctx context.Context, sessionID string) (*song.Model, error)
 
 	GetSongByID(ctx context.Context, sessionID, songID string) (*song.Model, error)
 	AddSong(ctx context.Context, sessionID string, newSong *song.Model) error
@@ -232,32 +233,58 @@ func (c *sessionCollection) RemoveSong(ctx context.Context, sessionID, songID st
 func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]*song.Model, error) {
 	errMsg := "[db] list songs: %w"
 
-	filter := bson.D{
-		{"_id", sessionID},
-	}
-	projection := bson.D{
-		{"song_list", 1},
+	matchStage := bson.D{
+		{"$match", bson.D{{"_id", sessionID}}},
 	}
 
-	options.FindOne().SetSort(bson.D{
-		{"score", -1},
-		{"time_added", 1},
-	})
+	unwindStage := bson.D{
+		{"$unwind", "$song_list"},
+	}
 
-	var sessionInfo *session.Session
-	err := c.collection.FindOne(
+	sortStage := bson.D{
+		{
+			"$sort",
+			bson.D{
+				{"song_list.score", -1},
+				{"song_list.time_added", 1},
+			},
+		},
+	}
+
+	projectStage := bson.D{
+		{"$project", bson.D{
+			{"_id", 1},
+			{"song_list", 1},
+		}},
+	}
+
+	cursor, err := c.collection.Aggregate(
 		ctx,
-		filter,
-		options.FindOne().SetProjection(projection),
-	).Decode(&sessionInfo)
-
-	if err == mongo.ErrNoDocuments {
-		return nil, fmt.Errorf(errMsg, ErrNoSessionWithID)
-	}
+		mongo.Pipeline{matchStage, unwindStage, sortStage, projectStage},
+	)
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
-	return sessionInfo.SongList, nil
+	defer cursor.Close(ctx)
+
+
+	var songList []*song.Model
+
+	// define custom result struct because I'm to stupid
+	// to make the mongo aggregation pipeline do what i want
+	type result struct {
+		Song *song.Model `bson:"song_list"`
+	}
+
+	for cursor.Next(ctx) {
+		var res result
+		if err := cursor.Decode(&res); err != nil {
+			return nil, fmt.Errorf(errMsg, err)
+		}
+		songList = append(songList, res.Song)
+	}
+
+	return songList, nil
 }
 
 func (c *sessionCollection) VoteUp(
@@ -580,4 +607,9 @@ func (c *sessionCollection) VoteDown(
 	}
 
 	return 0, fmt.Errorf(errMsg, ErrIllegalState)
+}
+
+func (c *sessionCollection) GetAndDeleteNextSong(ctx context.Context, sessionID string) (*song.Model, error) {
+	// todo
+	return nil, nil
 }
