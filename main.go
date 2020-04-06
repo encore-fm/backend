@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	"github.com/antonbaumann/spotify-jukebox/sse"
@@ -54,7 +55,12 @@ func main() {
 	sseBroker.Start()
 	log.Info("[startup] successfully started SSE broker")
 
+	// create controller
+	playerCtrl := player.NewController()
+	playerCtrl.Start()
+	log.Info("[startup] successfully started player controller")
+
 	// start server
-	svr := server.New(dbConn, spotifyAuth, spotifyClient, sseBroker)
+	svr := server.New(dbConn, spotifyAuth, spotifyClient, sseBroker, playerCtrl)
 	svr.Start()
 }
