@@ -18,7 +18,6 @@ type SessionCollection interface {
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 
 	ListSessionIDs(ctx context.Context) ([]string, error)
-	GetAndDeleteNextSong(ctx context.Context, sessionID string) (*song.Model, error)
 
 	GetSongByID(ctx context.Context, sessionID, songID string) (*song.Model, error)
 	AddSong(ctx context.Context, sessionID string, newSong *song.Model) error
