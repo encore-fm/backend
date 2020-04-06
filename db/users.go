@@ -9,6 +9,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"golang.org/x/oauth2"
 )
 
@@ -19,6 +20,7 @@ type UserCollection interface {
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
+	GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
 }
 
 type userCollection struct {
@@ -41,9 +43,9 @@ func NewUserCollection(client *mongo.Client) UserCollection {
 // findOne is a wrapper around mongo's FindOne operation
 // returns user if found
 // if no document is found it returns nil
-func (h *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Model, error) {
+func (c *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Model, error) {
 	var foundUser *user.Model
-	err := h.collection.FindOne(ctx, filter).Decode(&foundUser)
+	err := c.collection.FindOne(ctx, filter).Decode(&foundUser)
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +54,10 @@ func (h *userCollection) findOne(ctx context.Context, filter bson.D) (*user.Mode
 
 // Get User returns a user struct if username exists
 // if username does not exist it returns nil
-func (h *userCollection) GetUserByID(ctx context.Context, userID string) (*user.Model, error) {
+func (c *userCollection) GetUserByID(ctx context.Context, userID string) (*user.Model, error) {
 	errMsg := "[db] get user by id : %w"
 	filter := bson.D{{"_id", userID}}
-	res, err := h.findOne(ctx, filter)
+	res, err := c.findOne(ctx, filter)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf(errMsg, ErrNoUserWithID)
@@ -67,10 +69,10 @@ func (h *userCollection) GetUserByID(ctx context.Context, userID string) (*user.
 
 // Get User returns a user struct if user with `state` exists
 // if `state` does not exist it returns nil
-func (h *userCollection) GetUserByState(ctx context.Context, state string) (*user.Model, error) {
+func (c *userCollection) GetUserByState(ctx context.Context, state string) (*user.Model, error) {
 	errMsg := "[db] get user by state: %w"
 	filter := bson.D{{"auth_state", state}}
-	res, err := h.findOne(ctx, filter)
+	res, err := c.findOne(ctx, filter)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf(errMsg, ErrNoUserWithState)
@@ -80,9 +82,9 @@ func (h *userCollection) GetUserByState(ctx context.Context, state string) (*use
 	return res, nil
 }
 
-func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
+func (c *userCollection) AddUser(ctx context.Context, newUser *user.Model) error {
 	errMsg := "[db] add user: %w"
-	if _, err := h.collection.InsertOne(ctx, newUser); err != nil {
+	if _, err := c.collection.InsertOne(ctx, newUser); err != nil {
 		if _, ok := err.(mongo.WriteException); ok {
 			return fmt.Errorf(errMsg, ErrUsernameTaken)
 		}
@@ -91,10 +93,10 @@ func (h *userCollection) AddUser(ctx context.Context, newUser *user.Model) error
 	return nil
 }
 
-func (h *userCollection) ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error) {
+func (c *userCollection) ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error) {
 	errMsg := "[db] list users: %w"
 	var userList []*user.ListElement
-	cursor, err := h.collection.Find(ctx, bson.D{{"session_id", sessionID}})
+	cursor, err := c.collection.Find(ctx, bson.D{{"session_id", sessionID}})
 	if err != nil {
 		return nil, fmt.Errorf(errMsg, err)
 	}
@@ -112,7 +114,7 @@ func (h *userCollection) ListUsers(ctx context.Context, sessionID string) ([]*us
 	return userList, nil
 }
 
-func (h *userCollection) IncrementScore(ctx context.Context, userID string, amount int) error {
+func (c *userCollection) IncrementScore(ctx context.Context, userID string, amount int) error {
 	errMsg := "[db] increment user score: %w"
 
 	filter := bson.D{{"_id", userID}}
@@ -127,7 +129,7 @@ func (h *userCollection) IncrementScore(ctx context.Context, userID string, amou
 			},
 		},
 	}
-	result, err := h.collection.UpdateOne(ctx, filter, update)
+	result, err := c.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -140,7 +142,7 @@ func (h *userCollection) IncrementScore(ctx context.Context, userID string, amou
 // Set token
 // - sets spotify authorization token
 // - sets spotify_authorized field to true
-func (h *userCollection) SetToken(ctx context.Context, userID string, token *oauth2.Token) error {
+func (c *userCollection) SetToken(ctx context.Context, userID string, token *oauth2.Token) error {
 	errMsg := "[db] set token: %w"
 	filter := bson.D{{"_id", userID}}
 	update := bson.D{
@@ -158,7 +160,7 @@ func (h *userCollection) SetToken(ctx context.Context, userID string, token *oau
 			},
 		},
 	}
-	result, err := h.collection.UpdateOne(ctx, filter, update)
+	result, err := c.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
@@ -166,4 +168,43 @@ func (h *userCollection) SetToken(ctx context.Context, userID string, token *oau
 		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 	return nil
+}
+
+func (c *userCollection) GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
+	errMsg := "[db] get spotify clients: %w"
+	filter := bson.D{
+		{"session_id", sessionID},
+		{"spotify_authorized", true},
+		{"spotify_synchronized", true},
+	}
+	projection := bson.D{
+		{"_id", 1},
+		{"username", 1},
+		{"session_id", 1},
+		{"is_admin", 1},
+		{"auth_token", 1},
+	}
+
+	cursor, err := c.collection.Find(
+		ctx,
+		filter,
+		options.Find().SetProjection(projection),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	defer cursor.Close(ctx)
+
+	var clients []*user.SpotifyClient
+	for cursor.Next(ctx) {
+		var client user.SpotifyClient
+		err := cursor.Decode(&client)
+		if err != nil {
+			return nil, fmt.Errorf(errMsg, err)
+		}
+
+		clients = append(clients, &client)
+	}
+
+	return clients, nil
 }

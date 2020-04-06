@@ -17,6 +17,8 @@ type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 
+	ListSessionIDs(ctx context.Context) ([]string, error)
+
 	GetSongByID(ctx context.Context, sessionID, songID string) (*song.Model, error)
 	AddSong(ctx context.Context, sessionID string, newSong *song.Model) error
 	RemoveSong(ctx context.Context, sessionID, songID string) error
@@ -72,6 +74,36 @@ func (c *sessionCollection) GetSessionByID(ctx context.Context, sessionID string
 		return nil, fmt.Errorf(errMsg, err)
 	}
 	return foundSess, nil
+}
+
+func (c *sessionCollection) ListSessionIDs(ctx context.Context) ([]string, error) {
+	errMsg := "[db] get sessionID list: %w"
+	filter := bson.D{}
+	projection := bson.D{
+		{"song_list", 0},
+	}
+
+	cursor, err := c.collection.Find(
+		ctx,
+		filter,
+		options.Find().SetProjection(projection),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	defer cursor.Close(ctx)
+
+	var sessIDs []string
+	for cursor.Next(ctx) {
+		var sess session.Session
+		err := cursor.Decode(&sess)
+		if err != nil {
+			return nil, fmt.Errorf(errMsg, err)
+		}
+		sessIDs = append(sessIDs, sess.ID)
+	}
+
+	return sessIDs, nil
 }
 
 // GetSongByID returns a song struct if songID exists

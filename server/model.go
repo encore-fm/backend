@@ -22,14 +22,14 @@ type Model struct {
 }
 
 func New(
-	dbConn *db.Model,
+	userHandle db.UserCollection,
+	sessHandle db.SessionCollection,
 	spotifyAuth spotify.Authenticator,
 	spotifyClient *spotifycl.SpotifyClient,
 	broker *sse.Broker,
 	playerCtrl *player.Controller,
 ) *Model {
-	userHandle := db.NewUserCollection(dbConn.Client)
-	sessHandle := db.NewSessionCollection(dbConn.Client)
+
 
 	handler := handlers.New(
 		userHandle,

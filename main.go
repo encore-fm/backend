@@ -33,6 +33,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	userHandle := db.NewUserCollection(dbConn.Client)
+	sessHandle := db.NewSessionCollection(dbConn.Client)
 	log.Infof(
 		"[startup] successfully connected to database at %v:%v",
 		config.Conf.Database.DBHost,
@@ -56,11 +58,13 @@ func main() {
 	log.Info("[startup] successfully started SSE broker")
 
 	// create controller
-	playerCtrl := player.NewController()
-	playerCtrl.Start()
+	playerCtrl := player.NewController(sessHandle, userHandle, spotifyAuth)
+	if err := playerCtrl.Start(); err != nil {
+		log.Fatalf("[startup] staring player controller: %v", err)
+	}
 	log.Info("[startup] successfully started player controller")
 
 	// start server
-	svr := server.New(dbConn, spotifyAuth, spotifyClient, sseBroker, playerCtrl)
+	svr := server.New(userHandle, sessHandle, spotifyAuth, spotifyClient, sseBroker, playerCtrl)
 	svr.Start()
 }
