@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/davecgh/go-spew/spew"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
@@ -29,6 +28,8 @@ type Event struct {
 	SessionID string
 	Type      EventType
 	Payload   interface{}
+
+	SenderUserID string
 }
 
 type Controller struct {
@@ -98,7 +99,7 @@ func (ctrl *Controller) eventLoop() {
 		case event := <-ctrl.Events:
 			switch event.Type {
 			case AdminStateChangedEvent:
-				log.Info("[playerctrl] AdminStateChangeEvent")
+				log.Infof("[playerctrl] AdminStateChangeEvent: %v", event.SessionID)
 				payload, ok := event.Payload.(StateChangedPayload)
 				if !ok {
 					log.Error("[playerctrl] event payload malformed")
@@ -106,7 +107,7 @@ func (ctrl *Controller) eventLoop() {
 				ctrl.notifyClients(event.SessionID, payload, false)
 
 			case ControllerStateChangedEvent:
-				log.Info("[playerctrl] ControllerStateChangeEvent")
+				log.Infof("[playerctrl] ControllerStateChangeEvent: %v", event.SessionID)
 				payload, ok := event.Payload.(StateChangedPayload)
 				if !ok {
 					log.Error("[playerctrl] event payload malformed")
@@ -114,12 +115,15 @@ func (ctrl *Controller) eventLoop() {
 				ctrl.notifyClients(event.SessionID, payload, true)
 
 			case UserStateChangedEvent:
-				log.Info("[playerctrl] UserStateChangeEvent")
-				spew.Dump(event)
+				log.Infof("[playerctrl] UserStateChangeEvent: %v", event.SessionID)
+				payload, ok := event.Payload.(StateChangedPayload)
+				if !ok {
+					log.Error("[playerctrl] event payload malformed")
+				}
+				ctrl.handleUserStateChange(event.SenderUserID, payload)
 
 			default:
-				spew.Dump(event)
-
+				log.Warningf("[playerctrl] unknown event type: %v", event.Type)
 			}
 		}
 	}
@@ -144,6 +148,8 @@ func (ctrl *Controller) stopTimer(sessionID string) {
 	}
 }
 
+// gets next song from db and deletes it
+// sends event
 func (ctrl *Controller) getNextSong(sessionID string) {
 	msg := "[playerctrl] get next song from db"
 	ctx := context.Background()
@@ -172,6 +178,11 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	}
 
 	nextSong := songList[0]
+
+	// remove nextSong from db
+	if err := ctrl.sessionCollection.RemoveSong(ctx, sessionID, nextSong.ID); err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
 
 	payload := StateChangedPayload{
 		SongID:   nextSong.ID,
@@ -229,5 +240,14 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 			}
 			ctrl.stopTimer(sessionID)
 		}
+	}
+}
+
+// handleUserStateChange sets the user's synchronized field
+func (ctrl *Controller) handleUserStateChange(userID string, stateChange StateChangedPayload) {
+	msg := "[playerctrl] handle user state change"
+	err := ctrl.userCollection.SetSynchronized(context.TODO(), userID, !stateChange.Paused)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
 	}
 }

@@ -267,7 +267,6 @@ func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]
 	}
 	defer cursor.Close(ctx)
 
-
 	var songList []*song.Model
 
 	// define custom result struct because I'm to stupid
@@ -607,9 +606,4 @@ func (c *sessionCollection) VoteDown(
 	}
 
 	return 0, fmt.Errorf(errMsg, ErrIllegalState)
-}
-
-func (c *sessionCollection) GetAndDeleteNextSong(ctx context.Context, sessionID string) (*song.Model, error) {
-	// todo
-	return nil, nil
 }

@@ -332,9 +332,10 @@ func (h *handler) PlayerStateChange(w http.ResponseWriter, r *http.Request) {
 		eventType = player.AdminStateChangedEvent
 	}
 	event := player.Event{
-		SessionID: sessionID,
-		Type:      eventType,
-		Payload:   payload,
+		SessionID:    sessionID,
+		Type:         eventType,
+		Payload:      payload,
+		SenderUserID: userID,
 	}
 	h.PlayerCtrl.Events <- event
 

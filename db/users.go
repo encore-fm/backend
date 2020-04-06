@@ -20,6 +20,7 @@ type UserCollection interface {
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
+	SetSynchronized(ctx context.Context, userID string, synchronized bool) error
 	GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
 }
 
@@ -156,6 +157,30 @@ func (c *userCollection) SetToken(ctx context.Context, userID string, token *oau
 				{
 					Key:   "spotify_authorized",
 					Value: true,
+				},
+			},
+		},
+	}
+	result, err := c.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if result.ModifiedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoUserWithID)
+	}
+	return nil
+}
+
+func (c *userCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) error {
+	errMsg := "[db] set synchronized: %w"
+	filter := bson.D{{"_id", userID}}
+	update := bson.D{
+		{
+			Key: "$set",
+			Value: bson.D{
+				{
+					Key:   "spotify_synchronized",
+					Value: synchronized,
 				},
 			},
 		},
