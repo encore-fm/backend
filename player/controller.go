@@ -47,7 +47,7 @@ type Controller struct {
 
 	// maps sessions to timers
 	// timer fires when current song ended and new song must be fetched from db
-	Timers map[string]*time.Timer
+	timers map[string]*time.Timer
 }
 
 func NewController(
@@ -61,7 +61,7 @@ func NewController(
 		authenticator:     authenticator,
 		Events:            make(chan Event),
 		Clients:           make(chan string),
-		Timers:            make(map[string]*time.Timer),
+		timers:            make(map[string]*time.Timer),
 	}
 	return controller
 }
@@ -130,21 +130,21 @@ func (ctrl *Controller) eventLoop() {
 }
 
 func (ctrl *Controller) setTimer(sessionID string, duration time.Duration, f func()) {
-	t, ok := ctrl.Timers[sessionID]
+	t, ok := ctrl.timers[sessionID]
 	if !ok {
-		ctrl.Timers[sessionID] = time.AfterFunc(duration, f)
+		ctrl.timers[sessionID] = time.AfterFunc(duration, f)
 	} else {
 		t.Reset(duration)
 	}
 }
 
 func (ctrl *Controller) stopTimer(sessionID string) {
-	t, ok := ctrl.Timers[sessionID]
+	t, ok := ctrl.timers[sessionID]
 	if ok {
 		if !t.Stop() {
 			<-t.C
 		}
-		delete(ctrl.Timers, sessionID)
+		delete(ctrl.timers, sessionID)
 	}
 }
 
