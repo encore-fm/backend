@@ -268,7 +268,7 @@ func (c *sessionCollection) ListSongs(ctx context.Context, sessionID string) ([]
 
 	var songList []*song.Model
 
-	// define custom result struct because I'm to stupid
+	// define custom result struct because I'm too stupid
 	// to make the mongo aggregation pipeline do what i want
 	type result struct {
 		Song *song.Model `bson:"song_list"`

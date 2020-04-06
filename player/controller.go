@@ -168,6 +168,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	if len(songList) == 0 {
 		// if songList is empty
 		// log error and try again in 500ms
+		// todo: wait for songAdded
 		log.Infof("%v: %v", msg, "songlist empty - waiting for 1000ms")
 		ctrl.setTimer(
 			sessionID,
