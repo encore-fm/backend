@@ -7,6 +7,11 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	StateBytes  = 64
+	SecretBytes = 64
+)
+
 type Model struct {
 	ID                string `json:"id" bson:"_id"`
 	Username          string `json:"username" bson:"username"`
@@ -41,12 +46,12 @@ func GenerateUserID(username, sessionID string) string {
 }
 
 func New(username, sessionID string) (*Model, error) {
-	secret, err := util.GenerateSecret()
+	secret, err := util.GenerateSecret(SecretBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	state, err := util.GenerateSecret()
+	state, err := util.GenerateSecret(StateBytes)
 	if err != nil {
 		return nil, err
 	}
