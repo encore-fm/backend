@@ -217,11 +217,6 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 	}
 
 	for _, client := range clients {
-		// don't change admin state
-		if client.IsAdmin && !notifyAdmin {
-			continue
-		}
-
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
 		opt := &spotify.PlayOptions{
 			URIs:       []spotify.URI{TrackURI(stateChange.SongID)},
@@ -229,8 +224,13 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 		}
 
 		if !stateChange.Paused {
-			if err := spotifyClient.PlayOpt(opt); err != nil {
-				log.Errorf("%v: %v", msg, err)
+			// usually we dont want to overwrite the state at the
+			// admin's "real spotify player" since this function mostly
+			// gets called if the admin changes his player state
+			if !client.IsAdmin || notifyAdmin {
+				if err := spotifyClient.PlayOpt(opt); err != nil {
+					log.Errorf("%v: %v", msg, err)
+				}
 			}
 
 			delta := time.Millisecond * time.Duration(stateChange.Duration-stateChange.Position)
