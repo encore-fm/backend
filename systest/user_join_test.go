@@ -65,7 +65,7 @@ func Test_UserJoin_ExistingSession(t *testing.T) {
 
 func Test_UserJoin_NonExistingSession(t *testing.T) {
 	username := "eti"
-	sessionID, err := util.GenerateSecret()
+	sessionID, err := util.GenerateSecret(16)
 	assert.NoError(t, err)
 
 	// get db collection count before insertion
