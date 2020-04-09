@@ -29,6 +29,7 @@ type EventBus interface {
 	Start()
 	Stop()
 	Subscribe([]EventType, []GroupID) subscription
+	Unsubscribe(subscription)
 	Publish(EventType, GroupID, EventPayload)
 }
 
@@ -69,6 +70,24 @@ func (eb *eventBus) Subscribe(types []EventType, groupIDs []GroupID) subscriptio
 	}
 	eb.newSubscriptions <- subscription
 	return subscription
+}
+
+func (eb *eventBus) Unsubscribe(sub subscription) {
+	for _, eventType := range sub.Types {
+		if groups, ok := eb.subscribers[eventType]; ok {
+			for _, id := range sub.Groups {
+				delete(groups[id], sub.Channel)
+
+				if len(groups[id]) == 0 {
+					delete(groups, id)
+				}
+			}
+
+			if len(groups) == 0 {
+				delete(eb.subscribers, eventType)
+			}
+		}
+	}
 }
 
 func (eb *eventBus) Publish(eventType EventType, groupID GroupID, data EventPayload) {
