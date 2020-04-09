@@ -57,7 +57,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Remove this client from the map of attached clients
 		// when `EventHandler` exits.
 
-		// todo: close channel and remove from subscribers
+		h.eventBus.Unsubscribe(sub)
 
 		log.Info("[sse] HTTP connection just closed")
 	}()
