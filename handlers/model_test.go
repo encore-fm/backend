@@ -5,7 +5,6 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	"github.com/stretchr/testify/assert"
 	"github.com/zmb3/spotify"
@@ -17,7 +16,6 @@ func TestNew(t *testing.T) {
 	cli := &spotifycl.SpotifyClient{}
 	userCol := db.UserCollection(nil)
 	sessCol := db.SessionCollection(nil)
-	ctrl := &player.Controller{}
 
 	expected := &handler{
 		eventBus: eventBus,
@@ -25,10 +23,9 @@ func TestNew(t *testing.T) {
 		Spotify:              cli,
 		UserCollection:       userCol,
 		SessionCollection:    sessCol,
-		PlayerCtrl:           ctrl,
 	}
 
-	result := New(eventBus, userCol, sessCol, auth, cli, ctrl)
+	result := New(eventBus, userCol, sessCol, auth, cli)
 
 	assert.Equal(t, expected, result)
 }
