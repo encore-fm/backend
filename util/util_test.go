@@ -2,9 +2,10 @@ package util
 
 import (
 	"errors"
-	"github.com/magiconair/properties/assert"
 	"regexp"
 	"testing"
+
+	"github.com/magiconair/properties/assert"
 )
 
 func TestGenerateSecret(t *testing.T) {

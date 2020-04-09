@@ -15,4 +15,5 @@ require (
 	github.com/zmb3/spotify v0.0.0-20200112163645-71a4c67d18db
 	go.mongodb.org/mongo-driver v1.3.1
 	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+	golang.org/x/tools v0.0.0-20200409210453-700752c24408 // indirect
 )
