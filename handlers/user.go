@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
@@ -157,7 +158,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: event: %v", msg, err)
 	}
 
-	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
 }
 
 // ListSongs returns all songs in one session
@@ -245,7 +246,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	log.Infof("user [%v] %vvoted song [%v]", username, voteAction, songID)
 	jsonResponse(w, songList)
 
-	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
 }
 
 // returns client token
@@ -331,13 +332,8 @@ func (h *handler) PlayerStateChange(w http.ResponseWriter, r *http.Request) {
 	if usr.IsAdmin {
 		eventType = player.AdminStateChangedEvent
 	}
-	event := player.Event{
-		SessionID:    sessionID,
-		Type:         eventType,
-		Payload:      payload,
-		SenderUserID: userID,
-	}
-	h.PlayerCtrl.Events <- event
+
+	h.eventBus.Publish(eventType, events.GroupID(sessionID), payload)
 
 	response := struct {
 		Message string `json:"message"`

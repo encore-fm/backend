@@ -2,19 +2,24 @@ package player
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
 
-type EventType string
+var (
+	ErrEventPayloadMalformed = errors.New("event payload malformed")
+)
 
+// define state change events
 const (
-	ControllerStateChangedEvent EventType = "controller_player_state_changed"
-	AdminStateChangedEvent      EventType = "admin_player_state_changed"
-	UserStateChangedEvent       EventType = "user_player_state_changed"
+	ControllerStateChangedEvent events.EventType = "controller_player_state_changed"
+	AdminStateChangedEvent      events.EventType = "admin_player_state_changed"
+	UserStateChangedEvent       events.EventType = "user_player_state_changed"
 )
 
 type StateChangedPayload struct {
@@ -24,12 +29,16 @@ type StateChangedPayload struct {
 	Paused   bool   `json:"paused"`
 }
 
-type Event struct {
-	SessionID string
-	Type      EventType
-	Payload   interface{}
+type UserStateChangedPayload struct {
+	UserID string `json:"user_id"`
+	StateChangedPayload
+}
 
-	SenderUserID string
+// define register session events
+const RegisterSessionEvent events.EventType = "register_session"
+
+type RegisterSessionPayload struct {
+	SessionID string `json:"session_id"`
 }
 
 type Controller struct {
@@ -42,8 +51,7 @@ type Controller struct {
 	// sessionID must be passed to this channel
 	Clients chan string
 
-	// channel for incoming events
-	Events chan Event
+	eventBus events.EventBus
 
 	// maps sessions to timers
 	// timer fires when current song ended and new song must be fetched from db
@@ -51,6 +59,7 @@ type Controller struct {
 }
 
 func NewController(
+	eventBus events.EventBus,
 	sessionCollection db.SessionCollection,
 	userCollection db.UserCollection,
 	authenticator spotify.Authenticator,
@@ -59,7 +68,7 @@ func NewController(
 		sessionCollection: sessionCollection,
 		userCollection:    userCollection,
 		authenticator:     authenticator,
-		Events:            make(chan Event),
+		eventBus:          eventBus,
 		Clients:           make(chan string),
 		timers:            make(map[string]*time.Timer),
 	}
@@ -84,47 +93,67 @@ func (ctrl *Controller) Start() error {
 
 func (ctrl *Controller) registerSessionLoop() {
 	msg := "[playerctrl] register session"
+	sub := ctrl.eventBus.Subscribe(
+		[]events.EventType{RegisterSessionEvent},
+		[]events.GroupID{events.GroupIDAny},
+	)
 	for {
 		select {
-		case sessionID := <-ctrl.Clients:
-			log.Infof("%v: id={%v}", msg, sessionID)
-			ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+		case ev := <-sub.Channel:
+			payload, ok := ev.Data.(RegisterSessionPayload)
+			if !ok {
+				log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+				continue
+			}
+			log.Infof("%v: id={%v}", msg, payload.SessionID)
+			ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 		}
 	}
 }
 
 func (ctrl *Controller) eventLoop() {
+
+	adminSub := ctrl.eventBus.Subscribe(
+		[]events.EventType{AdminStateChangedEvent},
+		[]events.GroupID{events.GroupIDAny},
+	)
+
+	controllerSub := ctrl.eventBus.Subscribe(
+		[]events.EventType{ControllerStateChangedEvent},
+		[]events.GroupID{events.GroupIDAny},
+	)
+
+	userSub := ctrl.eventBus.Subscribe(
+		[]events.EventType{UserStateChangedEvent},
+		[]events.GroupID{events.GroupIDAny},
+	)
+
 	for {
 		select {
-		case event := <-ctrl.Events:
-			switch event.Type {
-			case AdminStateChangedEvent:
-				log.Infof("[playerctrl] AdminStateChangeEvent: %v", event.SessionID)
-				payload, ok := event.Payload.(StateChangedPayload)
-				if !ok {
-					log.Error("[playerctrl] event payload malformed")
-				}
-				ctrl.notifyClients(event.SessionID, payload, false)
-
-			case ControllerStateChangedEvent:
-				log.Infof("[playerctrl] ControllerStateChangeEvent: %v", event.SessionID)
-				payload, ok := event.Payload.(StateChangedPayload)
-				if !ok {
-					log.Error("[playerctrl] event payload malformed")
-				}
-				ctrl.notifyClients(event.SessionID, payload, true)
-
-			case UserStateChangedEvent:
-				log.Infof("[playerctrl] UserStateChangeEvent: %v", event.SessionID)
-				payload, ok := event.Payload.(StateChangedPayload)
-				if !ok {
-					log.Error("[playerctrl] event payload malformed")
-				}
-				ctrl.handleUserStateChange(event.SenderUserID, payload)
-
-			default:
-				log.Warningf("[playerctrl] unknown event type: %v", event.Type)
+		case event := <-adminSub.Channel:
+			log.Infof("[playerctrl] AdminStateChangeEvent: %v", event.GroupID)
+			payload, ok := event.Data.(StateChangedPayload)
+			if !ok {
+				log.Error("[playerctrl] event payload malformed")
 			}
+			ctrl.notifyClients(string(event.GroupID), payload, false)
+
+		case ev := <-controllerSub.Channel:
+			log.Infof("[playerctrl] ControllerStateChangeEvent: %v", ev.GroupID)
+			payload, ok := ev.Data.(StateChangedPayload)
+			if !ok {
+				log.Error("[playerctrl] event payload malformed")
+			}
+			ctrl.notifyClients(string(ev.GroupID), payload, true)
+
+		case ev := <-userSub.Channel:
+			log.Infof("[playerctrl] UserStateChangeEvent: %v", ev.GroupID)
+			payload, ok := ev.Data.(UserStateChangedPayload)
+			if !ok {
+				log.Error("[playerctrl] event payload malformed")
+			}
+			ctrl.handleUserStateChange(payload)
+
 		}
 	}
 }
@@ -191,12 +220,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		Position: 0,
 		Paused:   false,
 	}
-	event := Event{
-		SessionID: sessionID,
-		Type:      ControllerStateChangedEvent,
-		Payload:   payload,
-	}
-	ctrl.Events <- event
+	ctrl.eventBus.Publish(ControllerStateChangedEvent, events.GroupID(sessionID), payload)
 
 	// fetch next song after song has ended
 	ctrl.setTimer(
@@ -245,9 +269,9 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 }
 
 // handleUserStateChange sets the user's synchronized field
-func (ctrl *Controller) handleUserStateChange(userID string, stateChange StateChangedPayload) {
+func (ctrl *Controller) handleUserStateChange(payload UserStateChangedPayload) {
 	msg := "[playerctrl] handle user state change"
-	err := ctrl.userCollection.SetSynchronized(context.TODO(), userID, !stateChange.Paused)
+	err := ctrl.userCollection.SetSynchronized(context.TODO(), payload.UserID, !payload.Paused)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}

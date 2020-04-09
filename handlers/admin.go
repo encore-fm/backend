@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -80,7 +82,11 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, response)
 
 	// register session at playerController
-	h.PlayerCtrl.Clients <- sess.ID
+	h.eventBus.Publish(
+		player.RegisterSessionEvent,
+		events.GroupIDAny,
+		player.RegisterSessionPayload{SessionID: sess.ID},
+	)
 }
 
 func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
@@ -111,7 +117,7 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
 
 	log.Infof("%v: admin removed song [%v]", msg, songID)
 	jsonResponse(w, songList)

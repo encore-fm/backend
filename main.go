@@ -3,10 +3,10 @@ package main
 import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
-	"github.com/antonbaumann/spotify-jukebox/sse"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
@@ -28,6 +28,11 @@ func spotifyAuthSetup() spotify.Authenticator {
 
 func main() {
 	config.Setup()
+
+	// init event bus
+	eventBus := events.NewEventBus()
+	eventBus.Start()
+
 	// connect to database
 	dbConn, err := db.New()
 	if err != nil {
@@ -52,19 +57,19 @@ func main() {
 	// create spotify authenticator
 	spotifyAuth := spotifyAuthSetup()
 
-	// create broker
-	sseBroker := sse.NewBroker()
-	sseBroker.Start()
-	log.Info("[startup] successfully started SSE broker")
-
 	// create controller
-	playerCtrl := player.NewController(sessHandle, userHandle, spotifyAuth)
+	playerCtrl := player.NewController(
+		eventBus,
+		sessHandle,
+		userHandle,
+		spotifyAuth,
+	)
 	if err := playerCtrl.Start(); err != nil {
 		log.Fatalf("[startup] staring player controller: %v", err)
 	}
 	log.Info("[startup] successfully started player controller")
 
 	// start server
-	svr := server.New(userHandle, sessHandle, spotifyAuth, spotifyClient, sseBroker, playerCtrl)
+	svr := server.New(eventBus, userHandle, sessHandle, spotifyAuth, spotifyClient)
 	svr.Start()
 }
