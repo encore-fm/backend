@@ -25,7 +25,7 @@ type handler struct {
 var _ Handler = (*handler)(nil)
 
 func New(eventBus events.EventBus) Handler {
-	return &handler{eventBus:eventBus}
+	return &handler{eventBus: eventBus}
 }
 
 // This Broker method handles and HTTP request at the "/users/{session_id}" URL.

@@ -18,4 +18,3 @@ func UserListSongs(username string, secret string, sessionID string) (resp *http
 
 	return client.Do(req)
 }
-

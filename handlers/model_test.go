@@ -18,7 +18,7 @@ func TestNew(t *testing.T) {
 	sessCol := db.SessionCollection(nil)
 
 	expected := &handler{
-		eventBus: eventBus,
+		eventBus:             eventBus,
 		spotifyAuthenticator: auth,
 		Spotify:              cli,
 		UserCollection:       userCol,
