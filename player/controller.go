@@ -7,9 +7,13 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
+
+// todo: don't send events from buggy Spotify SDK player
+const DelayCompensation = time.Millisecond * 300
 
 var (
 	ErrEventPayloadMalformed = errors.New("event payload malformed")
@@ -19,7 +23,6 @@ var (
 const (
 	ControllerStateChangedEvent events.EventType = "controller_player_state_changed"
 	AdminStateChangedEvent      events.EventType = "admin_player_state_changed"
-	UserStateChangedEvent       events.EventType = "user_player_state_changed"
 )
 
 type StateChangedPayload struct {
@@ -27,11 +30,6 @@ type StateChangedPayload struct {
 	Duration int    `json:"duration"`
 	Position int    `json:"position"`
 	Paused   bool   `json:"paused"`
-}
-
-type UserStateChangedPayload struct {
-	UserID string `json:"user_id"`
-	StateChangedPayload
 }
 
 // define register session events
@@ -123,11 +121,6 @@ func (ctrl *Controller) eventLoop() {
 		[]events.GroupID{events.GroupIDAny},
 	)
 
-	userSub := ctrl.eventBus.Subscribe(
-		[]events.EventType{UserStateChangedEvent},
-		[]events.GroupID{events.GroupIDAny},
-	)
-
 	for {
 		select {
 		case event := <-adminSub.Channel:
@@ -145,15 +138,6 @@ func (ctrl *Controller) eventLoop() {
 				log.Error("[playerctrl] event payload malformed")
 			}
 			ctrl.notifyClients(string(ev.GroupID), payload, true)
-
-		case ev := <-userSub.Channel:
-			log.Infof("[playerctrl] UserStateChangeEvent: %v", ev.GroupID)
-			payload, ok := ev.Data.(UserStateChangedPayload)
-			if !ok {
-				log.Error("[playerctrl] event payload malformed")
-			}
-			ctrl.handleUserStateChange(payload)
-
 		}
 	}
 }
@@ -161,9 +145,9 @@ func (ctrl *Controller) eventLoop() {
 func (ctrl *Controller) setTimer(sessionID string, duration time.Duration, f func()) {
 	t, ok := ctrl.timers[sessionID]
 	if !ok {
-		ctrl.timers[sessionID] = time.AfterFunc(duration, f)
+		ctrl.timers[sessionID] = time.AfterFunc(duration -DelayCompensation, f)
 	} else {
-		t.Reset(duration)
+		t.Reset(duration - DelayCompensation)
 	}
 }
 
@@ -220,7 +204,9 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		Position: 0,
 		Paused:   false,
 	}
+
 	ctrl.eventBus.Publish(ControllerStateChangedEvent, events.GroupID(sessionID), payload)
+	ctrl.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList[1:])
 
 	// fetch next song after song has ended
 	ctrl.setTimer(
@@ -268,11 +254,3 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 	}
 }
 
-// handleUserStateChange sets the user's synchronized field
-func (ctrl *Controller) handleUserStateChange(payload UserStateChangedPayload) {
-	msg := "[playerctrl] handle user state change"
-	err := ctrl.userCollection.SetSynchronized(context.TODO(), payload.UserID, !payload.Paused)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-	}
-}

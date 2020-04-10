@@ -74,6 +74,7 @@ func (eb *eventBus) Subscribe(types []EventType, groupIDs []GroupID) subscriptio
 
 // removes channel from topics
 func (eb *eventBus) Unsubscribe(sub subscription) {
+	msg := "[eventbus] unsubscribe"
 	for _, eventType := range sub.Types {
 		if groups, ok := eb.subscribers[eventType]; ok {
 			for _, id := range sub.Groups {
@@ -89,6 +90,8 @@ func (eb *eventBus) Unsubscribe(sub subscription) {
 			}
 		}
 	}
+	close(sub.Channel)
+	log.Infof("%v: type=%v groups=%v", msg, sub.Types, sub.Groups)
 }
 
 func (eb *eventBus) Publish(eventType EventType, groupID GroupID, data EventPayload) {

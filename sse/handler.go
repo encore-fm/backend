@@ -85,10 +85,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Write to the ResponseWriter, `w`.
-		_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Data, data)
+		_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Type, data)
 		if err != nil {
 			log.Errorf(msg, err)
 		}
+
+		log.Infof("[sse] sent event: type=%v group=%v", event.Type, event.GroupID)
 
 		// Flush the response. This is only possible if
 		// the response supports streaming.

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
@@ -18,6 +19,7 @@ import (
 type AdminHandler interface {
 	CreateSession(w http.ResponseWriter, r *http.Request)
 	RemoveSong(w http.ResponseWriter, r *http.Request)
+	PutPlayerState(w http.ResponseWriter, r *http.Request)
 }
 
 var _ AdminHandler = (*handler)(nil)
@@ -122,3 +124,26 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	log.Infof("%v: admin removed song [%v]", msg, songID)
 	jsonResponse(w, songList)
 }
+
+func (h *handler) PutPlayerState(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] player state change"
+
+	sessionID := r.Header.Get("Session")
+
+	var payload player.StateChangedPayload
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil || payload.SongID == "" {
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestBodyMalformedError)
+		return
+	}
+
+	h.eventBus.Publish(player.AdminStateChangedEvent, events.GroupID(sessionID), payload)
+
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "success",
+	}
+	jsonResponse(w, response)
+}
+
