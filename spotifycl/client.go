@@ -42,9 +42,9 @@ func (c *SpotifyClient) Start() {
 	go func() {
 		for {
 			select {
-			case <- c.ticker.C:
+			case <-c.ticker.C:
 				c.refreshToken()
-			case <- c.quit:
+			case <-c.quit:
 				c.ticker.Stop()
 				return
 			}

@@ -5,6 +5,8 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/util"
 )
 
+const IDBytes = 16
+
 // Session stores session information
 // todo: maybe save session options later
 type Session struct {
@@ -13,7 +15,7 @@ type Session struct {
 }
 
 func New() (*Session, error) {
-	sessionID, err := util.GenerateSecret()
+	sessionID, err := util.GenerateSecret(IDBytes)
 	if err != nil {
 		return nil, err
 	}

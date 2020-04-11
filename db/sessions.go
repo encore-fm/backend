@@ -11,6 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type SessionCollection interface {
@@ -50,7 +52,8 @@ func NewSessionCollection(client *mongo.Client) SessionCollection {
 func (c *sessionCollection) AddSession(ctx context.Context, sess *session.Session) error {
 	errMsg := "[db] add session: %w"
 	if _, err := c.collection.InsertOne(ctx, sess); err != nil {
-		if _, ok := err.(mongo.WriteException); ok {
+		if err, ok := err.(mongo.WriteException); ok {
+			log.Error(err)
 			return fmt.Errorf(errMsg, ErrSessionAlreadyExisting)
 		}
 		return fmt.Errorf(errMsg, err)

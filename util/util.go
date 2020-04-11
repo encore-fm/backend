@@ -6,8 +6,8 @@ import (
 )
 
 // returns a 128 char secret key
-func GenerateSecret() (string, error) {
-	key := make([]byte, 64)
+func GenerateSecret(bytes int) (string, error) {
+	key := make([]byte, bytes)
 	_, err := rand.Read(key)
 	if err != nil {
 		return "", fmt.Errorf("generate secret: %v", err)

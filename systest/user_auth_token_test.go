@@ -5,12 +5,13 @@ package systest
 import (
 	"context"
 	"encoding/json"
+	"testing"
+
 	"github.com/antonbaumann/spotify-jukebox/handlers"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/oauth2"
-	"testing"
 )
 
 func Test_UserGetAuthToken_Authorized(t *testing.T) {

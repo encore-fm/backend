@@ -2,14 +2,15 @@ package util
 
 import (
 	"errors"
-	"github.com/magiconair/properties/assert"
 	"regexp"
 	"testing"
+
+	"github.com/magiconair/properties/assert"
 )
 
 func TestGenerateSecret(t *testing.T) {
 	alphanumRegex := regexp.MustCompile("^[a-zA-Z0-9]{128}$")
-	secret, err := GenerateSecret()
+	secret, err := GenerateSecret(64)
 	if err != nil {
 		t.Error(err)
 	}

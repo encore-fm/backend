@@ -11,8 +11,8 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/db/mocks"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/song"
-	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )
@@ -40,16 +40,12 @@ func TestHandler_RemoveSong(t *testing.T) {
 			nil,
 		)
 
-	// take element from chanel to avoid blocking
-	ch := make(chan sse.Event)
-	go func() {
-		<-ch
-	}()
-
+	eventBus := events.NewEventBus()
+	eventBus.Start()
 	// create handler with mock collections
 	handler := &handler{
 		SessionCollection: sessionCollection,
-		Broker:            &sse.Broker{Notifier: ch},
+		eventBus:          eventBus,
 	}
 	adminHandler := AdminHandler(handler)
 

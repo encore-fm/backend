@@ -2,12 +2,11 @@ package handlers
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -25,7 +24,6 @@ type UserHandler interface {
 	Vote(w http.ResponseWriter, r *http.Request)
 	ClientToken(w http.ResponseWriter, r *http.Request)
 	AuthToken(w http.ResponseWriter, r *http.Request)
-	PlayerStateChange(w http.ResponseWriter, r *http.Request)
 }
 
 var _ UserHandler = (*handler)(nil)
@@ -157,7 +155,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: event: %v", msg, err)
 	}
 
-	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
 }
 
 // ListSongs returns all songs in one session
@@ -245,7 +243,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	log.Infof("user [%v] %vvoted song [%v]", username, voteAction, songID)
 	jsonResponse(w, songList)
 
-	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
 }
 
 // returns client token
@@ -298,51 +296,4 @@ func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(w, token)
 	log.Infof("%v: user=[%v], session=[%v]", msg, username, sessionID)
-}
-
-func (h *handler) PlayerStateChange(w http.ResponseWriter, r *http.Request) {
-	msg := "[handler] player state change"
-	ctx := context.Background()
-
-	vars := mux.Vars(r)
-	username := vars["username"]
-	sessionID := r.Header.Get("Session")
-	userID := user.GenerateUserID(username, sessionID)
-
-	usr, err := h.UserCollection.GetUserByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, db.ErrNoUserWithID) {
-			handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorizedError)
-			return
-		} else {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
-	}
-
-	var payload player.StateChangedPayload
-	err = json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil || payload.SongID == "" {
-		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestBodyMalformedError)
-		return
-	}
-
-	eventType := player.UserStateChangedEvent
-	if usr.IsAdmin {
-		eventType = player.AdminStateChangedEvent
-	}
-	event := player.Event{
-		SessionID:    sessionID,
-		Type:         eventType,
-		Payload:      payload,
-		SenderUserID: userID,
-	}
-	h.PlayerCtrl.Events <- event
-
-	response := struct {
-		Message string `json:"message"`
-	}{
-		Message: "success",
-	}
-	jsonResponse(w, response)
 }
