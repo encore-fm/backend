@@ -234,6 +234,9 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 		}
 
 		if !stateChange.Paused {
+			// usually we dont want to overwrite the state at the
+			// admin's "real spotify player" since this function mostly
+			// gets called if the admin changes his player state
 			if !client.IsAdmin || notifyAdmin {
 				if err := spotifyClient.PlayOpt(opt); err != nil {
 					log.Errorf("%v: %v", msg, err)
