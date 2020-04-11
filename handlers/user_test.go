@@ -10,9 +10,9 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/db/mocks"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/song"
-	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
@@ -244,17 +244,13 @@ func TestHandler_Vote(t *testing.T) {
 		).
 		Return(nil)
 
-	// take element from chanel to avoid blocking
-	ch := make(chan sse.Event)
-	go func() {
-		<-ch
-	}()
-
+	eventBus := events.NewEventBus()
+	eventBus.Start()
 	// create handler with mock collections
 	handler := &handler{
 		SessionCollection: sessionCollection,
 		UserCollection:    userCollection,
-		Broker:            &sse.Broker{Notifier: ch},
+		eventBus:          eventBus,
 	}
 	userHandler := UserHandler(handler)
 

@@ -18,4 +18,3 @@ func UserGetClientToken(username, secret, sessionID string) (*http.Response, err
 
 	return client.Do(req)
 }
-

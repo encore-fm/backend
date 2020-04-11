@@ -189,4 +189,3 @@ func Test_AdminRemoveSong_UserRequest_UserSong(t *testing.T) {
 	songList = sess.SongList
 	assert.NotEmpty(t, songList)
 }
-

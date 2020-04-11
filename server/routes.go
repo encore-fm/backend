@@ -54,11 +54,6 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/authToken",
 		auth(http.HandlerFunc(s.UserHandler.AuthToken)),
 	).Methods(http.MethodGet)
-
-	r.Handle(
-		"/users/{username}/playerState",
-		auth(http.HandlerFunc(s.UserHandler.PlayerStateChange)),
-	).Methods(http.MethodPut)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {
@@ -71,6 +66,11 @@ func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/removeSong/{song_id}",
 		auth(http.HandlerFunc(s.AdminHandler.RemoveSong)),
 	).Methods(http.MethodDelete)
+
+	r.Handle(
+		"/users/{username}/playerState",
+		auth(http.HandlerFunc(s.AdminHandler.PutPlayerState)),
+	).Methods(http.MethodPut)
 }
 
 func (s *Model) setupSpotifyRoutes(r *mux.Router) {
@@ -83,6 +83,6 @@ func (s *Model) setupSpotifyRoutes(r *mux.Router) {
 func (s *Model) setupEventRoutes(r *mux.Router) {
 	r.Handle(
 		"/events/{username}/{session_id}",
-		http.HandlerFunc(s.Broker.ServeHTTP),
+		http.HandlerFunc(s.SSEHandler.ServeHTTP),
 	)
 }

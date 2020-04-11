@@ -18,4 +18,3 @@ func UserDownvote(username, secret, sessionID, songID string) (resp *http.Respon
 
 	return client.Do(req)
 }
-

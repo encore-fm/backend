@@ -2,10 +2,13 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -16,6 +19,7 @@ import (
 type AdminHandler interface {
 	CreateSession(w http.ResponseWriter, r *http.Request)
 	RemoveSong(w http.ResponseWriter, r *http.Request)
+	PutPlayerState(w http.ResponseWriter, r *http.Request)
 }
 
 var _ AdminHandler = (*handler)(nil)
@@ -80,7 +84,11 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, response)
 
 	// register session at playerController
-	h.PlayerCtrl.Clients <- sess.ID
+	h.eventBus.Publish(
+		player.RegisterSessionEvent,
+		events.GroupIDAny,
+		player.RegisterSessionPayload{SessionID: sess.ID},
+	)
 }
 
 func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
@@ -111,8 +119,31 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.SendEvent(sessionID, sse.PlaylistChange, songList)
+	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
 
 	log.Infof("%v: admin removed song [%v]", msg, songID)
 	jsonResponse(w, songList)
 }
+
+func (h *handler) PutPlayerState(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] player state change"
+
+	sessionID := r.Header.Get("Session")
+
+	var payload player.StateChangedPayload
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil || payload.SongID == "" {
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestBodyMalformedError)
+		return
+	}
+
+	h.eventBus.Publish(player.AdminStateChangedEvent, events.GroupID(sessionID), payload)
+
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "success",
+	}
+	jsonResponse(w, response)
+}
+
