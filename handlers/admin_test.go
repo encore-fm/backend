@@ -23,17 +23,17 @@ func TestHandler_RemoveSong(t *testing.T) {
 	songID := "song_id"
 	username := "username"
 
-	// set up sessionCollection mock
-	var sessionCollection db.SessionCollection
-	sessionCollection = &mocks.SessionCollection{}
+	// set up songCollection mock
+	var songCollection db.SongCollection
+	songCollection = &mocks.SongCollection{}
 
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("RemoveSong", context.TODO(), sessionID, songID).
 		Return(
 			nil,
 		)
 
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("ListSongs", context.TODO(), sessionID).
 		Return(
 			[]*song.Model{},
@@ -44,7 +44,7 @@ func TestHandler_RemoveSong(t *testing.T) {
 	eventBus.Start()
 	// create handler with mock collections
 	handler := &handler{
-		SessionCollection: sessionCollection,
+		SongCollection: songCollection,
 		eventBus:          eventBus,
 	}
 	adminHandler := AdminHandler(handler)
@@ -88,11 +88,11 @@ func TestHandler_RemoveSong_NoSessionWithID(t *testing.T) {
 	songID := "song_id"
 	username := "username"
 
-	// set up sessionCollection mock
-	var sessionCollection db.SessionCollection
-	sessionCollection = &mocks.SessionCollection{}
+	// set up songCollection mock
+	var songCollection db.SongCollection
+	songCollection = &mocks.SongCollection{}
 
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("RemoveSong", context.TODO(), sessionID, songID).
 		Return(
 			db.ErrNoSessionWithID,
@@ -100,7 +100,7 @@ func TestHandler_RemoveSong_NoSessionWithID(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SessionCollection: sessionCollection,
+		SongCollection: songCollection,
 	}
 	adminHandler := AdminHandler(handler)
 
@@ -139,11 +139,11 @@ func TestHandler_RemoveSong_NoSongWithID(t *testing.T) {
 	songID := "song_id"
 	username := "username"
 
-	// set up sessionCollection mock
-	var sessionCollection db.SessionCollection
-	sessionCollection = &mocks.SessionCollection{}
+	// set up songCollection mock
+	var songCollection db.SongCollection
+	songCollection = &mocks.SongCollection{}
 
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("RemoveSong", context.TODO(), sessionID, songID).
 		Return(
 			db.ErrNoSongWithID,
@@ -151,7 +151,7 @@ func TestHandler_RemoveSong_NoSongWithID(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SessionCollection: sessionCollection,
+		SongCollection: songCollection,
 	}
 	adminHandler := AdminHandler(handler)
 
@@ -191,11 +191,11 @@ func TestHandler_RemoveSong_UnknownError(t *testing.T) {
 	username := "username"
 	unknownErr := errors.New("unknown")
 
-	// set up sessionCollection mock
-	var sessionCollection db.SessionCollection
-	sessionCollection = &mocks.SessionCollection{}
+	// set up songCollection mock
+	var songCollection db.SongCollection
+	songCollection = &mocks.SongCollection{}
 
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("RemoveSong", context.TODO(), sessionID, songID).
 		Return(
 			unknownErr,
@@ -203,7 +203,7 @@ func TestHandler_RemoveSong_UnknownError(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SessionCollection: sessionCollection,
+		SongCollection: songCollection,
 	}
 	adminHandler := AdminHandler(handler)
 

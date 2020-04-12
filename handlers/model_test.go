@@ -15,7 +15,8 @@ func TestNew(t *testing.T) {
 	auth := spotify.NewAuthenticator("http://123.de")
 	cli := &spotifycl.SpotifyClient{}
 	userCol := db.UserCollection(nil)
-	sessCol := db.SessionCollection(nil)
+	sessCol := db.So(nil)
+	songCol := db.SongCollection(nil)
 
 	expected := &handler{
 		eventBus:             eventBus,
@@ -23,9 +24,10 @@ func TestNew(t *testing.T) {
 		Spotify:              cli,
 		UserCollection:       userCol,
 		SessionCollection:    sessCol,
+		SongCollection:       songCol,
 	}
 
-	result := New(eventBus, userCol, sessCol, auth, cli)
+	result := New(eventBus, userCol, sessCol, songCol, auth, cli)
 
 	assert.Equal(t, expected, result)
 }

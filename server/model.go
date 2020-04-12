@@ -13,7 +13,8 @@ import (
 type Model struct {
 	Port              int
 	UserCollection    db.UserCollection
-	SessionCollection db.SessionCollection
+	SessionCollection db.So
+	SongCollection    db.SongCollection
 	SSEHandler        sse.Handler
 	AdminHandler      handlers.AdminHandler
 	UserHandler       handlers.UserHandler
@@ -25,7 +26,8 @@ type Model struct {
 func New(
 	eventBus events.EventBus,
 	userHandle db.UserCollection,
-	sessHandle db.SessionCollection,
+	sessHandle db.So,
+	songHandle db.SongCollection,
 	spotifyAuth spotify.Authenticator,
 	spotifyClient *spotifycl.SpotifyClient,
 ) *Model {
@@ -34,6 +36,7 @@ func New(
 		eventBus,
 		userHandle,
 		sessHandle,
+		songHandle,
 		spotifyAuth,
 		spotifyClient,
 	)
@@ -44,6 +47,7 @@ func New(
 		Port:              config.Conf.Server.Port,
 		UserCollection:    userHandle,
 		SessionCollection: sessHandle,
+		SongCollection:    songHandle,
 		SSEHandler:        sseHandler,
 		AdminHandler:      handlers.AdminHandler(handler),
 		UserHandler:       handlers.UserHandler(handler),
