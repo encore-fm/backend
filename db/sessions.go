@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/player"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/session"
@@ -18,6 +19,7 @@ type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 	ListSessionIDs(ctx context.Context) ([]string, error)
+	SetPlayer(ctx context.Context, sessionID string, newPlayer player.Player) error
 }
 
 type sessionCollection struct {
@@ -98,4 +100,28 @@ func (c *sessionCollection) ListSessionIDs(ctx context.Context) ([]string, error
 	}
 
 	return sessIDs, nil
+}
+
+func (c *sessionCollection) SetPlayer(ctx context.Context, sessionID string, newPlayer player.Player) error {
+	errMsg := "[db] update player: %w"
+	filter := bson.D{{"_id", sessionID}}
+	update := bson.D{
+		{
+			Key: "$set",
+			Value: bson.D{
+				{
+					Key:   "player",
+					Value: newPlayer,
+				},
+			},
+		},
+	}
+	result, err := c.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if result.ModifiedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoSessionWithID)
+	}
+	return nil
 }

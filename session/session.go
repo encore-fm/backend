@@ -1,6 +1,7 @@
 package session
 
 import (
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/util"
 )
@@ -12,6 +13,7 @@ const IDBytes = 16
 type Session struct {
 	ID       string        `json:"id" bson:"_id"`
 	SongList []*song.Model `json:"song_list" bson:"song_list"`
+	Player   player.Player `json:"player" bson:"player"`
 }
 
 func New() (*Session, error) {

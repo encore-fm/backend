@@ -217,6 +217,17 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		time.Duration(nextSong.Duration)*time.Millisecond,
 		func() { ctrl.getNextSong(sessionID) },
 	)
+
+	// update session player
+	newPlayer := Player{
+		CurrentSong:  *nextSong,
+		SongProgress: 0,
+		SongStart:    time.Now(),
+		Paused:       false,
+	}
+	if err := ctrl.sessionCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
 }
 
 // synchronizes all connected users with admin player state
