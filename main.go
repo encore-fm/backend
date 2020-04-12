@@ -4,7 +4,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	log "github.com/sirupsen/logrus"
@@ -59,7 +59,7 @@ func main() {
 	spotifyAuth := spotifyAuthSetup()
 
 	// create controller
-	playerCtrl := player.NewController(
+	playerCtrl := playerctrl.NewController(
 		eventBus,
 		sessDB,
 		songDB,
@@ -67,7 +67,7 @@ func main() {
 		spotifyAuth,
 	)
 	if err := playerCtrl.Start(); err != nil {
-		log.Fatalf("[startup] staring player controller: %v", err)
+		log.Fatalf("[startup] starting player controller: %v", err)
 	}
 	log.Info("[startup] successfully started player controller")
 

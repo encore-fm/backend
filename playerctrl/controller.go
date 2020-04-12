@@ -1,8 +1,9 @@
-package player
+package playerctrl
 
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
@@ -219,7 +220,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	)
 
 	// update session player
-	newPlayer := Player{
+	newPlayer := player.Player{
 		CurrentSong:  *nextSong,
 		SongProgress: 0,
 		SongStart:    time.Now(),
