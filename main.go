@@ -40,7 +40,7 @@ func main() {
 	}
 	userDB := db.NewUserCollection(dbConn.Client)
 	sessDB := db.NewSessionCollection(dbConn.Client)
-	songDB := db.NewSessionCollection(dbConn.Client)
+	songDB := db.NewSongCollection(dbConn.Client)
 	log.Infof(
 		"[startup] successfully connected to database at %v:%v",
 		config.Conf.Database.DBHost,
@@ -62,6 +62,7 @@ func main() {
 	playerCtrl := player.NewController(
 		eventBus,
 		sessDB,
+		songDB,
 		userDB,
 		spotifyAuth,
 	)

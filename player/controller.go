@@ -40,7 +40,7 @@ type RegisterSessionPayload struct {
 }
 
 type Controller struct {
-	sessionCollection db.So
+	sessionCollection db.SessionCollection
 	songCollection    db.SongCollection
 	userCollection    db.UserCollection
 
@@ -59,7 +59,7 @@ type Controller struct {
 
 func NewController(
 	eventBus events.EventBus,
-	sessionCollection db.So,
+	sessionCollection db.SessionCollection,
 	songCollection db.SongCollection,
 	userCollection db.UserCollection,
 	authenticator spotify.Authenticator,

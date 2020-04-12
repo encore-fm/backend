@@ -26,7 +26,7 @@ func TestHandler_Join(t *testing.T) {
 	username := "username"
 
 	// set up sessionCollection mock
-	var sessionCollection db.So
+	var sessionCollection db.SessionCollection
 	sessionCollection = &mocks.SessionCollection{}
 
 	// set up userCollection mock

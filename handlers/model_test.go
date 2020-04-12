@@ -15,7 +15,7 @@ func TestNew(t *testing.T) {
 	auth := spotify.NewAuthenticator("http://123.de")
 	cli := &spotifycl.SpotifyClient{}
 	userCol := db.UserCollection(nil)
-	sessCol := db.So(nil)
+	sessCol := db.SessionCollection(nil)
 	songCol := db.SongCollection(nil)
 
 	expected := &handler{

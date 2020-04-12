@@ -13,7 +13,7 @@ import (
 type Model struct {
 	Port              int
 	UserCollection    db.UserCollection
-	SessionCollection db.So
+	SessionCollection db.SessionCollection
 	SongCollection    db.SongCollection
 	SSEHandler        sse.Handler
 	AdminHandler      handlers.AdminHandler
@@ -26,7 +26,7 @@ type Model struct {
 func New(
 	eventBus events.EventBus,
 	userHandle db.UserCollection,
-	sessHandle db.So,
+	sessHandle db.SessionCollection,
 	songHandle db.SongCollection,
 	spotifyAuth spotify.Authenticator,
 	spotifyClient *spotifycl.SpotifyClient,

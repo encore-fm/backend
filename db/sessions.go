@@ -14,7 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type So interface {
+type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 	ListSessionIDs(ctx context.Context) ([]string, error)
@@ -25,10 +25,10 @@ type sessionCollection struct {
 	collection *mongo.Collection
 }
 
-var _ So = (*sessionCollection)(nil)
+var _ SessionCollection = (*sessionCollection)(nil)
 
 // NewSessionCollection creates a new sessionCollection from a client
-func NewSessionCollection(client *mongo.Client) So {
+func NewSessionCollection(client *mongo.Client) SessionCollection {
 	collection := client.
 		Database(config.Conf.Database.DBName).
 		Collection(config.Conf.Database.SessionCollectionName)
