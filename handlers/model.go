@@ -13,12 +13,14 @@ type handler struct {
 	Spotify              *spotifycl.SpotifyClient
 	UserCollection       db.UserCollection
 	SessionCollection    db.SessionCollection
+	SongCollection       db.SongCollection
 }
 
 func New(
 	eventBus events.EventBus,
 	userCollection db.UserCollection,
 	sessCollection db.SessionCollection,
+	songCollection db.SongCollection,
 	auth spotify.Authenticator,
 	client *spotifycl.SpotifyClient,
 ) *handler {
@@ -28,5 +30,6 @@ func New(
 		Spotify:              client,
 		UserCollection:       userCollection,
 		SessionCollection:    sessCollection,
+		SongCollection:       songCollection,
 	}
 }

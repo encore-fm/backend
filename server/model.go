@@ -14,6 +14,7 @@ type Model struct {
 	Port              int
 	UserCollection    db.UserCollection
 	SessionCollection db.SessionCollection
+	SongCollection    db.SongCollection
 	SSEHandler        sse.Handler
 	AdminHandler      handlers.AdminHandler
 	UserHandler       handlers.UserHandler
@@ -26,6 +27,7 @@ func New(
 	eventBus events.EventBus,
 	userHandle db.UserCollection,
 	sessHandle db.SessionCollection,
+	songHandle db.SongCollection,
 	spotifyAuth spotify.Authenticator,
 	spotifyClient *spotifycl.SpotifyClient,
 ) *Model {
@@ -34,6 +36,7 @@ func New(
 		eventBus,
 		userHandle,
 		sessHandle,
+		songHandle,
 		spotifyAuth,
 		spotifyClient,
 	)
@@ -44,6 +47,7 @@ func New(
 		Port:              config.Conf.Server.Port,
 		UserCollection:    userHandle,
 		SessionCollection: sessHandle,
+		SongCollection:    songHandle,
 		SSEHandler:        sseHandler,
 		AdminHandler:      handlers.AdminHandler(handler),
 		UserHandler:       handlers.UserHandler(handler),

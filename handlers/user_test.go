@@ -153,18 +153,18 @@ func TestHandler_ListSongs(t *testing.T) {
 	sessionID := "session_id"
 	songList := make([]*song.Model, 0)
 
-	// set up sessionCollection mock
-	var sessionCollection db.SessionCollection
-	sessionCollection = &mocks.SessionCollection{}
+	// set up songCollection mock
+	var songCollection db.SongCollection
+	songCollection = &mocks.SongCollection{}
 
 	// no error
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("ListSongs", context.TODO(), sessionID).
 		Return(songList, nil)
 
 	// create handler with mock collections
 	handler := &handler{
-		SessionCollection: sessionCollection,
+		SongCollection: songCollection,
 	}
 	userHandler := UserHandler(handler)
 
@@ -212,26 +212,26 @@ func TestHandler_Vote(t *testing.T) {
 
 	songList := []*song.Model{songInfo}
 
-	// set up sessionCollection mock
-	var sessionCollection db.SessionCollection
-	sessionCollection = &mocks.SessionCollection{}
+	// set up songCollection mock
+	var songCollection db.SongCollection
+	songCollection = &mocks.SongCollection{}
 
 	// set up userCollection mock
 	var userCollection db.UserCollection
 	userCollection = &mocks.UserCollection{}
 
 	// no error on vote up
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("VoteUp", context.TODO(), sessionID, songID, username).
 		Return(scoreChange, nil)
 
 	// no error on GetSongByID
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("GetSongByID", context.TODO(), sessionID, songID).
 		Return(songInfo, nil)
 
 	// no error on ListSongs
-	sessionCollection.(*mocks.SessionCollection).
+	songCollection.(*mocks.SongCollection).
 		On("ListSongs", context.TODO(), sessionID).
 		Return(songList, nil)
 
@@ -248,9 +248,9 @@ func TestHandler_Vote(t *testing.T) {
 	eventBus.Start()
 	// create handler with mock collections
 	handler := &handler{
-		SessionCollection: sessionCollection,
-		UserCollection:    userCollection,
-		eventBus:          eventBus,
+		SongCollection: songCollection,
+		UserCollection: userCollection,
+		eventBus:       eventBus,
 	}
 	userHandler := UserHandler(handler)
 

@@ -137,7 +137,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	songInfo := song.New(username, 1, fullTrack)
 	songInfo.Upvoters = append(songInfo.Upvoters, username)
 
-	if err := h.SessionCollection.AddSong(ctx, sessionID, songInfo); err != nil {
+	if err := h.SongCollection.AddSong(ctx, sessionID, songInfo); err != nil {
 		if errors.Is(err, db.ErrSongAlreadyInSession) {
 			handleError(w, http.StatusConflict, log.WarnLevel, msg, err, SongConflictError)
 		} else {
@@ -150,7 +150,7 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, songInfo)
 
 	// fetch songList and send event
-	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
+	songList, err := h.SongCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: event: %v", msg, err)
 	}
@@ -168,7 +168,7 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := r.Header.Get("Session")
 
-	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
+	songList, err := h.SongCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
@@ -201,20 +201,20 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if voteAction == "up" {
-		scoreChange, err = h.SessionCollection.VoteUp(ctx, sessionID, songID, username)
+		scoreChange, err = h.SongCollection.VoteUp(ctx, sessionID, songID, username)
 		if err != nil {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
 	} else {
-		scoreChange, err = h.SessionCollection.VoteDown(ctx, sessionID, songID, username)
+		scoreChange, err = h.SongCollection.VoteDown(ctx, sessionID, songID, username)
 		if err != nil {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
 	}
 
-	songInfo, err := h.SessionCollection.GetSongByID(ctx, sessionID, songID)
+	songInfo, err := h.SongCollection.GetSongByID(ctx, sessionID, songID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
@@ -234,7 +234,7 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// return updated song list
-	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
+	songList, err := h.SongCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return

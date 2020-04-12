@@ -41,6 +41,7 @@ type RegisterSessionPayload struct {
 
 type Controller struct {
 	sessionCollection db.SessionCollection
+	songCollection    db.SongCollection
 	userCollection    db.UserCollection
 
 	authenticator spotify.Authenticator
@@ -59,12 +60,14 @@ type Controller struct {
 func NewController(
 	eventBus events.EventBus,
 	sessionCollection db.SessionCollection,
+	songCollection db.SongCollection,
 	userCollection db.UserCollection,
 	authenticator spotify.Authenticator,
 ) *Controller {
 	controller := &Controller{
 		sessionCollection: sessionCollection,
 		userCollection:    userCollection,
+		songCollection:    songCollection,
 		authenticator:     authenticator,
 		eventBus:          eventBus,
 		Clients:           make(chan string),
@@ -145,7 +148,7 @@ func (ctrl *Controller) eventLoop() {
 func (ctrl *Controller) setTimer(sessionID string, duration time.Duration, f func()) {
 	t, ok := ctrl.timers[sessionID]
 	if !ok {
-		ctrl.timers[sessionID] = time.AfterFunc(duration -DelayCompensation, f)
+		ctrl.timers[sessionID] = time.AfterFunc(duration-DelayCompensation, f)
 	} else {
 		t.Reset(duration - DelayCompensation)
 	}
@@ -166,7 +169,7 @@ func (ctrl *Controller) stopTimer(sessionID string) {
 func (ctrl *Controller) getNextSong(sessionID string) {
 	msg := "[playerctrl] get next song from db"
 	ctx := context.Background()
-	songList, err := ctrl.sessionCollection.ListSongs(ctx, sessionID)
+	songList, err := ctrl.songCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		// if error occurs while fetching list
 		// log error and try again in 500ms
@@ -194,7 +197,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	nextSong := songList[0]
 
 	// remove nextSong from db
-	if err := ctrl.sessionCollection.RemoveSong(ctx, sessionID, nextSong.ID); err != nil {
+	if err := ctrl.songCollection.RemoveSong(ctx, sessionID, nextSong.ID); err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
 
@@ -253,4 +256,3 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 		}
 	}
 }
-

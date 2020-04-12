@@ -98,7 +98,7 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	songID := vars["song_id"]
 	sessionID := r.Header.Get("Session")
 
-	if err := h.SessionCollection.RemoveSong(ctx, sessionID, songID); err != nil {
+	if err := h.SongCollection.RemoveSong(ctx, sessionID, songID); err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
 			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
 		} else if errors.Is(err, db.ErrNoSongWithID) {
@@ -109,7 +109,7 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songList, err := h.SessionCollection.ListSongs(ctx, sessionID)
+	songList, err := h.SongCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
 			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)

@@ -38,8 +38,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	userHandle := db.NewUserCollection(dbConn.Client)
-	sessHandle := db.NewSessionCollection(dbConn.Client)
+	userDB := db.NewUserCollection(dbConn.Client)
+	sessDB := db.NewSessionCollection(dbConn.Client)
+	songDB := db.NewSongCollection(dbConn.Client)
 	log.Infof(
 		"[startup] successfully connected to database at %v:%v",
 		config.Conf.Database.DBHost,
@@ -60,8 +61,9 @@ func main() {
 	// create controller
 	playerCtrl := player.NewController(
 		eventBus,
-		sessHandle,
-		userHandle,
+		sessDB,
+		songDB,
+		userDB,
 		spotifyAuth,
 	)
 	if err := playerCtrl.Start(); err != nil {
@@ -70,6 +72,6 @@ func main() {
 	log.Info("[startup] successfully started player controller")
 
 	// start server
-	svr := server.New(eventBus, userHandle, sessHandle, spotifyAuth, spotifyClient)
+	svr := server.New(eventBus, userDB, sessDB, songDB, spotifyAuth, spotifyClient)
 	svr.Start()
 }
