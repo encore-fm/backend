@@ -194,10 +194,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 }
 
 // synchronizes all connected users with admin player state
-func (ctrl *Controller) notifyClients(
-	sessionID string,
-	state playerState,
-) {
+func (ctrl *Controller) notifyClients(sessionID string, state playerState) {
 	msg := "[playerctrl] notify clients"
 	ctx := context.Background()
 

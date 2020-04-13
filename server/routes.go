@@ -66,11 +66,6 @@ func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/removeSong/{song_id}",
 		auth(http.HandlerFunc(s.AdminHandler.RemoveSong)),
 	).Methods(http.MethodDelete)
-
-	r.Handle(
-		"/users/{username}/playerState",
-		auth(http.HandlerFunc(s.AdminHandler.PutPlayerState)),
-	).Methods(http.MethodPut)
 }
 
 func (s *Model) setupSpotifyRoutes(r *mux.Router) {
