@@ -172,7 +172,6 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	// update session player
 	newPlayer := &player.Player{
 		CurrentSong:  nextSong,
-		SongProgress: 0,
 		SongStart:    time.Now(),
 		Paused:       false,
 	}

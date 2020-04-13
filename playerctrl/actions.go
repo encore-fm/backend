@@ -31,7 +31,3 @@ func (ctrl *Controller) setPlayerStateAction(songID string, position time.Durati
 	}
 	return ctrl.setPlayerStateWithOptions(opt, paused)
 }
-
-func (ctrl *Controller) setPausedAction(paused bool) notifyAction {
-	return ctrl.setPlayerStateWithOptions(nil, paused)
-}

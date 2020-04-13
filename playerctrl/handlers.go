@@ -24,22 +24,34 @@ func (ctrl *Controller) handlePlayPause(
 		return
 	}
 
-	if err := ctrl.playerCollection.SetPaused(ctx, sessionID, payload.Paused); err != nil {
-		log.Errorf("%v: %v", msg, err)
+	if payload.Paused {
+		if err := ctrl.playerCollection.SetPaused(ctx, sessionID); err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
+	} else {
+		if err := ctrl.playerCollection.SetPlaying(ctx, sessionID); err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
 	}
 
-	// todo: implement SetPaused as findUpdate
+	// todo: implement SetPaused as findAndUpdate
 	p, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
 
-	ctrl.notifyClients(sessionID, ctrl.setPausedAction(payload.Paused))
+	ctrl.notifyClients(sessionID,
+		ctrl.setPlayerStateAction(
+			p.CurrentSong.ID,
+			p.Progress(),
+			payload.Paused,
+		),
+	)
 
 	if !payload.Paused {
 		ctrl.setTimer(
 			sessionID,
-			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-p.SongProgress,
+			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-p.Progress(),
 			func() { ctrl.getNextSong(sessionID) },
 		)
 	}

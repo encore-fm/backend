@@ -3,6 +3,8 @@ package db
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/session"
@@ -14,7 +16,8 @@ import (
 type PlayerCollection interface {
 	GetPlayer(ctx context.Context, sessionID string) (*player.Player, error)
 	SetPlayer(ctx context.Context, sessionID string, newPlayer *player.Player) error
-	SetPaused(ctx context.Context, sessionID string, paused bool) error
+	SetPaused(ctx context.Context, sessionID string) error
+	SetPlaying(ctx context.Context, sessionID string) error
 	SetProgress(ctx context.Context, sessionID, progress int) error
 }
 
@@ -80,16 +83,23 @@ func (c *playerCollection) SetPlayer(ctx context.Context, sessionID string, newP
 	return nil
 }
 
-func (c *playerCollection) SetPaused(ctx context.Context, sessionID string, paused bool) error {
+func (c *playerCollection) SetPaused(ctx context.Context, sessionID string) error {
 	errMsg := "[db] toggle playing: %w"
-	filter := bson.D{{"_id", sessionID}}
+	filter := bson.D{
+		{"_id", sessionID},
+		{"player.paused", false},
+	}
 	update := bson.D{
 		{
 			Key: "$set",
 			Value: bson.D{
 				{
 					Key:   "player.paused",
-					Value: paused,
+					Value: true,
+				},
+				{
+					Key:   "player.pause_start",
+					Value: time.Now(),
 				},
 			},
 		},
@@ -98,7 +108,71 @@ func (c *playerCollection) SetPaused(ctx context.Context, sessionID string, paus
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
-	if result.ModifiedCount == 0 {
+	if result.MatchedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoSessionWithID)
+	}
+	return nil
+}
+
+func (c *playerCollection) SetPlaying(ctx context.Context, sessionID string) error {
+	errMsg := "[db] toggle playing: %w"
+	filter := bson.D{
+		{"_id", sessionID},
+		{"player.paused", true},
+	}
+
+	/*
+		db.sessions.update(
+		{
+			"_id": "c7c75dd4be88f7b093ffeede455bcdee",
+			"player.paused": true
+		},
+		[{
+			$set: {
+				"player.paused": true,
+				"player.pause_duration": {
+					$subtract: [new Date(), "$player.pause_start"]
+				}
+			}
+		}]
+		)
+	*/
+
+	update := bson.A{
+		bson.D{
+			{
+				Key: "$set",
+				Value: bson.D{
+					{
+						Key:   "player.paused",
+						Value: false,
+					},
+					{
+						Key: "player.pause_duration",
+						Value: bson.D{
+							{
+								"$add",
+								bson.A{
+									"$player.pause_duration",
+									bson.D{
+										{
+											Key:   "$subtract",
+											Value: bson.A{time.Now(), "$player.pause_start"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	result, err := c.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if result.MatchedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoSessionWithID)
 	}
 	return nil
@@ -122,7 +196,7 @@ func (c *playerCollection) SetProgress(ctx context.Context, sessionID, progress 
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
-	if result.ModifiedCount == 0 {
+	if result.MatchedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoSessionWithID)
 	}
 	return nil
