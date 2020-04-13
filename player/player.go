@@ -1,11 +1,14 @@
 package player
 
-import "time"
+import (
+	"github.com/antonbaumann/spotify-jukebox/song"
+	"time"
+)
 
 // every session object in the db contains a player object
 type Player struct {
-	SongID       string        `json:"current_song_id" bson:"current_song_id"`
+	CurrentSong  *song.Model   `json:"current_song" bson:"current_song"`
 	SongProgress time.Duration `json:"progress" bson:"progress"`
-	SongEnd      time.Time     `json:"song_end" bson:"song_end"`
+	SongStart    time.Time     `json:"song_start" bson:"song_start"`
 	Paused       bool          `json:"paused" bson:"paused"`
 }

@@ -4,7 +4,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	log "github.com/sirupsen/logrus"
@@ -41,6 +41,7 @@ func main() {
 	userDB := db.NewUserCollection(dbConn.Client)
 	sessDB := db.NewSessionCollection(dbConn.Client)
 	songDB := db.NewSongCollection(dbConn.Client)
+	playerDB := db.NewPlayerCollection(dbConn.Client)
 	log.Infof(
 		"[startup] successfully connected to database at %v:%v",
 		config.Conf.Database.DBHost,
@@ -59,19 +60,20 @@ func main() {
 	spotifyAuth := spotifyAuthSetup()
 
 	// create controller
-	playerCtrl := player.NewController(
+	playerCtrl := playerctrl.NewController(
 		eventBus,
 		sessDB,
 		songDB,
 		userDB,
+		playerDB,
 		spotifyAuth,
 	)
 	if err := playerCtrl.Start(); err != nil {
-		log.Fatalf("[startup] staring player controller: %v", err)
+		log.Fatalf("[startup] starting player controller: %v", err)
 	}
 	log.Info("[startup] successfully started player controller")
 
 	// start server
-	svr := server.New(eventBus, userDB, sessDB, songDB, spotifyAuth, spotifyClient)
+	svr := server.New(eventBus, userDB, sessDB, songDB, playerDB, spotifyAuth, spotifyClient)
 	svr.Start()
 }

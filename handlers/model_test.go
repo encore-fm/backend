@@ -17,6 +17,7 @@ func TestNew(t *testing.T) {
 	userCol := db.UserCollection(nil)
 	sessCol := db.SessionCollection(nil)
 	songCol := db.SongCollection(nil)
+	playerCol := db.PlayerCollection(nil)
 
 	expected := &handler{
 		eventBus:             eventBus,
@@ -27,7 +28,7 @@ func TestNew(t *testing.T) {
 		SongCollection:       songCol,
 	}
 
-	result := New(eventBus, userCol, sessCol, songCol, auth, cli)
+	result := New(eventBus, userCol, sessCol, songCol, playerCol, auth, cli)
 
 	assert.Equal(t, expected, result)
 }

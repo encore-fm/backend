@@ -8,7 +8,7 @@ max_users = 1000
 [spotify]
 client_id = "client_id"
 client_secret = "client_secret"
-redirect_url = "http://127.0.0.1:8080/redirect"
+redirect_url = "http://localhost:8080/callback"
 state = "state"
 open_browser = true
 

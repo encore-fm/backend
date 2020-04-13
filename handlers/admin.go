@@ -4,16 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
-
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"net/http"
 )
 
 type AdminHandler interface {
@@ -85,9 +84,9 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 
 	// register session at playerController
 	h.eventBus.Publish(
-		player.RegisterSessionEvent,
+		playerctrl.RegisterSessionEvent,
 		events.GroupIDAny,
-		player.RegisterSessionPayload{SessionID: sess.ID},
+		playerctrl.RegisterSessionPayload{SessionID: sess.ID},
 	)
 }
 
@@ -130,14 +129,14 @@ func (h *handler) PutPlayerState(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := r.Header.Get("Session")
 
-	var payload player.StateChangedPayload
+	var payload playerctrl.StateChangedPayload
 	err := json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil || payload.SongID == "" {
 		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestBodyMalformedError)
 		return
 	}
 
-	h.eventBus.Publish(player.AdminStateChangedEvent, events.GroupID(sessionID), payload)
+	h.eventBus.Publish(playerctrl.AdminStateChangedEvent, events.GroupID(sessionID), payload)
 
 	response := struct {
 		Message string `json:"message"`
@@ -146,4 +145,3 @@ func (h *handler) PutPlayerState(w http.ResponseWriter, r *http.Request) {
 	}
 	jsonResponse(w, response)
 }
-

@@ -1,8 +1,9 @@
-package player
+package playerctrl
 
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
@@ -43,6 +44,7 @@ type Controller struct {
 	sessionCollection db.SessionCollection
 	songCollection    db.SongCollection
 	userCollection    db.UserCollection
+	playerCollection  db.PlayerCollection
 
 	authenticator spotify.Authenticator
 
@@ -62,12 +64,14 @@ func NewController(
 	sessionCollection db.SessionCollection,
 	songCollection db.SongCollection,
 	userCollection db.UserCollection,
+	playerCollection db.PlayerCollection,
 	authenticator spotify.Authenticator,
 ) *Controller {
 	controller := &Controller{
 		sessionCollection: sessionCollection,
 		userCollection:    userCollection,
 		songCollection:    songCollection,
+		playerCollection:  playerCollection,
 		authenticator:     authenticator,
 		eventBus:          eventBus,
 		Clients:           make(chan string),
@@ -217,6 +221,17 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		time.Duration(nextSong.Duration)*time.Millisecond,
 		func() { ctrl.getNextSong(sessionID) },
 	)
+
+	// update session player
+	newPlayer := &player.Player{
+		CurrentSong:  nextSong,
+		SongProgress: 0,
+		SongStart:    time.Now(),
+		Paused:       false,
+	}
+	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
 }
 
 // synchronizes all connected users with admin player state
