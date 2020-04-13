@@ -20,6 +20,7 @@ type Model struct {
 	UserHandler       handlers.UserHandler
 	ServerHandler     handlers.ServerHandler
 	SpotifyHandler    handlers.SpotifyHandler
+	PlayerHandler     handlers.PlayerHandler
 	EventBus          events.EventBus
 }
 
@@ -55,6 +56,7 @@ func New(
 		UserHandler:       handlers.UserHandler(handler),
 		ServerHandler:     handlers.ServerHandler(handler),
 		SpotifyHandler:    handlers.SpotifyHandler(handler),
+		PlayerHandler:     handlers.PlayerHandler(handler),
 		EventBus:          eventBus,
 	}
 

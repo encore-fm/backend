@@ -23,6 +23,7 @@ func (s *Model) Start() {
 	s.setupUserRoutes(r, handlers.UserAuth(s.UserCollection))
 	s.setupAdminRoutes(r, handlers.AdminAuth(s.UserCollection))
 	s.setupEventRoutes(r)
+	s.setupPlayerRoutes(r, handlers.UserAuth(s.UserCollection))
 
 	http.Handle("/", r)
 

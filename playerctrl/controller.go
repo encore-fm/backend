@@ -18,20 +18,6 @@ var (
 	ErrEventPayloadMalformed = errors.New("event payload malformed")
 )
 
-// define register session events
-const RegisterSessionEvent events.EventType = "register_session"
-
-type RegisterSessionPayload struct {
-	SessionID string `json:"session_id"`
-}
-
-type playerState struct {
-	SongID   string
-	Duration time.Duration
-	Position time.Duration
-	Paused   bool
-}
-
 type Controller struct {
 	sessionCollection db.SessionCollection
 	songCollection    db.SongCollection
@@ -105,7 +91,17 @@ func (ctrl *Controller) registerSessionLoop() {
 }
 
 func (ctrl *Controller) eventLoop() {
+	playPause := ctrl.eventBus.Subscribe(
+		[]events.EventType{PlayPauseEvent},
+		[]events.GroupID{events.GroupIDAny},
+	)
 
+	for {
+		select {
+		case ev := <-playPause.Channel:
+			ctrl.handlePlayPause(ev.Type, ev.GroupID, ev.Data)
+		}
+	}
 }
 
 func (ctrl *Controller) setTimer(sessionID string, duration time.Duration, f func()) {
@@ -184,17 +180,18 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		log.Errorf("%v: %v", msg, err)
 	}
 
-	state := playerState{
-		SongID:   newPlayer.CurrentSong.ID,
-		Duration: time.Millisecond * time.Duration(newPlayer.CurrentSong.Duration),
-		Position: 0,
-		Paused:   false,
-	}
-	ctrl.notifyClients(sessionID, state)
+	ctrl.notifyClients(
+		sessionID,
+		ctrl.setPlayerStateAction(
+			newPlayer.CurrentSong.ID,
+			0,
+			false,
+		),
+	)
 }
 
 // synchronizes all connected users with admin player state
-func (ctrl *Controller) notifyClients(sessionID string, state playerState) {
+func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 	msg := "[playerctrl] notify clients"
 	ctx := context.Background()
 
@@ -205,26 +202,6 @@ func (ctrl *Controller) notifyClients(sessionID string, state playerState) {
 
 	for _, client := range clients {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
-		opt := &spotify.PlayOptions{
-			URIs:       []spotify.URI{TrackURI(state.SongID)},
-			PositionMs: int(state.Position.Milliseconds()),
-		}
-
-		if !state.Paused {
-			if err := spotifyClient.PlayOpt(opt); err != nil {
-				log.Errorf("%v: %v", msg, err)
-			}
-
-			ctrl.setTimer(
-				sessionID,
-				state.Duration-state.Position,
-				func() { ctrl.getNextSong(sessionID) },
-			)
-		} else {
-			if err := spotifyClient.PauseOpt(opt); err != nil {
-				log.Errorf("%v: %v", msg, err)
-			}
-			ctrl.stopTimer(sessionID)
-		}
+		action(spotifyClient)
 	}
 }

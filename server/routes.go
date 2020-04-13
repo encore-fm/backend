@@ -81,3 +81,15 @@ func (s *Model) setupEventRoutes(r *mux.Router) {
 		http.HandlerFunc(s.SSEHandler.ServeHTTP),
 	)
 }
+
+func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
+	r.Handle(
+		"/user/{username}/player/play",
+		auth(http.HandlerFunc(s.PlayerHandler.Play)),
+	)
+
+	r.Handle(
+		"/user/{username}/player/pause",
+		auth(http.HandlerFunc(s.PlayerHandler.Pause)),
+	)
+}
