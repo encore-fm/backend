@@ -6,6 +6,7 @@ import (
 	"errors"
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"net/http"
+	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -145,4 +146,75 @@ func (h *handler) PutPlayerState(w http.ResponseWriter, r *http.Request) {
 		Message: "success",
 	}
 	jsonResponse(w, response)
+}
+
+// todo: think about splitting this in two seperate play/pause endpoints for simplicity reasons
+func (h *handler) SetPlaying(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] set playing"
+	ctx := context.Background()
+
+	sessionID := r.Header.Get("Session")
+
+	// todo have parameter in request url or in body?
+	var payload struct {
+		Playing bool `json:"playing"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestBodyMalformedError)
+		return
+	}
+	playing := payload.Playing
+
+	// todo notify clients
+
+	// update session player
+	if err := h.SessionCollection.SetPaused(ctx, sessionID, !playing); err != nil {
+		if errors.Is(err, db.ErrNoSessionWithID) {
+			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
+		} else {
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
+		return
+	}
+
+	response := struct {
+		Message string `json:"message"`
+	}{
+		Message: "success",
+	}
+
+	log.Infof("%v: admin played", msg)
+	jsonResponse(w, response)
+}
+
+func (h *handler) Skip(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] skip"
+	ctx := context.Background()
+
+	sessionID := r.Header.Get("Session")
+
+	// todo have parameter in request url or in body?
+	var payload struct {
+		SeekTime time.Duration `json:"seek_time"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestBodyMalformedError)
+		return
+	}
+	seekTime := payload.SeekTime
+
+	// todo seek player in db and notify clients
+
+}
+
+func (h *handler) Seek(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] seek"
+	ctx := context.Background()
+
+	sessionID := r.Header.Get("Session")
+
+	// todo get current playing song, see if request is valid and notify clients
+	// todo atomicity??
 }
