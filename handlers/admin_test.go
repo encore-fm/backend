@@ -45,7 +45,7 @@ func TestHandler_RemoveSong(t *testing.T) {
 	// create handler with mock collections
 	handler := &handler{
 		SongCollection: songCollection,
-		eventBus:          eventBus,
+		eventBus:       eventBus,
 	}
 	adminHandler := AdminHandler(handler)
 

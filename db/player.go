@@ -156,8 +156,16 @@ func (c *playerCollection) SetPlaying(ctx context.Context, sessionID string) err
 									"$player.pause_duration",
 									bson.D{
 										{
-											Key:   "$subtract",
-											Value: bson.A{time.Now(), "$player.pause_start"},
+											Key: "$multiply", // convert milliseconds to nanoseconds
+											Value: bson.A{
+												1000000,
+												bson.D{
+													{
+														Key:   "$subtract",
+														Value: bson.A{time.Now(), "$player.pause_start"},
+													},
+												},
+											},
 										},
 									},
 								},

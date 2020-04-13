@@ -54,6 +54,8 @@ func (ctrl *Controller) handlePlayPause(
 			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-p.Progress(),
 			func() { ctrl.getNextSong(sessionID) },
 		)
+	} else {
+		ctrl.stopTimer(sessionID)
 	}
 
 	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)

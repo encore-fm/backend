@@ -5,10 +5,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/player"
-
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
@@ -54,14 +53,36 @@ func NewController(
 }
 
 func (ctrl *Controller) Start() error {
-	sessionIDs, err := ctrl.sessionCollection.ListSessionIDs(context.TODO())
+	msg := "[playerctrl] start"
+	ctx := context.Background()
+	sessionIDs, err := ctrl.sessionCollection.ListSessionIDs(ctx)
 	if err != nil {
 		return err
 	}
 
 	// initialize timer for every known sessionID
 	for _, sessionID := range sessionIDs {
-		ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+		playerState, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+		if err != nil {
+			log.Errorf(msg, err)
+		}
+		if playerState == nil || playerState.IsEmpty() {
+			ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+		} else {
+			timerDuration := time.Duration(playerState.CurrentSong.Duration)*time.Millisecond - playerState.Progress()
+			if timerDuration < 0 {
+				timerDuration = 0
+			}
+			ctrl.setTimer(
+				sessionID,
+				timerDuration,
+				func() { ctrl.getNextSong(sessionID) },
+			)
+			ctrl.notifyClients(
+				sessionID,
+				ctrl.setPlayerStateAction(playerState.CurrentSong.ID, playerState.Progress(), playerState.Paused),
+			)
+		}
 	}
 
 	go ctrl.eventLoop()
@@ -171,9 +192,9 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 
 	// update session player
 	newPlayer := &player.Player{
-		CurrentSong:  nextSong,
-		SongStart:    time.Now(),
-		Paused:       false,
+		CurrentSong: nextSong,
+		SongStart:   time.Now(),
+		Paused:      false,
 	}
 	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {
 		log.Errorf("%v: %v", msg, err)

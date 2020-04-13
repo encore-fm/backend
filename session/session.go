@@ -24,5 +24,6 @@ func New() (*Session, error) {
 	return &Session{
 		ID:       sessionID,
 		SongList: make([]*song.Model, 0),
+		Player:   player.New(),
 	}, nil
 }

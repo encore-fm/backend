@@ -15,6 +15,19 @@ type Player struct {
 	Paused        bool          `json:"paused" bson:"paused"`
 }
 
+func New() *Player {
+	return &Player{
+		CurrentSong: nil,
+	}
+}
+
+func (p *Player) IsEmpty() bool {
+	return p.CurrentSong == nil
+}
+
 func (p *Player) Progress() time.Duration {
-	return time.Now().Sub(p.SongStart) - p.PauseDuration
+	if !p.Paused {
+		return time.Now().Sub(p.SongStart) - p.PauseDuration
+	}
+	return p.PauseStart.Sub(p.SongStart) - p.PauseDuration
 }
