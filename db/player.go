@@ -28,7 +28,7 @@ var _ PlayerCollection = (*playerCollection)(nil)
 func NewPlayerCollection(client *mongo.Client) PlayerCollection {
 	collection := client.
 		Database(config.Conf.Database.DBName).
-		Collection(config.Conf.Database.PlayerCollectionName)
+		Collection(config.Conf.Database.SessionCollectionName)
 	return &playerCollection{
 		client:     client,
 		collection: collection,
@@ -74,7 +74,7 @@ func (c *playerCollection) SetPlayer(ctx context.Context, sessionID string, newP
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
-	if result.ModifiedCount == 0 {
+	if result.MatchedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoSessionWithID)
 	}
 	return nil

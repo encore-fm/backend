@@ -8,7 +8,7 @@ max_users = 1000
 [spotify]
 client_id = "client_id"
 client_secret = "client_secret"
-redirect_url = "http://127.0.0.1:8080/redirect"
+redirect_url = "http://192.168.1.4:8080/callback"
 state = "state"
 open_browser = true
 
@@ -24,4 +24,3 @@ db_port = 53272
 db_name = "spotify-jukebox-test"
 user_collection_name = "users"
 session_collection_name = "sessions"
-player_collection_name = "players"

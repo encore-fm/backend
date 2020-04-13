@@ -28,7 +28,6 @@ type DBConfig struct {
 	DBName                string `mapstructure:"db_name"`
 	UserCollectionName    string `mapstructure:"user_collection_name"`
 	SessionCollectionName string `mapstructure:"session_collection_name"`
-	PlayerCollectionName  string `mapstructure:"player_collection_name"`
 }
 
 type Config struct {

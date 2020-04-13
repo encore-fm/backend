@@ -74,6 +74,6 @@ func main() {
 	log.Info("[startup] successfully started player controller")
 
 	// start server
-	svr := server.New(eventBus, userDB, sessDB, songDB, spotifyAuth, spotifyClient)
+	svr := server.New(eventBus, userDB, sessDB, songDB, playerDB, spotifyAuth, spotifyClient)
 	svr.Start()
 }

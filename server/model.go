@@ -28,6 +28,7 @@ func New(
 	userHandle db.UserCollection,
 	sessHandle db.SessionCollection,
 	songHandle db.SongCollection,
+	playerHandle db.PlayerCollection,
 	spotifyAuth spotify.Authenticator,
 	spotifyClient *spotifycl.SpotifyClient,
 ) *Model {
@@ -37,6 +38,7 @@ func New(
 		userHandle,
 		sessHandle,
 		songHandle,
+		playerHandle,
 		spotifyAuth,
 		spotifyClient,
 	)

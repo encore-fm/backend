@@ -223,13 +223,13 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	)
 
 	// update session player
-	newPlayer := player.Player{
+	newPlayer := &player.Player{
 		CurrentSong:  nextSong,
 		SongProgress: 0,
 		SongStart:    time.Now(),
 		Paused:       false,
 	}
-	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, &newPlayer); err != nil {
+	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
 }
