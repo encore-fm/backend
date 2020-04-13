@@ -14,6 +14,7 @@ type handler struct {
 	UserCollection       db.UserCollection
 	SessionCollection    db.SessionCollection
 	SongCollection       db.SongCollection
+	PlayerCollection     db.PlayerCollection
 }
 
 func New(

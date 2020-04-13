@@ -44,6 +44,7 @@ type Controller struct {
 	sessionCollection db.SessionCollection
 	songCollection    db.SongCollection
 	userCollection    db.UserCollection
+	playerCollection  db.PlayerCollection
 
 	authenticator spotify.Authenticator
 
@@ -63,12 +64,14 @@ func NewController(
 	sessionCollection db.SessionCollection,
 	songCollection db.SongCollection,
 	userCollection db.UserCollection,
+	playerCollection db.PlayerCollection,
 	authenticator spotify.Authenticator,
 ) *Controller {
 	controller := &Controller{
 		sessionCollection: sessionCollection,
 		userCollection:    userCollection,
 		songCollection:    songCollection,
+		playerCollection:  playerCollection,
 		authenticator:     authenticator,
 		eventBus:          eventBus,
 		Clients:           make(chan string),
@@ -226,7 +229,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		SongStart:    time.Now(),
 		Paused:       false,
 	}
-	if err := ctrl.sessionCollection.SetPlayer(ctx, sessionID, &newPlayer); err != nil {
+	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, &newPlayer); err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
 }

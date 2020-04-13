@@ -24,3 +24,4 @@ db_port = 53272
 db_name = "spotify-jukebox-test"
 user_collection_name = "users"
 session_collection_name = "sessions"
+player_collection_name = "players"

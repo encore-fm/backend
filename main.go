@@ -41,6 +41,7 @@ func main() {
 	userDB := db.NewUserCollection(dbConn.Client)
 	sessDB := db.NewSessionCollection(dbConn.Client)
 	songDB := db.NewSongCollection(dbConn.Client)
+	playerDB := db.NewPlayerCollection(dbConn.Client)
 	log.Infof(
 		"[startup] successfully connected to database at %v:%v",
 		config.Conf.Database.DBHost,
@@ -64,6 +65,7 @@ func main() {
 		sessDB,
 		songDB,
 		userDB,
+		playerDB,
 		spotifyAuth,
 	)
 	if err := playerCtrl.Start(); err != nil {

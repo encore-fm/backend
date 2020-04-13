@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/antonbaumann/spotify-jukebox/player"
-
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"go.mongodb.org/mongo-driver/bson"
@@ -19,8 +17,6 @@ type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 	ListSessionIDs(ctx context.Context) ([]string, error)
-	SetPlayer(ctx context.Context, sessionID string, newPlayer *player.Player) error
-	SetPaused(ctx context.Context, sessionID string, paused bool) error
 }
 
 type sessionCollection struct {
@@ -101,73 +97,4 @@ func (c *sessionCollection) ListSessionIDs(ctx context.Context) ([]string, error
 	}
 
 	return sessIDs, nil
-}
-
-func (c *sessionCollection) GetPlayer(ctx context.Context, sessionID string) (*player.Player, error) {
-	errMsg := "[db] get player: %w"
-	filter := bson.D{{"_id", sessionID}}
-	projection := bson.D{
-		{"_id", 0},
-		{"player", 1},
-	}
-
-	var sess *session.Session
-	err := c.collection.FindOne(
-		ctx,
-		filter,
-		options.FindOne().SetProjection(projection),
-	).Decode(&sess)
-	if err != nil {
-		return nil, fmt.Errorf(errMsg, err)
-	}
-
-	return &sess.Player, nil
-}
-
-func (c *sessionCollection) SetPlayer(ctx context.Context, sessionID string, newPlayer *player.Player) error {
-	errMsg := "[db] update player: %w"
-	filter := bson.D{{"_id", sessionID}}
-	update := bson.D{
-		{
-			Key: "$set",
-			Value: bson.D{
-				{
-					Key:   "player",
-					Value: *newPlayer,
-				},
-			},
-		},
-	}
-	result, err := c.collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-	if result.ModifiedCount == 0 {
-		return fmt.Errorf(errMsg, ErrNoSessionWithID)
-	}
-	return nil
-}
-
-func (c *sessionCollection) SetPaused(ctx context.Context, sessionID string, paused bool) error {
-	errMsg := "[db] toggle playing: %w"
-	filter := bson.D{{"_id", sessionID}}
-	update := bson.D{
-		{
-			Key: "$set",
-			Value: bson.D{
-				{
-					Key:   "player.paused",
-					Value: paused,
-				},
-			},
-		},
-	}
-	result, err := c.collection.UpdateOne(ctx, filter, update)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-	if result.ModifiedCount == 0 {
-		return fmt.Errorf(errMsg, ErrNoSessionWithID)
-	}
-	return nil
 }

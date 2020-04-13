@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"go.mongodb.org/mongo-driver/bson"
@@ -24,6 +25,16 @@ type playerCollection struct {
 
 var _ PlayerCollection = (*playerCollection)(nil)
 
+func NewPlayerCollection(client *mongo.Client) PlayerCollection {
+	collection := client.
+		Database(config.Conf.Database.DBName).
+		Collection(config.Conf.Database.PlayerCollectionName)
+	return &playerCollection{
+		client:     client,
+		collection: collection,
+	}
+}
+
 func (c *playerCollection) GetPlayer(ctx context.Context, sessionID string) (*player.Player, error) {
 	errMsg := "[db] get player: %w"
 	filter := bson.D{{"_id", sessionID}}
@@ -32,7 +43,7 @@ func (c *playerCollection) GetPlayer(ctx context.Context, sessionID string) (*pl
 		{"player", 1},
 	}
 
-	var sess *session.Session
+	var sess session.Session
 	err := c.collection.FindOne(
 		ctx,
 		filter,
@@ -42,11 +53,11 @@ func (c *playerCollection) GetPlayer(ctx context.Context, sessionID string) (*pl
 		return nil, fmt.Errorf(errMsg, err)
 	}
 
-	return &sess.Player, nil
+	return sess.Player, nil
 }
 
 func (c *playerCollection) SetPlayer(ctx context.Context, sessionID string, newPlayer *player.Player) error {
-	errMsg := "[db] update player: %w"
+	errMsg := "[db] set player: %w"
 	filter := bson.D{{"_id", sessionID}}
 	update := bson.D{
 		{
@@ -54,7 +65,7 @@ func (c *playerCollection) SetPlayer(ctx context.Context, sessionID string, newP
 			Value: bson.D{
 				{
 					Key:   "player",
-					Value: *newPlayer,
+					Value: newPlayer,
 				},
 			},
 		},
