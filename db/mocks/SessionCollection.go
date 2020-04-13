@@ -77,12 +77,26 @@ func (_m *SessionCollection) ListSessionIDs(ctx context.Context) ([]string, erro
 	return r0, r1
 }
 
+// SetPaused provides a mock function with given fields: ctx, sessionID, paused
+func (_m *SessionCollection) SetPaused(ctx context.Context, sessionID string, paused bool) error {
+	ret := _m.Called(ctx, sessionID, paused)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) error); ok {
+		r0 = rf(ctx, sessionID, paused)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SetPlayer provides a mock function with given fields: ctx, sessionID, newPlayer
-func (_m *SessionCollection) SetPlayer(ctx context.Context, sessionID string, newPlayer player.Player) error {
+func (_m *SessionCollection) SetPlayer(ctx context.Context, sessionID string, newPlayer *player.Player) error {
 	ret := _m.Called(ctx, sessionID, newPlayer)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, player.Player) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *player.Player) error); ok {
 		r0 = rf(ctx, sessionID, newPlayer)
 	} else {
 		r0 = ret.Error(0)
