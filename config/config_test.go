@@ -1,3 +1,5 @@
+// +build !dev
+
 package config
 
 import (
@@ -18,8 +20,6 @@ func TestFromFile(t *testing.T) {
 		ClientID:     "id",
 		ClientSecret: "secret",
 		RedirectUrl:  "redirect.url",
-		State:        "state",
-		OpenBrowser:  true,
 	}
 	assert.Equal(t, spotifyConfig, result.Spotify)
 

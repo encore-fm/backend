@@ -11,8 +11,6 @@ type SpotifyConfig struct {
 	ClientID     string `mapstructure:"client_id"`
 	ClientSecret string `mapstructure:"client_secret"`
 	RedirectUrl  string `mapstructure:"redirect_url"`
-	State        string `mapstructure:"state"`
-	OpenBrowser  bool   `mapstructure:"open_browser"`
 }
 
 type ServerConfig struct {

@@ -9,8 +9,6 @@ max_users = 1000
 client_id = "id"
 client_secret = "secret"
 redirect_url = "redirect.url"
-state = "state"
-open_browser = true
 
 [server]
 port = 8080
@@ -23,5 +21,4 @@ db_host = "127.0.0.1"
 db_port = 27017
 db_name = "spotify-jukebox"
 user_collection_name = "users"
-song_collection_name = "songs"
 session_collection_name = "sessions"
