@@ -84,7 +84,7 @@ func (c *playerCollection) SetPlayer(ctx context.Context, sessionID string, newP
 }
 
 func (c *playerCollection) SetPaused(ctx context.Context, sessionID string) error {
-	errMsg := "[db] toggle playing: %w"
+	errMsg := "[db] set paused: %w"
 	filter := bson.D{
 		{"_id", sessionID},
 		{"player.paused", false},
@@ -115,28 +115,11 @@ func (c *playerCollection) SetPaused(ctx context.Context, sessionID string) erro
 }
 
 func (c *playerCollection) SetPlaying(ctx context.Context, sessionID string) error {
-	errMsg := "[db] toggle playing: %w"
+	errMsg := "[db] set playing: %w"
 	filter := bson.D{
 		{"_id", sessionID},
 		{"player.paused", true},
 	}
-
-	/*
-		db.sessions.update(
-		{
-			"_id": "c7c75dd4be88f7b093ffeede455bcdee",
-			"player.paused": true
-		},
-		[{
-			$set: {
-				"player.paused": true,
-				"player.pause_duration": {
-					$subtract: [new Date(), "$player.pause_start"]
-				}
-			}
-		}]
-		)
-	*/
 
 	update := bson.A{
 		bson.D{

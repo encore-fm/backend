@@ -27,10 +27,12 @@ func (ctrl *Controller) handlePlayPause(
 	if payload.Paused {
 		if err := ctrl.playerCollection.SetPaused(ctx, sessionID); err != nil {
 			log.Errorf("%v: %v", msg, err)
+			return
 		}
 	} else {
 		if err := ctrl.playerCollection.SetPlaying(ctx, sessionID); err != nil {
 			log.Errorf("%v: %v", msg, err)
+			return
 		}
 	}
 
@@ -38,6 +40,7 @@ func (ctrl *Controller) handlePlayPause(
 	p, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
+		return
 	}
 
 	ctrl.notifyClients(sessionID,

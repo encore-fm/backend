@@ -84,12 +84,12 @@ func (s *Model) setupEventRoutes(r *mux.Router) {
 
 func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	r.Handle(
-		"/user/{username}/player/play",
+		"/users/{username}/player/play",
 		auth(http.HandlerFunc(s.PlayerHandler.Play)),
 	)
 
 	r.Handle(
-		"/user/{username}/player/pause",
+		"/users/{username}/player/pause",
 		auth(http.HandlerFunc(s.PlayerHandler.Pause)),
 	)
 }

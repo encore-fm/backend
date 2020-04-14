@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"golang.org/x/oauth2"
 
 	"github.com/antonbaumann/spotify-jukebox/session"
@@ -37,6 +38,7 @@ const (
 )
 
 var (
+	testNow     = time.Now()
 	testSession = &session.Session{
 		ID: TestSessionID,
 		SongList: []*song.Model{{
@@ -45,19 +47,33 @@ var (
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername},
 			Downvoters:  make([]string, 0),
+			Duration:    10000,
 		}, {
 			ID:          AntonAusTirolID,
 			SuggestedBy: TestUserName,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername, TestUserName},
 			Downvoters:  []string{},
+			Duration:    10000,
 		}, {
 			ID:          CordulaSongID,
 			SuggestedBy: TestAdminUsername,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername},
 			Downvoters:  []string{TestUserName},
+			Duration:    10000,
 		}},
+		Player: &player.Player{
+			CurrentSong: &song.Model{
+				Name:     "Not Rock Roll Song",
+				ID:       NotRickRollSongID,
+				Duration: 10000, // 10 seconds
+			},
+			SongStart:     testNow.Add(-2 * time.Minute),
+			PauseStart:    testNow.Add(-1 * time.Minute),
+			PauseDuration: 30 * time.Second,
+			Paused:        false,
+		},
 	}
 	testAdmin = &user.Model{
 		ID:                fmt.Sprintf("%v@%v", TestAdminUsername, TestSessionID),
