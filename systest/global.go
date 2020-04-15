@@ -37,26 +37,31 @@ const (
 )
 
 var (
+	testNow     = time.Now()
 	testSession = &session.Session{
 		ID: TestSessionID,
 		SongList: []*song.Model{{
+			Name:        "SkiFoan",
 			ID:          SkiFoanID,
 			SuggestedBy: TestAdminUsername,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername},
 			Downvoters:  make([]string, 0),
+			Duration:    10000,
 		}, {
 			ID:          AntonAusTirolID,
 			SuggestedBy: TestUserName,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername, TestUserName},
 			Downvoters:  []string{},
+			Duration:    10000,
 		}, {
 			ID:          CordulaSongID,
 			SuggestedBy: TestAdminUsername,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername},
 			Downvoters:  []string{TestUserName},
+			Duration:    10000,
 		}},
 	}
 	testAdmin = &user.Model{

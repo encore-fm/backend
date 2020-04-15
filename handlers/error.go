@@ -62,13 +62,9 @@ var (
 		Error:       "UserNotFoundError",
 		Description: "No user with the specified ID exists.",
 	}
-	VoteOnSuggestedSongError = FrontendError{
-		Error:       "VoteOnSuggestedSongError",
-		Description: "The user requesting the vote has suggested this song.",
-	}
-	UserAlreadyVotedError = FrontendError{
-		Error:       "UserAlreadyVotedError",
-		Description: "The user requesting the vote has already voted for this song.",
+	ActionNotAllowedError = FrontendError{
+		Error:       "ActionNotAllowedError",
+		Description: "User does not have sufficient permissions to perform this action.",
 	}
 	InternalServerError = FrontendError{
 		Error:       "InternalServerError",

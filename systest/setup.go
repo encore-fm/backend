@@ -2,6 +2,8 @@ package systest
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 )
@@ -35,4 +37,16 @@ func dropDB() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func resetPlayerController(sessionID string) (*http.Response, error) {
+	endpointUrl := fmt.Sprintf("%v/debug/reset_player_controller/%v", BackendBaseUrl, sessionID)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", endpointUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return client.Do(req)
 }

@@ -3,42 +3,20 @@ package playerctrl
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/player"
 	"time"
 
+	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
 
-// todo: don't send events from buggy Spotify SDK player
-const DelayCompensation = time.Millisecond * 300
-
 var (
 	ErrEventPayloadMalformed = errors.New("event payload malformed")
 )
-
-// define state change events
-const (
-	ControllerStateChangedEvent events.EventType = "controller_player_state_changed"
-	AdminStateChangedEvent      events.EventType = "admin_player_state_changed"
-)
-
-type StateChangedPayload struct {
-	SongID   string `json:"current_track"`
-	Duration int    `json:"duration"`
-	Position int    `json:"position"`
-	Paused   bool   `json:"paused"`
-}
-
-// define register session events
-const RegisterSessionEvent events.EventType = "register_session"
-
-type RegisterSessionPayload struct {
-	SessionID string `json:"session_id"`
-}
 
 type Controller struct {
 	sessionCollection db.SessionCollection
@@ -47,10 +25,6 @@ type Controller struct {
 	playerCollection  db.PlayerCollection
 
 	authenticator spotify.Authenticator
-
-	// if new session is created
-	// sessionID must be passed to this channel
-	Clients chan string
 
 	eventBus events.EventBus
 
@@ -74,20 +48,42 @@ func NewController(
 		playerCollection:  playerCollection,
 		authenticator:     authenticator,
 		eventBus:          eventBus,
-		Clients:           make(chan string),
 		timers:            make(map[string]*time.Timer),
 	}
 	return controller
 }
 
 func (ctrl *Controller) Start() error {
-	sessionIDs, err := ctrl.sessionCollection.ListSessionIDs(context.TODO())
+	msg := "[playerctrl] start"
+	ctx := context.Background()
+	sessionIDs, err := ctrl.sessionCollection.ListSessionIDs(ctx)
 	if err != nil {
 		return err
 	}
 
+	// initialize timer for every known sessionID
 	for _, sessionID := range sessionIDs {
-		ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+		playerState, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+		if err != nil {
+			log.Errorf(msg, err)
+		}
+		if playerState == nil || playerState.IsEmpty() {
+			ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+		} else {
+			timerDuration := time.Duration(playerState.CurrentSong.Duration)*time.Millisecond - playerState.Progress()
+			if timerDuration < 0 {
+				timerDuration = 0
+			}
+			ctrl.setTimer(
+				sessionID,
+				timerDuration,
+				func() { ctrl.getNextSong(sessionID) },
+			)
+			ctrl.notifyClients(
+				sessionID,
+				ctrl.setPlayerStateAction(playerState.CurrentSong.ID, playerState.Progress(), playerState.Paused),
+			)
+		}
 	}
 
 	go ctrl.eventLoop()
@@ -102,6 +98,7 @@ func (ctrl *Controller) registerSessionLoop() {
 		[]events.EventType{RegisterSessionEvent},
 		[]events.GroupID{events.GroupIDAny},
 	)
+
 	for {
 		select {
 		case ev := <-sub.Channel:
@@ -117,34 +114,35 @@ func (ctrl *Controller) registerSessionLoop() {
 }
 
 func (ctrl *Controller) eventLoop() {
+	msg := "[playerctrl] event loop"
 
-	adminSub := ctrl.eventBus.Subscribe(
-		[]events.EventType{AdminStateChangedEvent},
+	playPause := ctrl.eventBus.Subscribe(
+		[]events.EventType{PlayPauseEvent},
 		[]events.GroupID{events.GroupIDAny},
 	)
 
-	controllerSub := ctrl.eventBus.Subscribe(
-		[]events.EventType{ControllerStateChangedEvent},
+	reset := ctrl.eventBus.Subscribe(
+		[]events.EventType{ResetEvent},
 		[]events.GroupID{events.GroupIDAny},
 	)
 
 	for {
 		select {
-		case event := <-adminSub.Channel:
-			log.Infof("[playerctrl] AdminStateChangeEvent: %v", event.GroupID)
-			payload, ok := event.Data.(StateChangedPayload)
-			if !ok {
-				log.Error("[playerctrl] event payload malformed")
-			}
-			ctrl.notifyClients(string(event.GroupID), payload, false)
+		case ev := <-playPause.Channel:
+			ctrl.handlePlayPause(ev.Type, ev.GroupID, ev.Data)
 
-		case ev := <-controllerSub.Channel:
-			log.Infof("[playerctrl] ControllerStateChangeEvent: %v", ev.GroupID)
-			payload, ok := ev.Data.(StateChangedPayload)
-			if !ok {
-				log.Error("[playerctrl] event payload malformed")
+		case ev := <- reset.Channel:
+			if !config.Conf.Server.Debug {
+				log.Errorf("%v: debug event sent but running in production mode", msg)
+				continue
 			}
-			ctrl.notifyClients(string(ev.GroupID), payload, true)
+			payload, ok := ev.Data.(ResetPayload)
+			if !ok {
+				log.Errorf("%v: reset event: %v", msg, ErrEventPayloadMalformed)
+				continue
+			}
+			log.Infof("%v: id={%v}", msg, payload.SessionID)
+			ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 		}
 	}
 }
@@ -152,9 +150,9 @@ func (ctrl *Controller) eventLoop() {
 func (ctrl *Controller) setTimer(sessionID string, duration time.Duration, f func()) {
 	t, ok := ctrl.timers[sessionID]
 	if !ok {
-		ctrl.timers[sessionID] = time.AfterFunc(duration-DelayCompensation, f)
+		ctrl.timers[sessionID] = time.AfterFunc(duration, f)
 	} else {
-		t.Reset(duration - DelayCompensation)
+		t.Reset(duration)
 	}
 }
 
@@ -205,14 +203,6 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		log.Errorf("%v: %v", msg, err)
 	}
 
-	payload := StateChangedPayload{
-		SongID:   nextSong.ID,
-		Duration: nextSong.Duration,
-		Position: 0,
-		Paused:   false,
-	}
-
-	ctrl.eventBus.Publish(ControllerStateChangedEvent, events.GroupID(sessionID), payload)
 	ctrl.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList[1:])
 
 	// fetch next song after song has ended
@@ -224,18 +214,27 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 
 	// update session player
 	newPlayer := &player.Player{
-		CurrentSong:  nextSong,
-		SongProgress: 0,
-		SongStart:    time.Now(),
-		Paused:       false,
+		CurrentSong: nextSong,
+		SongStart:   time.Now(),
+		PauseStart:  time.Now(),
+		Paused:      false,
 	}
 	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
+
+	ctrl.notifyClients(
+		sessionID,
+		ctrl.setPlayerStateAction(
+			newPlayer.CurrentSong.ID,
+			0,
+			false,
+		),
+	)
 }
 
 // synchronizes all connected users with admin player state
-func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChangedPayload, notifyAdmin bool) {
+func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 	msg := "[playerctrl] notify clients"
 	ctx := context.Background()
 
@@ -246,28 +245,6 @@ func (ctrl *Controller) notifyClients(sessionID string, stateChange StateChanged
 
 	for _, client := range clients {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
-		opt := &spotify.PlayOptions{
-			URIs:       []spotify.URI{TrackURI(stateChange.SongID)},
-			PositionMs: stateChange.Position,
-		}
-
-		if !stateChange.Paused {
-			// usually we dont want to overwrite the state at the
-			// admin's "real spotify player" since this function mostly
-			// gets called if the admin changes his player state
-			if !client.IsAdmin || notifyAdmin {
-				if err := spotifyClient.PlayOpt(opt); err != nil {
-					log.Errorf("%v: %v", msg, err)
-				}
-			}
-
-			delta := time.Millisecond * time.Duration(stateChange.Duration-stateChange.Position)
-			ctrl.setTimer(sessionID, delta, func() { ctrl.getNextSong(sessionID) })
-		} else {
-			if err := spotifyClient.PauseOpt(opt); err != nil {
-				log.Errorf("%v: %v", msg, err)
-			}
-			ctrl.stopTimer(sessionID)
-		}
+		action(spotifyClient)
 	}
 }

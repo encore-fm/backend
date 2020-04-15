@@ -3,14 +3,14 @@ package events
 import log "github.com/sirupsen/logrus"
 
 // if subscribed to GroupIDAny
-// any event will be received
+// any Event will be received
 const GroupIDAny GroupID = "*"
 
 type EventType string
 type GroupID string
 type EventPayload interface{}
 
-type event struct {
+type Event struct {
 	Type    EventType
 	GroupID GroupID
 	Data    EventPayload
@@ -21,7 +21,7 @@ type event struct {
 type subscription struct {
 	Types   []EventType
 	Groups  []GroupID
-	Channel chan event
+	Channel chan Event
 }
 
 // todo: add unsubscribe method
@@ -34,11 +34,11 @@ type EventBus interface {
 }
 
 // eventBus stores the information about subscribers
-// listening to specific event types and group ids
+// listening to specific Event types and group ids
 type eventBus struct {
-	subscribers      map[EventType]map[GroupID]map[chan event]bool
+	subscribers      map[EventType]map[GroupID]map[chan Event]bool
 	newSubscriptions chan subscription
-	eventChan        chan event
+	eventChan        chan Event
 	quit             chan struct{}
 }
 
@@ -46,9 +46,9 @@ var _ EventBus = (*eventBus)(nil)
 
 func NewEventBus() EventBus {
 	return &eventBus{
-		subscribers:      make(map[EventType]map[GroupID]map[chan event]bool),
+		subscribers:      make(map[EventType]map[GroupID]map[chan Event]bool),
 		newSubscriptions: make(chan subscription),
-		eventChan:        make(chan event),
+		eventChan:        make(chan Event),
 		quit:             make(chan struct{}),
 	}
 }
@@ -66,7 +66,7 @@ func (eb *eventBus) Subscribe(types []EventType, groupIDs []GroupID) subscriptio
 	subscription := subscription{
 		Types:   types,
 		Groups:  groupIDs,
-		Channel: make(chan event),
+		Channel: make(chan Event),
 	}
 	eb.newSubscriptions <- subscription
 	return subscription
@@ -95,7 +95,7 @@ func (eb *eventBus) Unsubscribe(sub subscription) {
 }
 
 func (eb *eventBus) Publish(eventType EventType, groupID GroupID, data EventPayload) {
-	ev := event{
+	ev := Event{
 		Type:    eventType,
 		GroupID: groupID,
 		Data:    data,
@@ -121,12 +121,12 @@ func (eb *eventBus) loop() {
 	}
 }
 
-func (eb *eventBus) forwardEvent(ev event) {
-	msg := "[eventbus] forward event"
+func (eb *eventBus) forwardEvent(ev Event) {
+	msg := "[eventbus] forward Event"
 
-	log.Infof("%v: received event: type={%v} groupID={%v}", msg, ev.Type, ev.GroupID)
+	log.Infof("%v: received Event: type={%v} groupID={%v}", msg, ev.Type, ev.GroupID)
 
-	broadcastList := make(map[chan event]bool)
+	broadcastList := make(map[chan Event]bool)
 
 	if groups, typeExists := eb.subscribers[ev.Type]; typeExists {
 		if chans, ok := groups[ev.GroupID]; ok {
@@ -136,7 +136,7 @@ func (eb *eventBus) forwardEvent(ev event) {
 			}
 		}
 
-		// send event to subscribers that listen to all groups
+		// send Event to subscribers that listen to all groups
 		if chans, ok := groups[GroupIDAny]; ok {
 			for ch := range chans {
 				broadcastList[ch] = true
@@ -145,7 +145,7 @@ func (eb *eventBus) forwardEvent(ev event) {
 	}
 
 	// broadcast in goroutine to avoid blocking
-	go func(channels map[chan event]bool, ev event) {
+	go func(channels map[chan Event]bool, ev Event) {
 		for ch := range channels {
 			ch <- ev
 		}
@@ -157,14 +157,14 @@ func (eb *eventBus) subscribe(sub subscription) {
 	for _, evType := range sub.Types {
 		groups, ok := eb.subscribers[evType]
 		if !ok {
-			groups = make(map[GroupID]map[chan event]bool)
+			groups = make(map[GroupID]map[chan Event]bool)
 			eb.subscribers[evType] = groups
 		}
 
 		for _, id := range sub.Groups {
 			chans, ok := groups[id]
 			if !ok {
-				chans = make(map[chan event]bool)
+				chans = make(map[chan Event]bool)
 				groups[id] = chans
 			}
 

@@ -37,7 +37,7 @@ func TestEventBus_Publish(t *testing.T) {
 	eventBus.Start()
 	defer eventBus.Stop()
 
-	eventSplice := []event{
+	eventSplice := []Event{
 		{
 			Type:    "event1",
 			GroupID: "group1",
@@ -56,10 +56,10 @@ func TestEventBus_Publish(t *testing.T) {
 	}
 
 	sub1 := eventBus.Subscribe([]EventType{"event1", "event2"}, []GroupID{"group1"})
-	ch1 := make(chan []event)
+	ch1 := make(chan []Event)
 
 	go func() {
-		var collector []event
+		var collector []Event
 
 		for i := 0; i < 2; i++ {
 			res := <-sub1.Channel
