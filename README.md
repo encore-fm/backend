@@ -1,4 +1,5 @@
 [![Build Status](https://github.com/antonbaumann/spotify-jukebox/workflows/build/badge.svg)](https://github.com/antonbaumann/spotify-jukebox/actions?workflow=build)
+[![Go Report Card](https://goreportcard.com/badge/github.com/antonbaumann/spotify-jukebox)](https://goreportcard.com/report/github.com/antonbaumann/spotify-jukebox)
 [![codecov](https://codecov.io/gh/antonbaumann/spotify-jukebox/branch/master/graph/badge.svg?token=juTAuitYfJ)](https://codecov.io/gh/antonbaumann/spotify-jukebox)
 # Spotify Jukebox
 
