@@ -1,6 +1,10 @@
 package playerctrl
 
-import "github.com/antonbaumann/spotify-jukebox/events"
+import (
+	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/events"
+)
 
 // define register session event
 const RegisterSessionEvent events.EventType = "player_event:register_session"
@@ -20,6 +24,13 @@ type PlayPausePayload struct {
 const SkipEvent events.EventType = "player_event:skip"
 
 type SkipPayload struct{}
+
+// define seek event
+const SeekEvent events.EventType = "player_event:seek"
+
+type SeekPayload struct {
+	Progress time.Duration `json:"progress"`
+}
 
 // define reset event
 const ResetEvent events.EventType = "player_event:reset_session"

@@ -21,7 +21,7 @@ func TestPlayerSkip(t *testing.T) {
 
 	p, err := getPlayer()
 	assert.NoError(t, err)
-	assert.Equal(t, testSession.SongList[0], p.CurrentSong.ID)
+	assert.Equal(t, testSession.SongList[0].ID, p.CurrentSong.ID)
 
 	resp, err := PlayerSkip(TestAdminUsername, TestAdminSecret, TestSessionID)
 	assert.NoError(t, err)
@@ -31,6 +31,6 @@ func TestPlayerSkip(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	p, err = getPlayer()
 	assert.NoError(t, err)
-	assert.Equal(t, testSession.SongList[1], p.CurrentSong.ID)
+	assert.Equal(t, testSession.SongList[1].ID, p.CurrentSong.ID)
 }
 

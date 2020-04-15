@@ -97,6 +97,11 @@ func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/player/skip",
 		auth(http.HandlerFunc(s.PlayerHandler.Skip)),
 	).Methods(http.MethodPost)
+
+	r.Handle(
+		"/users/{username}/player/seek/{position_ms}",
+		auth(http.HandlerFunc(s.PlayerHandler.Seek)),
+	).Methods(http.MethodPost)
 }
 
 func (s *Model) setupDebugRoutes(r *mux.Router) {

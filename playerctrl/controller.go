@@ -118,6 +118,7 @@ func (ctrl *Controller) eventLoop() {
 
 	playPause := ctrl.eventBus.Subscribe([]events.EventType{PlayPauseEvent}, []events.GroupID{events.GroupIDAny})
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
+	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
 	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
@@ -127,6 +128,9 @@ func (ctrl *Controller) eventLoop() {
 
 		case ev := <-skip.Channel:
 			ctrl.handleSkip(ev.Type, ev.GroupID, ev.Data)
+
+		case ev := <-seek.Channel:
+			ctrl.handleSeek(ev.Type, ev.GroupID, ev.Data)
 
 		case ev := <-reset.Channel:
 			if !config.Conf.Server.Debug {

@@ -22,6 +22,10 @@ var (
 	ErrUserNotAdmin    = errors.New("user not an admin")
 
 	// Frontend errors
+	RequestUrlMalformedError = FrontendError{
+		Error:       "RequestUrlMalformedError",
+		Description: "Request url does not match expected model.",
+	}
 	RequestBodyMalformedError = FrontendError{
 		Error:       "RequestBodyMalformedError",
 		Description: "Request body does not match expected model.",

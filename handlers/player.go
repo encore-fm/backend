@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -18,7 +20,7 @@ type PlayerHandler interface {
 	Play(w http.ResponseWriter, r *http.Request)
 	Pause(w http.ResponseWriter, r *http.Request)
 	Skip(w http.ResponseWriter, r *http.Request)
-	//Seek(w http.ResponseWriter, r *http.Request)
+	Seek(w http.ResponseWriter, r *http.Request)
 }
 
 var _ PlayerHandler = (*handler)(nil)
@@ -87,5 +89,31 @@ func (h *handler) Skip(w http.ResponseWriter, r *http.Request) {
 		playerctrl.SkipEvent,
 		events.GroupID(sessionID),
 		playerctrl.SkipPayload{},
+	)
+}
+
+func (h *handler) Seek(w http.ResponseWriter, r *http.Request) {
+	msg := "[player handler]: seek"
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+
+	positionMs, err := strconv.Atoi(vars["position_ms"])
+	if err != nil {
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, RequestUrlMalformedError)
+		return
+	}
+
+	if ok := h.checkUserPermissions(w, msg, user.GenerateUserID(username, sessionID)); !ok {
+		return
+	}
+
+	h.eventBus.Publish(
+		playerctrl.SeekEvent,
+		events.GroupID(sessionID),
+		playerctrl.SeekPayload{
+			Progress: time.Millisecond * time.Duration(positionMs),
+		},
 	)
 }
