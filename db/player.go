@@ -18,7 +18,7 @@ type PlayerCollection interface {
 	SetPlayer(ctx context.Context, sessionID string, newPlayer *player.Player) error
 	SetPaused(ctx context.Context, sessionID string) error
 	SetPlaying(ctx context.Context, sessionID string) error
-	SetProgress(ctx context.Context, sessionID, progress int) error
+	IncrementProgress(ctx context.Context, sessionID string, progress time.Duration) error
 }
 
 type playerCollection struct {
@@ -169,15 +169,15 @@ func (c *playerCollection) SetPlaying(ctx context.Context, sessionID string) err
 	return nil
 }
 
-func (c *playerCollection) SetProgress(ctx context.Context, sessionID, progress int) error {
+func (c *playerCollection) IncrementProgress(ctx context.Context, sessionID string, progress time.Duration) error {
 	errMsg := "[db] set progress: %w"
 	filter := bson.D{{"_id", sessionID}}
 	update := bson.D{
 		{
-			Key: "$set",
+			Key: "$inc",
 			Value: bson.D{
 				{
-					Key:   "player.progress",
+					Key:   "player.pause_duration",
 					Value: progress,
 				},
 			},

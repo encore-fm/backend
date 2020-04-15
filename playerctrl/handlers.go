@@ -80,3 +80,51 @@ func (ctrl *Controller) handleSkip(
 	ctrl.getNextSong(sessionID)
 	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
 }
+
+func (ctrl *Controller) handleSeek(
+	eventType events.EventType,
+	groupID events.GroupID,
+	data interface{},
+) {
+	ctx := context.Background()
+	msg := "[playerctrl] handle seek"
+	sessionID := string(groupID)
+	payload, ok := data.(SeekPayload)
+	if !ok {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+
+	// todo: find a way to make atomic
+	// todo: currently only one user per session can manipulate player
+
+	p, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	delta := p.Progress() - payload.Progress
+	if err := ctrl.playerCollection.IncrementProgress(ctx, sessionID, delta); err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	ctrl.notifyClients(sessionID,
+		ctrl.setPlayerStateAction(
+			p.CurrentSong.ID,
+			payload.Progress,
+			p.Paused,
+		),
+	)
+
+	if !p.Paused {
+		ctrl.setTimer(
+			sessionID,
+			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-payload.Progress,
+			func() { ctrl.getNextSong(sessionID) },
+		)
+	}
+	
+	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
+}
