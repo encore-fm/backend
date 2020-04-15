@@ -20,6 +20,8 @@ var (
 	// Authentication Errors
 	ErrWrongUserSecret = errors.New("user secret wrong")
 	ErrUserNotAdmin    = errors.New("user not an admin")
+	// Permission Errors
+	ErrInsufficientPermissions = errors.New("user does not have permission to perform this action")
 
 	// Frontend errors
 	RequestBodyMalformedError = FrontendError{

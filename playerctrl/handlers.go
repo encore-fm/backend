@@ -63,3 +63,20 @@ func (ctrl *Controller) handlePlayPause(
 
 	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
 }
+
+func (ctrl *Controller) handleSkip(
+	eventType events.EventType,
+	groupID events.GroupID,
+	data interface{},
+) {
+	msg := "[playerctrl] handle skip"
+	sessionID := string(groupID)
+	_, ok := data.(SkipPayload)
+	if !ok {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+
+	ctrl.getNextSong(sessionID)
+	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
+}
