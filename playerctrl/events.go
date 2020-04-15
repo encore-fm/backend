@@ -16,6 +16,11 @@ type PlayPausePayload struct {
 	Paused bool `json:"paused"`
 }
 
+// define skip event
+const SkipEvent events.EventType = "player_event:skip"
+
+type SkipPayload struct{}
+
 // define reset event
 const ResetEvent events.EventType = "player_event:reset_session"
 

@@ -86,12 +86,17 @@ func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	r.Handle(
 		"/users/{username}/player/play",
 		auth(http.HandlerFunc(s.PlayerHandler.Play)),
-	)
+	).Methods(http.MethodPost)
 
 	r.Handle(
 		"/users/{username}/player/pause",
 		auth(http.HandlerFunc(s.PlayerHandler.Pause)),
-	)
+	).Methods(http.MethodPost)
+
+	r.Handle(
+		"/users/{username}/player/skip",
+		auth(http.HandlerFunc(s.PlayerHandler.Skip)),
+	).Methods(http.MethodPost)
 }
 
 func (s *Model) setupDebugRoutes(r *mux.Router) {

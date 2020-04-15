@@ -116,20 +116,17 @@ func (ctrl *Controller) registerSessionLoop() {
 func (ctrl *Controller) eventLoop() {
 	msg := "[playerctrl] event loop"
 
-	playPause := ctrl.eventBus.Subscribe(
-		[]events.EventType{PlayPauseEvent},
-		[]events.GroupID{events.GroupIDAny},
-	)
-
-	reset := ctrl.eventBus.Subscribe(
-		[]events.EventType{ResetEvent},
-		[]events.GroupID{events.GroupIDAny},
-	)
+	playPause := ctrl.eventBus.Subscribe([]events.EventType{PlayPauseEvent}, []events.GroupID{events.GroupIDAny})
+	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
+	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
 		select {
 		case ev := <-playPause.Channel:
 			ctrl.handlePlayPause(ev.Type, ev.GroupID, ev.Data)
+
+		case ev := <-skip.Channel:
+			ctrl.handleSkip(ev.Type, ev.GroupID, ev.Data)
 
 		case ev := <-reset.Channel:
 			if !config.Conf.Server.Debug {
