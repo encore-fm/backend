@@ -50,13 +50,19 @@ func TestPlayerPause(t *testing.T) {
 	err = setPlaying()
 	assert.NoError(t, err)
 
+	p, err := getPlayer()
+	assert.NoError(t, err)
+
+	progressBefore := p.Progress()
+
 	resp, err := PlayerPause(TestAdminUsername, TestAdminSecret, TestSessionID)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 
-	// short pause because PlayerPlay is async
-	time.Sleep(200 * time.Millisecond)
-	p, err := getPlayer()
+	// short pause to see if pausing works
+	time.Sleep(2 * time.Second)
+	p, err = getPlayer()
 	assert.NoError(t, err)
-	assert.WithinDuration(t, testNow.Add(90*time.Second), testNow.Add(p.Progress()), 1*time.Second)
+
+	assert.WithinDuration(t, testNow.Add(progressBefore), testNow.Add(p.Progress()), 1*time.Second)
 }

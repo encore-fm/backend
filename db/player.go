@@ -178,7 +178,7 @@ func (c *playerCollection) IncrementProgress(ctx context.Context, sessionID stri
 			Value: bson.D{
 				{
 					Key:   "player.pause_duration",
-					Value: progress,
+					Value: progress.Nanoseconds(),
 				},
 			},
 		},

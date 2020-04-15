@@ -119,12 +119,14 @@ func (ctrl *Controller) handleSeek(
 	)
 
 	if !p.Paused {
+		songDuration := time.Duration(p.CurrentSong.Duration) * time.Millisecond
+		timerDuration := songDuration - payload.Progress
 		ctrl.setTimer(
 			sessionID,
-			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-payload.Progress,
+			timerDuration,
 			func() { ctrl.getNextSong(sessionID) },
 		)
 	}
-	
+
 	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
 }

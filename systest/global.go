@@ -47,21 +47,21 @@ var (
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername},
 			Downvoters:  make([]string, 0),
-			Duration:    10000,
+			Duration:    int((time.Minute * 10).Milliseconds()),
 		}, {
 			ID:          AntonAusTirolID,
 			SuggestedBy: TestUserName,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername, TestUserName},
 			Downvoters:  []string{},
-			Duration:    10000,
+			Duration:    int((time.Minute * 10).Milliseconds()),
 		}, {
 			ID:          CordulaSongID,
 			SuggestedBy: TestAdminUsername,
 			Score:       1,
 			Upvoters:    []string{TestAdminUsername},
 			Downvoters:  []string{TestUserName},
-			Duration:    10000,
+			Duration:    int((time.Minute * 10).Milliseconds()),
 		}},
 	}
 	testAdmin = &user.Model{
