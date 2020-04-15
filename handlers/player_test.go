@@ -210,7 +210,7 @@ func TestHandler_Play_InternalError(t *testing.T) {
 		Return(
 			nil,
 			errors.New("test"),
-	)
+		)
 
 	handler := &handler{
 		UserCollection: userCollection,

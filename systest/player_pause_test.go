@@ -58,5 +58,5 @@ func TestPlayerPause(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	p, err := getPlayer()
 	assert.NoError(t, err)
-	assert.WithinDuration(t, testNow.Add(90 * time.Second), testNow.Add(p.Progress()), 1 * time.Second)
+	assert.WithinDuration(t, testNow.Add(90*time.Second), testNow.Add(p.Progress()), 1*time.Second)
 }

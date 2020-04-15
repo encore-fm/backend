@@ -131,7 +131,7 @@ func (ctrl *Controller) eventLoop() {
 		case ev := <-playPause.Channel:
 			ctrl.handlePlayPause(ev.Type, ev.GroupID, ev.Data)
 
-		case ev := <- reset.Channel:
+		case ev := <-reset.Channel:
 			if !config.Conf.Server.Debug {
 				log.Errorf("%v: debug event sent but running in production mode", msg)
 				continue

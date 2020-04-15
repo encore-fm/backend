@@ -94,5 +94,5 @@ func TestPlayerPlay(t *testing.T) {
 	playerNew, err := getPlayer()
 	assert.NoError(t, err)
 
-	assert.WithinDuration(t, testNow.Add(playerOld.Progress()), testNow.Add(playerNew.Progress()), time.Millisecond * 300)
+	assert.WithinDuration(t, testNow.Add(playerOld.Progress()), testNow.Add(playerNew.Progress()), time.Millisecond*300)
 }
