@@ -11,7 +11,6 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/session"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -94,12 +93,6 @@ func TestPlayerPlay(t *testing.T) {
 	time.Sleep(200 * time.Millisecond)
 	playerNew, err := getPlayer()
 	assert.NoError(t, err)
-
-	spew.Dump(playerOld)
-	spew.Dump(playerNew)
-
-	spew.Dump(playerOld.Progress())
-	spew.Dump(playerNew.Progress())
 
 	assert.WithinDuration(t, testNow.Add(playerOld.Progress()), testNow.Add(playerNew.Progress()), time.Millisecond * 300)
 }
