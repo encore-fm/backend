@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
@@ -97,6 +98,7 @@ func (ctrl *Controller) registerSessionLoop() {
 		[]events.EventType{RegisterSessionEvent},
 		[]events.GroupID{events.GroupIDAny},
 	)
+
 	for {
 		select {
 		case ev := <-sub.Channel:
@@ -112,8 +114,15 @@ func (ctrl *Controller) registerSessionLoop() {
 }
 
 func (ctrl *Controller) eventLoop() {
+	msg := "[playerctrl] event loop"
+
 	playPause := ctrl.eventBus.Subscribe(
 		[]events.EventType{PlayPauseEvent},
+		[]events.GroupID{events.GroupIDAny},
+	)
+
+	reset := ctrl.eventBus.Subscribe(
+		[]events.EventType{ResetEvent},
 		[]events.GroupID{events.GroupIDAny},
 	)
 
@@ -121,6 +130,19 @@ func (ctrl *Controller) eventLoop() {
 		select {
 		case ev := <-playPause.Channel:
 			ctrl.handlePlayPause(ev.Type, ev.GroupID, ev.Data)
+
+		case ev := <- reset.Channel:
+			if !config.Conf.Server.Debug {
+				log.Errorf("%v: debug event sent but running in production mode", msg)
+				continue
+			}
+			payload, ok := ev.Data.(ResetPayload)
+			if !ok {
+				log.Errorf("%v: reset event: %v", msg, ErrEventPayloadMalformed)
+				continue
+			}
+			log.Infof("%v: id={%v}", msg, payload.SessionID)
+			ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 		}
 	}
 }
@@ -194,6 +216,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	newPlayer := &player.Player{
 		CurrentSong: nextSong,
 		SongStart:   time.Now(),
+		PauseStart:  time.Now(),
 		Paused:      false,
 	}
 	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {

@@ -93,3 +93,10 @@ func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		auth(http.HandlerFunc(s.PlayerHandler.Pause)),
 	)
 }
+
+func (s *Model) setupDebugRoutes(r *mux.Router) {
+	r.Handle(
+		"/debug/reset_player_controller/{session_id}",
+		http.HandlerFunc(s.DebugHandler.ResetControllerState),
+	)
+}

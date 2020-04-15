@@ -11,6 +11,7 @@ client_secret = "secret"
 redirect_url = "redirect.url"
 
 [server]
+debug = true
 port = 8080
 frontend_base_url = "http://localhost:3000"
 

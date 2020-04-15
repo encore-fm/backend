@@ -25,6 +25,10 @@ func (s *Model) Start() {
 	s.setupEventRoutes(r)
 	s.setupPlayerRoutes(r, handlers.UserAuth(s.UserCollection))
 
+	if config.Conf.Server.Debug {
+		s.setupDebugRoutes(r)
+	}
+
 	http.Handle("/", r)
 
 	log.Infof(

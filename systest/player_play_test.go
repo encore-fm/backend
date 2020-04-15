@@ -3,15 +3,19 @@ package systest
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
+	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/session"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func setPaused(paused bool) error {
+func setPaused() error {
 	filter := bson.D{
 		{"_id", TestSessionID},
 	}
@@ -20,7 +24,8 @@ func setPaused(paused bool) error {
 		{
 			"$set",
 			bson.D{
-				{"player.paused", paused},
+				{"player.paused", true},
+				{"player.song_paused", time.Now()},
 			},
 		},
 	}
@@ -57,22 +62,42 @@ func getPlayer() (*player.Player, error) {
 	return sess.Player, nil
 }
 
-// todo wait until seek endpoint exist and reset controller state after each test
+// pauses
+// waits few seconds
+// player progress should not have changed
 func TestPlayerPlay(t *testing.T) {
-	//dropDB()
-	//setupDB()
-	//
-	//err := setPaused(true)
-	//assert.NoError(t, err)
-	//
-	//resp, err := PlayerPlay(TestAdminUsername, TestAdminSecret, TestSessionID)
-	//assert.NoError(t, err)
-	//assert.Equal(t, http.StatusOK, resp.StatusCode)
-	//
-	//// short pause because PlayerPlay is async
-	//time.Sleep(200 * time.Millisecond)
-	//p, err := getPlayer()
-	//assert.NoError(t, err)
-	//
-	//assert.WithinDuration(t, testNow.Add(30 * time.Second), testNow.Add(p.Progress()), time.Millisecond * 300)
+	dropDB()
+	setupDB()
+
+	_, err := resetPlayerController(TestSessionID)
+	assert.NoError(t, err)
+
+	pauseDuration := 3 * time.Second
+
+	time.Sleep(2 * time.Second)
+
+	err = setPaused()
+	assert.NoError(t, err)
+
+	playerOld, err := getPlayer()
+	assert.NoError(t, err)
+
+	time.Sleep(pauseDuration)
+
+	resp, err := PlayerPlay(TestAdminUsername, TestAdminSecret, TestSessionID)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	// short pause because PlayerPlay is async
+	time.Sleep(200 * time.Millisecond)
+	playerNew, err := getPlayer()
+	assert.NoError(t, err)
+
+	spew.Dump(playerOld)
+	spew.Dump(playerNew)
+
+	spew.Dump(playerOld.Progress())
+	spew.Dump(playerNew.Progress())
+
+	assert.WithinDuration(t, testNow.Add(playerOld.Progress()), testNow.Add(playerNew.Progress()), time.Millisecond * 300)
 }

@@ -27,6 +27,7 @@ func TestFromFile(t *testing.T) {
 	serverConfig := &ServerConfig{
 		Port:            8080,
 		FrontendBaseUrl: "http://localhost:3000",
+		Debug:           true,
 	}
 	assert.Equal(t, serverConfig, result.Server)
 
