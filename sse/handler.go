@@ -3,7 +3,9 @@ package sse
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/song"
 	"net/http"
+	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/gorilla/mux"
@@ -14,6 +16,12 @@ const (
 	PlaylistChange    events.EventType = "playlist_change"
 	PlayerStateChange events.EventType = "player_state_change"
 )
+
+type PlayerStateChangePayload struct {
+	CurrentSong *song.Model   `json:"current_song"`
+	IsPlaying   bool          `json:"is_playing"`
+	Progress    time.Duration `json:"progress"`
+}
 
 type Handler interface {
 	ServeHTTP(w http.ResponseWriter, r *http.Request)

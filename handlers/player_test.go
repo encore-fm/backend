@@ -559,7 +559,7 @@ func TestHandler_Seek_NotAdmin(t *testing.T) {
 		t.Fatal(err)
 	}
 	req = mux.SetURLVars(req, map[string]string{
-		"username": username,
+		"username":    username,
 		"position_ms": strconv.Itoa(int(progress.Milliseconds())),
 	})
 	req.Header.Set("Session", sessionID)
@@ -586,7 +586,7 @@ func TestHandler_Seek_UrlMalformed(t *testing.T) {
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
+		eventBus: eventBus,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -601,7 +601,7 @@ func TestHandler_Seek_UrlMalformed(t *testing.T) {
 		t.Fatal(err)
 	}
 	req = mux.SetURLVars(req, map[string]string{
-		"username": username,
+		"username":    username,
 		"position_ms": progress,
 	})
 	req.Header.Set("Session", sessionID)
