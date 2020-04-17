@@ -283,3 +283,53 @@ func TestHandler_Vote(t *testing.T) {
 
 	assert.Equal(t, songList, response)
 }
+
+func TestHandler_SessionInfo(t *testing.T) {
+	sessionID := "session_id"
+	admin := &user.Model{}
+
+	// setup mock collection
+	var userCollection db.UserCollection
+	userCollection = &mocks.UserCollection{}
+
+	// no error
+	userCollection.(*mocks.UserCollection).
+		On("GetAdminBySessionID", context.TODO(), sessionID).
+		Return(admin, nil)
+
+	// create a handler with mock collection
+	handler := &handler{
+		UserCollection: userCollection,
+	}
+	userHandler := UserHandler(handler)
+
+	// set up http request
+	req, err := http.NewRequest(
+		"GET",
+		fmt.Sprintf("/sessionInfo/%v", sessionID),
+		nil,
+	)
+	assert.NoError(t, err)
+
+	req = mux.SetURLVars(req, map[string]string{
+		"session_id": sessionID,
+	})
+
+	rr := httptest.NewRecorder()
+
+	// call handler func
+	userHandler.SessionInfo(rr, req)
+
+	// check for success
+	assert.Equal(t, http.StatusOK, rr.Code)
+
+	// decode response
+	response := &struct {
+		AdminName   string      `json:"admin_name"`
+		CurrentSong *song.Model `json:"current_song"`
+	}{}
+	err = json.NewDecoder(rr.Body).Decode(response)
+	assert.NoError(t, err)
+
+	assert.Equal(t, admin.Username, response.AdminName)
+}
