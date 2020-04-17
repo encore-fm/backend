@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -287,21 +288,29 @@ func TestHandler_Vote(t *testing.T) {
 func TestHandler_SessionInfo(t *testing.T) {
 	sessionID := "session_id"
 	admin := &user.Model{}
+	player := &player.Player{}
 
 	// setup mock collection
 	var userCollection db.UserCollection
 	userCollection = &mocks.UserCollection{}
+
+	var playerCollection db.PlayerCollection
+	playerCollection = &mocks.PlayerCollection{}
 
 	// no error
 	userCollection.(*mocks.UserCollection).
 		On("GetAdminBySessionID", context.TODO(), sessionID).
 		Return(admin, nil)
 
+	playerCollection.(*mocks.PlayerCollection).
+		On("GetPlayer", context.TODO(), sessionID).
+		Return(player, nil)
+
 	// create a handler with mock collection
 	handler := &handler{
-		UserCollection: userCollection,
+		UserCollection:   userCollection,
+		PlayerCollection: playerCollection,
 	}
-	userHandler := UserHandler(handler)
 
 	// set up http request
 	req, err := http.NewRequest(
@@ -318,7 +327,7 @@ func TestHandler_SessionInfo(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	// call handler func
-	userHandler.SessionInfo(rr, req)
+	handler.SessionInfo(rr, req)
 
 	// check for success
 	assert.Equal(t, http.StatusOK, rr.Code)
