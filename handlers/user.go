@@ -326,13 +326,17 @@ func (h *handler) SessionInfo(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	var currentSong *song.Model
+	if player != nil {
+		currentSong = player.CurrentSong
+	}
 
 	response := &struct {
 		AdminName   string      `json:"admin_name"`
 		CurrentSong *song.Model `json:"current_song"`
 	}{
 		AdminName:   admin.Username,
-		CurrentSong: player.CurrentSong,
+		CurrentSong: currentSong,
 	}
 
 	jsonResponse(w, response)

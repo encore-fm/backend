@@ -85,7 +85,7 @@ func (c *userCollection) GetUserByState(ctx context.Context, state string) (*use
 }
 
 func (c *userCollection) GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error) {
-	errMsg := "[db] get user by sessionID: %w"
+	errMsg := "[db] get admin by sessionID: %w"
 	filter := bson.D{
 		{"session_id", sessionID},
 		{"is_admin", true},
