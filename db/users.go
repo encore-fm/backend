@@ -16,6 +16,7 @@ import (
 type UserCollection interface {
 	GetUserByID(ctx context.Context, userID string) (*user.Model, error)
 	GetUserByState(ctx context.Context, state string) (*user.Model, error)
+	GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
@@ -77,6 +78,23 @@ func (c *userCollection) GetUserByState(ctx context.Context, state string) (*use
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, fmt.Errorf(errMsg, ErrNoUserWithState)
+		}
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	return res, nil
+}
+
+func (c *userCollection) GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error) {
+	errMsg := "[db] get user by sessionID: %w"
+	filter := bson.D{
+		{"session_id", sessionID},
+		{"is_admin", true},
+	}
+	res, err := c.findOne(ctx, filter)
+	if err != nil {
+		// no admin being found with the given session id implies the session not existing
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf(errMsg, ErrNoSessionWithID)
 		}
 		return nil, fmt.Errorf(errMsg, err)
 	}
