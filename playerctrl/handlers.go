@@ -50,6 +50,8 @@ func (ctrl *Controller) handlePlayPause(
 			payload.Paused,
 		),
 	)
+	// send out a player state change event
+	ctrl.notifyPlayerStateChange(sessionID)
 
 	if !payload.Paused {
 		ctrl.setTimer(

@@ -3,6 +3,7 @@ package playerctrl
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/song"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
@@ -248,4 +249,32 @@ func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
 		action(spotifyClient)
 	}
+}
+
+// sends out a player state change event with relevant data about the current player state
+func (ctrl *Controller) notifyPlayerStateChange(sessionID string) {
+	msg := "[playerctrl] notify player state change"
+	ctx := context.Background()
+
+	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	playerState := &struct {
+		CurrentSong *song.Model   `json:"current_song"`
+		IsPlaying   bool          `json:"is_playing"`
+		Progress    time.Duration `json:"progress"`
+	}{
+		CurrentSong: playr.CurrentSong,
+		IsPlaying:   !playr.Paused,
+		Progress:    playr.Progress(),
+	}
+
+	ctrl.eventBus.Publish(
+		sse.PlayerStateChange,
+		events.GroupID(sessionID),
+		playerState,
+	)
 }

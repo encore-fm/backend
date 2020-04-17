@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	PlaylistChange events.EventType = "playlist_change"
+	PlaylistChange    events.EventType = "playlist_change"
+	PlayerStateChange events.EventType = "player_state_change"
 )
 
 type Handler interface {
@@ -47,7 +48,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// subscribe to playlist changes
 	sub := h.eventBus.Subscribe(
-		[]events.EventType{PlaylistChange},
+		[]events.EventType{PlaylistChange, PlayerStateChange},
 		[]events.GroupID{events.GroupID(sessionID)},
 	)
 
