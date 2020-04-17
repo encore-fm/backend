@@ -80,6 +80,10 @@ func (ctrl *Controller) handleSkip(
 	}
 
 	ctrl.getNextSong(sessionID)
+
+	// send out a player state change event
+	ctrl.notifyPlayerStateChange(sessionID)
+
 	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
 }
 
@@ -119,6 +123,9 @@ func (ctrl *Controller) handleSeek(
 			p.Paused,
 		),
 	)
+
+	// send out a player state change event
+	ctrl.notifyPlayerStateChange(sessionID)
 
 	if !p.Paused {
 		songDuration := time.Duration(p.CurrentSong.Duration) * time.Millisecond
