@@ -31,6 +31,29 @@ func (_m *UserCollection) AddUser(ctx context.Context, newUser *user.Model) erro
 	return r0
 }
 
+// GetAdminBySessionID provides a mock function with given fields: ctx, sessionID
+func (_m *UserCollection) GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error) {
+	ret := _m.Called(ctx, sessionID)
+
+	var r0 *user.Model
+	if rf, ok := ret.Get(0).(func(context.Context, string) *user.Model); ok {
+		r0 = rf(ctx, sessionID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*user.Model)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, sessionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetSpotifyClients provides a mock function with given fields: ctx, sessionID
 func (_m *UserCollection) GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
 	ret := _m.Called(ctx, sessionID)

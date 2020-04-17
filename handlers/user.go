@@ -24,6 +24,7 @@ type UserHandler interface {
 	Vote(w http.ResponseWriter, r *http.Request)
 	ClientToken(w http.ResponseWriter, r *http.Request)
 	AuthToken(w http.ResponseWriter, r *http.Request)
+	SessionInfo(w http.ResponseWriter, r *http.Request)
 }
 
 var _ UserHandler = (*handler)(nil)
@@ -44,7 +45,7 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 	sess, err := h.SessionCollection.GetSessionByID(ctx, sessionID)
 	if err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
-			handleError(w, http.StatusNotFound, log.ErrorLevel, msg, err, SessionNotFoundError)
+			handleError(w, http.StatusBadRequest, log.ErrorLevel, msg, err, SessionNotFoundError)
 		} else {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
@@ -278,11 +279,10 @@ func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, db.ErrNoUserWithID) {
 			handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, err, RequestNotAuthorizedError)
-			return
 		} else {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
 		}
+		return
 	}
 
 	if !usr.SpotifyAuthorized {
@@ -296,4 +296,49 @@ func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(w, token)
 	log.Infof("%v: user=[%v], session=[%v]", msg, username, sessionID)
+}
+
+func (h *handler) SessionInfo(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] get session info"
+	ctx := context.Background()
+
+	vars := mux.Vars(r)
+	sessionID := vars["session_id"]
+
+	// get session's admin
+	admin, err := h.UserCollection.GetAdminBySessionID(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, db.ErrNoSessionWithID) {
+			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
+		} else {
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
+		return
+	}
+
+	// get session's player for current song
+	player, err := h.PlayerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		if errors.Is(err, db.ErrNoSessionWithID) {
+			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)
+		} else {
+			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		}
+		return
+	}
+	var currentSong *song.Model
+	if player != nil {
+		currentSong = player.CurrentSong
+	}
+
+	response := &struct {
+		AdminName   string      `json:"admin_name"`
+		CurrentSong *song.Model `json:"current_song"`
+	}{
+		AdminName:   admin.Username,
+		CurrentSong: currentSong,
+	}
+
+	jsonResponse(w, response)
+	log.Infof("%v: session=[%v]", msg, sessionID)
 }
