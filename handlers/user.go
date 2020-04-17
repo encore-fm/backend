@@ -175,6 +175,11 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// dont return nil if SongList is empty
+	if songList == nil {
+		songList = make([]*song.Model, 0)
+	}
+
 	log.Infof("%v: user [%v]", msg, username)
 	jsonResponse(w, songList)
 }
