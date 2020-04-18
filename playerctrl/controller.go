@@ -161,6 +161,8 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		if err != nil {
 			log.Errorf("%v: %v", msg, err)
 		}
+		// if no song is in the queue and a getNextSong is requested, notify the spotify clients to skip song
+		ctrl.notifyClients(sessionID, ctrl.playerSkipAction())
 		log.Warnf("%v: %v", msg, "songlist empty")
 		return
 	}
@@ -204,6 +206,35 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	)
 }
 
+// finds and activates a client's playback device if no active devices are found
+func initializeClient(client spotify.Client) {
+	msg := "[playerctrl] initialize client"
+
+	devices, err := client.PlayerDevices()
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+	if len(devices) == 0 {
+		// todo notify frontend about no devices being active
+		log.Warnf("%v: no spotify devices found", msg)
+		return
+	}
+
+	for _, device := range devices {
+		// Active device found. No action needed.
+		if device.Active {
+			return
+		}
+	}
+	// else, activate the first device in the list
+	err = client.TransferPlayback(devices[0].ID, false)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+}
+
 // synchronizes all connected users with admin player state
 func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 	msg := "[playerctrl] notify clients"
@@ -216,6 +247,7 @@ func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 
 	for _, client := range clients {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
+		initializeClient(spotifyClient)
 		action(spotifyClient)
 	}
 }

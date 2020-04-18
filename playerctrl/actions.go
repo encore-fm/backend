@@ -31,3 +31,14 @@ func (ctrl *Controller) setPlayerStateAction(songID string, position time.Durati
 	}
 	return ctrl.setPlayerStateWithOptions(opt, paused)
 }
+
+// Returns a function that notifies the client to skip to the next song.
+// Required when skip request is made on an empty queue
+func (ctrl *Controller) playerSkipAction() notifyAction {
+	msg := "[spotifyctrl] player skip"
+	return func(client spotify.Client) {
+		if err := client.Next(); err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
+	}
+}
