@@ -7,7 +7,6 @@ import (
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
@@ -80,13 +79,6 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("%v: [%v] successfully created session with id [%v]", msg, username, sess.ID)
 	jsonResponse(w, response)
-
-	// register session at playerController
-	h.eventBus.Publish(
-		playerctrl.RegisterSessionEvent,
-		events.GroupIDAny,
-		playerctrl.RegisterSessionPayload{SessionID: sess.ID},
-	)
 }
 
 func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {

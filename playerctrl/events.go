@@ -6,12 +6,8 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/events"
 )
 
-// define register session event
-const RegisterSessionEvent events.EventType = "player_event:register_session"
-
-type RegisterSessionPayload struct {
-	SessionID string `json:"session_id"`
-}
+// define song added event
+const SongAdded events.EventType = "player_event:song_added"
 
 // define play / paused event
 const PlayPauseEvent events.EventType = "player_event:play_pause"

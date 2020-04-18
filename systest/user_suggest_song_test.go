@@ -63,11 +63,13 @@ func Test_UserSuggestSong_ExistingSong(t *testing.T) {
 	sessionID := TestSessionID
 	songID := SkiFoanID
 
+	// suggest song twice, since it gets consumed by the player controller the first time
+	_, _ = UserSuggestSong(username, secret, sessionID, songID)
 	resp, err := UserSuggestSong(username, secret, sessionID, songID)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
 
-	// 409 expected when username exists
+	// 409 expected when song exists
 	assert.Equal(t, http.StatusConflict, resp.StatusCode)
 
 	// deserialize response body and assert expected results
