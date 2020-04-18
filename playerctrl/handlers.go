@@ -35,6 +35,18 @@ func (ctrl *Controller) handlePlayPause(ev events.Event) {
 
 	sessionID := string(ev.GroupID)
 
+	// todo: implement SetPaused as findAndUpdate
+	p, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	if p.IsEmpty() {
+		log.Warnf("%v: no song in player", msg)
+		return
+	}
+
 	payload, ok := ev.Data.(PlayPausePayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
@@ -51,13 +63,6 @@ func (ctrl *Controller) handlePlayPause(ev events.Event) {
 			log.Errorf("%v: %v", msg, err)
 			return
 		}
-	}
-
-	// todo: implement SetPaused as findAndUpdate
-	p, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		return
 	}
 
 	ctrl.notifyClients(sessionID,
