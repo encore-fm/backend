@@ -33,4 +33,3 @@ func TestPlayerSkip(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, testSession.SongList[1].ID, p.CurrentSong.ID)
 }
-

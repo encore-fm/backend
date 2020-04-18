@@ -3,6 +3,7 @@ package playerctrl
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/song"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
@@ -186,8 +187,12 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	}
 	if len(songList) == 0 {
 		// if songList is empty
-		// log error and try again in 500ms
+		// set player to nil, log error and try again in 500ms
 		// todo: wait for songAdded
+		err = ctrl.playerCollection.SetPlayer(ctx, sessionID, nil)
+		if err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
 		log.Infof("%v: %v", msg, "songlist empty - waiting for 1000ms")
 		ctrl.setTimer(
 			sessionID,
@@ -205,6 +210,8 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	}
 
 	ctrl.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList[1:])
+	// send out a player state change event
+	ctrl.notifyPlayerStateChange(sessionID)
 
 	// fetch next song after song has ended
 	ctrl.setTimer(
@@ -248,4 +255,38 @@ func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
 		action(spotifyClient)
 	}
+}
+
+// sends out a player state change event with relevant data about the current player state
+func (ctrl *Controller) notifyPlayerStateChange(sessionID string) {
+	msg := "[playerctrl] notify player state change"
+	ctx := context.Background()
+
+	var currentSong *song.Model
+	var isPlaying bool
+	var progress time.Duration
+
+	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	if playr != nil {
+		currentSong = playr.CurrentSong
+		isPlaying = !playr.Paused
+		progress = playr.Progress()
+	}
+
+	payload := &sse.PlayerStateChangePayload{
+		CurrentSong: currentSong,
+		IsPlaying:   isPlaying,
+		Progress:    progress,
+	}
+
+	ctrl.eventBus.Publish(
+		sse.PlayerStateChange,
+		events.GroupID(sessionID),
+		payload,
+	)
 }
