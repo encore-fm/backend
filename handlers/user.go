@@ -262,7 +262,7 @@ func (h *handler) ClientToken(w http.ResponseWriter, r *http.Request) {
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
 
-	token, err := h.Spotify.Client.Token()
+	token, err := h.Spotify.GetClientToken()
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return

@@ -6,6 +6,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
+	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -59,4 +60,9 @@ func (c *SpotifyClient) refreshToken() {
 	}
 	c.Client = spotify.Authenticator{}.NewClient(token)
 	log.Info("[spotifycl] refreshed token")
+}
+
+func (c *SpotifyClient) GetClientToken() (*oauth2.Token, error){
+	c.refreshToken()
+	return c.Client.Token()
 }
