@@ -3,6 +3,7 @@ package playerctrl
 import (
 	"context"
 	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -21,7 +22,7 @@ func (ctrl *Controller) handleSongAdded(ev events.Event) {
 		return
 	}
 	// timer only needs to be set when the player is empty
-	if playr != nil && playr.CurrentSong != nil {
+	if playr != nil && !playr.IsEmpty() {
 		return
 	}
 
@@ -150,6 +151,8 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 
 func (ctrl *Controller) handleReset(ev events.Event) {
 	msg := "[playerctrl] handle reset"
+	ctx := context.Background()
+	sessionID := string(ev.GroupID)
 
 	if !config.Conf.Server.Debug {
 		log.Errorf("%v: debug event sent but running in production mode", msg)
@@ -160,6 +163,14 @@ func (ctrl *Controller) handleReset(ev events.Event) {
 		log.Errorf("%v: reset event: %v", msg, ErrEventPayloadMalformed)
 		return
 	}
+
+	// setup test player todo: getPlayer in player_play_test.go still returns nil
+	err := ctrl.playerCollection.SetPlayer(ctx, sessionID, player.New())
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
 	log.Infof("%v: id={%v}", msg, payload.SessionID)
 	ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 }

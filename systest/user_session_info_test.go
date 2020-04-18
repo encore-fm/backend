@@ -7,6 +7,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/handlers"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"testing"
 )
 
@@ -14,9 +15,11 @@ func Test_UserGetSessionInfo_InvalidSession(t *testing.T) {
 	dropDB()
 	setupDB()
 
-	// empty string for invalid session
-	resp, err := UserGetSessionInfo("")
+	// totally valid sessionID
+	resp, err := UserGetSessionInfo("watch?v=dQw4w9WgXcQ")
 	assert.NoError(t, err)
+	// invalid session -> bad request
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
 	var response handlers.FrontendError
 	err = json.NewDecoder(resp.Body).Decode(&response)

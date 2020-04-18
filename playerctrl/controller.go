@@ -156,8 +156,8 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	}
 	if len(songList) == 0 {
 		// if songList is empty
-		// set player to nil, log error and wait for songAdded
-		err = ctrl.playerCollection.SetPlayer(ctx, sessionID, nil)
+		// reset player, log error and wait for songAdded
+		err = ctrl.playerCollection.SetPlayer(ctx, sessionID, player.New())
 		if err != nil {
 			log.Errorf("%v: %v", msg, err)
 		}

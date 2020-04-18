@@ -76,7 +76,7 @@ func Test_UserJoin_NonExistingSession(t *testing.T) {
 	resp, err := UserJoin(username, sessionID)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
-	assert.Equal(t, http.StatusNotFound, resp.StatusCode) // expect 404 when session is not found
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode) // expect 404 when session is not found
 
 	// deserialize response body and assert expected results
 	var response handlers.FrontendError
