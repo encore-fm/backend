@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
@@ -157,6 +158,8 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList)
+	// notify the player controller of a new song being suggested
+	h.eventBus.Publish(playerctrl.SongAdded, events.GroupID(sessionID), nil)
 }
 
 // ListSongs returns all songs in one session

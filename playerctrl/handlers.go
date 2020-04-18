@@ -2,23 +2,39 @@ package playerctrl
 
 import (
 	"context"
+	"github.com/antonbaumann/spotify-jukebox/config"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	log "github.com/sirupsen/logrus"
 )
 
-func (ctrl *Controller) handlePlayPause(
-	eventType events.EventType,
-	groupID events.GroupID,
-	data interface{},
-) {
+func (ctrl *Controller) handleSongAdded(ev events.Event) {
+	msg := "[playerctrl] handle song added"
+	ctx := context.Background()
+
+	sessionID := string(ev.GroupID)
+
+	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+	// timer only needs to be set when the player is empty
+	if playr != nil && playr.CurrentSong != nil {
+		return
+	}
+
+	ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+}
+
+func (ctrl *Controller) handlePlayPause(ev events.Event) {
 	msg := "[playerctrl] handle play/pause"
 	ctx := context.Background()
 
-	sessionID := string(groupID)
+	sessionID := string(ev.GroupID)
 
-	payload, ok := data.(PlayPausePayload)
+	payload, ok := ev.Data.(PlayPausePayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
 		return
@@ -63,17 +79,13 @@ func (ctrl *Controller) handlePlayPause(
 		ctrl.stopTimer(sessionID)
 	}
 
-	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
-func (ctrl *Controller) handleSkip(
-	eventType events.EventType,
-	groupID events.GroupID,
-	data interface{},
-) {
+func (ctrl *Controller) handleSkip(ev events.Event) {
 	msg := "[playerctrl] handle skip"
-	sessionID := string(groupID)
-	_, ok := data.(SkipPayload)
+	sessionID := string(ev.GroupID)
+	_, ok := ev.Data.(SkipPayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
 		return
@@ -84,18 +96,14 @@ func (ctrl *Controller) handleSkip(
 	// send out a player state change event
 	ctrl.notifyPlayerStateChange(sessionID)
 
-	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
-func (ctrl *Controller) handleSeek(
-	eventType events.EventType,
-	groupID events.GroupID,
-	data interface{},
-) {
+func (ctrl *Controller) handleSeek(ev events.Event) {
 	ctx := context.Background()
 	msg := "[playerctrl] handle seek"
-	sessionID := string(groupID)
-	payload, ok := data.(SeekPayload)
+	sessionID := string(ev.GroupID)
+	payload, ok := ev.Data.(SeekPayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
 		return
@@ -137,5 +145,21 @@ func (ctrl *Controller) handleSeek(
 		)
 	}
 
-	log.Infof("%v: type={%v} id={%v}", msg, eventType, groupID)
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+}
+
+func (ctrl *Controller) handleReset(ev events.Event) {
+	msg := "[playerctrl] handle reset"
+
+	if !config.Conf.Server.Debug {
+		log.Errorf("%v: debug event sent but running in production mode", msg)
+		return
+	}
+	payload, ok := ev.Data.(ResetPayload)
+	if !ok {
+		log.Errorf("%v: reset event: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+	log.Infof("%v: id={%v}", msg, payload.SessionID)
+	ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 }

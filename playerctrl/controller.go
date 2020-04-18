@@ -6,7 +6,6 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
@@ -88,35 +87,12 @@ func (ctrl *Controller) Start() error {
 	}
 
 	go ctrl.eventLoop()
-	go ctrl.registerSessionLoop()
 
 	return nil
 }
 
-func (ctrl *Controller) registerSessionLoop() {
-	msg := "[playerctrl] register session"
-	sub := ctrl.eventBus.Subscribe(
-		[]events.EventType{RegisterSessionEvent},
-		[]events.GroupID{events.GroupIDAny},
-	)
-
-	for {
-		select {
-		case ev := <-sub.Channel:
-			payload, ok := ev.Data.(RegisterSessionPayload)
-			if !ok {
-				log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
-				continue
-			}
-			log.Infof("%v: id={%v}", msg, payload.SessionID)
-			ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
-		}
-	}
-}
-
 func (ctrl *Controller) eventLoop() {
-	msg := "[playerctrl] event loop"
-
+	songAdded := ctrl.eventBus.Subscribe([]events.EventType{SongAdded}, []events.GroupID{events.GroupIDAny})
 	playPause := ctrl.eventBus.Subscribe([]events.EventType{PlayPauseEvent}, []events.GroupID{events.GroupIDAny})
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
 	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
@@ -124,27 +100,20 @@ func (ctrl *Controller) eventLoop() {
 
 	for {
 		select {
+		case ev := <-songAdded.Channel:
+			ctrl.handleSongAdded(ev)
+
 		case ev := <-playPause.Channel:
-			ctrl.handlePlayPause(ev.Type, ev.GroupID, ev.Data)
+			ctrl.handlePlayPause(ev)
 
 		case ev := <-skip.Channel:
-			ctrl.handleSkip(ev.Type, ev.GroupID, ev.Data)
+			ctrl.handleSkip(ev)
 
 		case ev := <-seek.Channel:
-			ctrl.handleSeek(ev.Type, ev.GroupID, ev.Data)
+			ctrl.handleSeek(ev)
 
 		case ev := <-reset.Channel:
-			if !config.Conf.Server.Debug {
-				log.Errorf("%v: debug event sent but running in production mode", msg)
-				continue
-			}
-			payload, ok := ev.Data.(ResetPayload)
-			if !ok {
-				log.Errorf("%v: reset event: %v", msg, ErrEventPayloadMalformed)
-				continue
-			}
-			log.Infof("%v: id={%v}", msg, payload.SessionID)
-			ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
+			ctrl.handleReset(ev)
 		}
 	}
 }
@@ -187,18 +156,12 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	}
 	if len(songList) == 0 {
 		// if songList is empty
-		// set player to nil, log error and try again in 500ms
-		// todo: wait for songAdded
+		// set player to nil, log error and wait for songAdded
 		err = ctrl.playerCollection.SetPlayer(ctx, sessionID, nil)
 		if err != nil {
 			log.Errorf("%v: %v", msg, err)
 		}
-		log.Infof("%v: %v", msg, "songlist empty - waiting for 1000ms")
-		ctrl.setTimer(
-			sessionID,
-			time.Duration(1000)*time.Millisecond,
-			func() { ctrl.getNextSong(sessionID) },
-		)
+		log.Warnf("%v: %v", msg, "songlist empty")
 		return
 	}
 
