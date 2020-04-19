@@ -3,8 +3,9 @@ package playerctrl
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/song"
 	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/song"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -278,6 +279,7 @@ func (ctrl *Controller) notifyPlayerStateChange(sessionID string) {
 		CurrentSong: currentSong,
 		IsPlaying:   isPlaying,
 		Progress:    progress,
+		Timestamp:   time.Now(),
 	}
 
 	ctrl.eventBus.Publish(

@@ -11,6 +11,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -21,6 +22,7 @@ type PlayerHandler interface {
 	Pause(w http.ResponseWriter, r *http.Request)
 	Skip(w http.ResponseWriter, r *http.Request)
 	Seek(w http.ResponseWriter, r *http.Request)
+	GetState(w http.ResponseWriter, r *http.Request)
 }
 
 var _ PlayerHandler = (*handler)(nil)
@@ -116,4 +118,27 @@ func (h *handler) Seek(w http.ResponseWriter, r *http.Request) {
 			Progress: time.Millisecond * time.Duration(positionMs),
 		},
 	)
+}
+
+// todo: add component tests
+// todo: add system tests
+func (h *handler) GetState(w http.ResponseWriter, r *http.Request) {
+	msg := "[player handler]: get state"
+	ctx := context.Background()
+
+	sessionID := r.Header.Get("Session")
+	playr, err := h.PlayerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	result := &sse.PlayerStateChangePayload{
+		CurrentSong: playr.CurrentSong,
+		IsPlaying:   !playr.Paused,
+		Progress:    playr.Progress(),
+		Timestamp:   time.Now(),
+	}
+
+	jsonResponse(w, result)
 }
