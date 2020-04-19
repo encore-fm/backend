@@ -53,6 +53,9 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
+
 	newUser, err := user.New(username, sessionID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
@@ -128,6 +131,9 @@ func (h *handler) SuggestSong(w http.ResponseWriter, r *http.Request) {
 	songID := vars["song_id"]
 	sessionID := r.Header.Get("Session")
 
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
+
 	fullTrack, err := h.Spotify.Client.GetTrack(spotify.ID(songID))
 	if err != nil {
 		// todo: should mostly be UserError -> better checks
@@ -172,6 +178,9 @@ func (h *handler) ListSongs(w http.ResponseWriter, r *http.Request) {
 
 	sessionID := r.Header.Get("Session")
 
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
+
 	songList, err := h.SongCollection.ListSongs(ctx, sessionID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
@@ -199,6 +208,9 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 
 	// get session id from headers
 	sessionID := r.Header.Get("Session")
+
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
 
 	if voteAction != "up" && voteAction != "down" {
 		handleError(w, http.StatusBadRequest, log.ErrorLevel, msg, ErrBadVoteAction, BadVoteError)
@@ -258,9 +270,13 @@ func (h *handler) Vote(w http.ResponseWriter, r *http.Request) {
 // returns client token
 func (h *handler) ClientToken(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] get client token"
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
+
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
 
 	token, err := h.Spotify.GetClientToken()
 	if err != nil {
@@ -281,6 +297,9 @@ func (h *handler) AuthToken(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
+
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
 
 	userID := user.GenerateUserID(username, sessionID)
 	usr, err := h.UserCollection.GetUserByID(ctx, userID)
