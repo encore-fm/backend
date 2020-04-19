@@ -112,6 +112,16 @@ func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/player/state",
 		auth(http.HandlerFunc(s.PlayerHandler.GetState)),
 	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/player/synchronize",
+		auth(http.HandlerFunc(s.PlayerHandler.Synchronize)),
+	).Methods(http.MethodPost)
+
+	r.Handle(
+		"/users/{username}/player/desynchronize",
+		auth(http.HandlerFunc(s.PlayerHandler.Desynchronize)),
+	).Methods(http.MethodPost)
 }
 
 func (s *Model) setupDebugRoutes(r *mux.Router) {
