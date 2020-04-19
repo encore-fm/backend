@@ -187,16 +187,17 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 		return
 	}
 
-	// todo: think about the best way to handle this case
-	if playr.CurrentSong == nil {
-		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-		return
+	// if no song in player, you know what to do...
+	// TODO: IF THIS APP EVER GETS SERIOUS WE NEED TO GET THE HELL RID OF THIS
+	songID := "4uLU6hMCjMI75M1A2tKUQC" // not rick roll
+	if playr.CurrentSong != nil {
+		songID = playr.CurrentSong.ID
 	}
 
 	// get the user's client up to speed...
 	ctrl.notifyClient(sessionID, userID,
 		ctrl.setPlayerStateAction(
-			playr.CurrentSong.ID,
+			songID,
 			playr.Progress(),
 			playr.Paused,
 		),
