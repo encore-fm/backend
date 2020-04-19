@@ -23,7 +23,12 @@ func TestEventBus_Unsubscribe(t *testing.T) {
 	assert.True(t, ok)
 
 	bus.Unsubscribe(sub)
-	time.Sleep(time.Millisecond * 200)
+	for {
+		if _, ok := <- sub.Channel; !ok {
+			break
+		}
+		time.Sleep(time.Millisecond * 200)
+	}
 
 	_, ok = bus.(*eventBus).subscribers["event1"]
 	assert.False(t, ok)
