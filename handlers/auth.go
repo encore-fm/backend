@@ -49,7 +49,7 @@ func authenticate(userCollection db.UserCollection, checkAdmin bool) AuthFunc {
 			}
 
 			if checkAdmin && !u.IsAdmin {
-				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrUserNotAdmin, RequestNotAuthorizedError)
+				handleError(w, http.StatusUnauthorized, log.WarnLevel, msg, ErrUserNotAdmin, ActionNotAllowedError)
 				return
 			}
 
