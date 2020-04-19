@@ -190,8 +190,10 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	// if no song in player, you know what to do...
 	// TODO: IF THIS APP EVER GETS SERIOUS WE NEED TO GET THE HELL RID OF THIS
 	songID := "4uLU6hMCjMI75M1A2tKUQC" // not rick roll
+	paused := false                    // hell no, crank that sh*t up
 	if playr.CurrentSong != nil {
 		songID = playr.CurrentSong.ID
+		paused = playr.Paused
 	}
 
 	// get the user's client up to speed...
@@ -199,7 +201,7 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 		ctrl.setPlayerStateAction(
 			songID,
 			playr.Progress(),
-			playr.Paused,
+			paused,
 		),
 	)
 
