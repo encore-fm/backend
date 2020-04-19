@@ -49,6 +49,7 @@ func NewEventBus() EventBus {
 	return &eventBus{
 		subscribers:      make(map[EventType]map[GroupID]map[chan Event]bool),
 		newSubscriptions: make(chan subscription),
+		unsubscriptions:  make(chan subscription),
 		eventChan:        make(chan Event),
 		quit:             make(chan struct{}),
 	}
@@ -91,11 +92,11 @@ func (eb *eventBus) loop() {
 	for {
 		select {
 
-		case sub := <-eb.newSubscriptions:
-			eb.subscribe(sub)
-
 		case unsub := <-eb.unsubscriptions:
 			eb.unsubscribe(unsub)
+
+		case sub := <-eb.newSubscriptions:
+			eb.subscribe(sub)
 
 		case ev := <-eb.eventChan:
 			eb.forwardEvent(ev)
