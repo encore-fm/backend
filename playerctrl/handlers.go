@@ -154,6 +154,62 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
+func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
+	msg := "[playerctrl] handle set synchronized"
+	ctx := context.Background()
+	sessionID := string(ev.GroupID)
+
+	payload, ok := ev.Data.(SetSynchronizedPayload)
+	if !ok {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+	userID := payload.UserID
+	synchronized := payload.Synchronized
+
+	// sets the synchronized flag in the user
+	err := ctrl.userCollection.SetSynchronized(ctx, userID, synchronized)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	// user wants to desynchronize, no further action needed.
+	if !synchronized {
+		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+		return
+	}
+
+	// get player to extract current playing information
+	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	// if no song in player, you know what to do...
+	// TODO: IF THIS APP EVER GETS SERIOUS WE NEED TO GET THE HELL RID OF THIS
+	songID := "4uLU6hMCjMI75M1A2tKUQC" // not rick roll
+	progress := time.Duration(0)       // we must enjoy the full length beauty
+	paused := false                    // hell no, crank that sh*t up
+	if playr.CurrentSong != nil {
+		songID = playr.CurrentSong.ID
+		progress = playr.Progress()
+		paused = playr.Paused
+	}
+
+	// get the user's client up to speed...
+	ctrl.notifyClient(sessionID, userID,
+		ctrl.setPlayerStateAction(
+			songID,
+			progress,
+			paused,
+		),
+	)
+
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+}
+
 func (ctrl *Controller) handleReset(ev events.Event) {
 	msg := "[playerctrl] handle reset"
 	ctx := context.Background()

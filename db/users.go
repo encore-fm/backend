@@ -207,7 +207,7 @@ func (c *userCollection) SetSynchronized(ctx context.Context, userID string, syn
 	if err != nil {
 		return fmt.Errorf(errMsg, err)
 	}
-	if result.ModifiedCount == 0 {
+	if result.MatchedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 	return nil

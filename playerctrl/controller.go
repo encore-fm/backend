@@ -3,6 +3,7 @@ package playerctrl
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/song"
@@ -97,6 +98,7 @@ func (ctrl *Controller) eventLoop() {
 	playPause := ctrl.eventBus.Subscribe([]events.EventType{PlayPauseEvent}, []events.GroupID{events.GroupIDAny})
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
 	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
+	setSynchronized := ctrl.eventBus.Subscribe([]events.EventType{SetSynchronized}, []events.GroupID{events.GroupIDAny})
 	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
@@ -112,6 +114,9 @@ func (ctrl *Controller) eventLoop() {
 
 		case ev := <-seek.Channel:
 			ctrl.handleSeek(ev)
+
+		case ev := <-setSynchronized.Channel:
+			ctrl.handleSetSynchronized(ev)
 
 		case ev := <-reset.Channel:
 			ctrl.handleReset(ev)
@@ -235,6 +240,35 @@ func initializeClient(client spotify.Client) {
 		log.Errorf("%v: %v", msg, err)
 		return
 	}
+}
+
+// synchronizes the specified user with admin player state
+func (ctrl *Controller) notifyClient(sessionID, userID string, action notifyAction) {
+	msg := "[playerctrl] notify client"
+	ctx := context.Background()
+
+	// get clients and filter out specific user client
+	clients, err := ctrl.userCollection.GetSpotifyClients(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	var userClient *user.SpotifyClient
+	for _, client := range clients {
+		// client found
+		if client.ID == userID {
+			userClient = client
+			break
+		}
+	}
+	// Client not found. Should never be the case.
+	if userClient == nil {
+		log.Errorf("%v: user client not found", msg)
+		return
+	}
+
+	spotifyClient := ctrl.authenticator.NewClient(userClient.AuthToken)
+	initializeClient(spotifyClient)
+	action(spotifyClient)
 }
 
 // synchronizes all connected users with admin player state

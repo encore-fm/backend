@@ -23,6 +23,8 @@ type PlayerHandler interface {
 	Skip(w http.ResponseWriter, r *http.Request)
 	Seek(w http.ResponseWriter, r *http.Request)
 	GetState(w http.ResponseWriter, r *http.Request)
+	Synchronize(w http.ResponseWriter, r *http.Request)
+	Desynchronize(w http.ResponseWriter, r *http.Request)
 }
 
 var _ PlayerHandler = (*handler)(nil)
@@ -141,4 +143,26 @@ func (h *handler) GetState(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, result)
+}
+
+// todo: component and system tests
+func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchronized bool) {
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+	userID := user.GenerateUserID(username, sessionID)
+
+	h.eventBus.Publish(
+		playerctrl.SetSynchronized,
+		events.GroupID(sessionID),
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: synchronized},
+	)
+}
+
+func (h *handler) Synchronize(w http.ResponseWriter, r *http.Request) {
+	h.setSynchronized(w, r, true)
+}
+
+func (h *handler) Desynchronize(w http.ResponseWriter, r *http.Request) {
+	h.setSynchronized(w, r, false)
 }

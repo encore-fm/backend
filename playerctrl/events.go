@@ -28,6 +28,14 @@ type SeekPayload struct {
 	Progress time.Duration `json:"progress"`
 }
 
+// define set synchronized event
+const SetSynchronized events.EventType = "player_event:set_synchronized"
+
+type SetSynchronizedPayload struct {
+	UserID       string
+	Synchronized bool
+}
+
 // define reset event
 const ResetEvent events.EventType = "player_event:reset_session"
 
