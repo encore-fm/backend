@@ -19,10 +19,10 @@ const (
 )
 
 type PlayerStateChangePayload struct {
-	CurrentSong *song.Model   `json:"current_song"`
-	IsPlaying   bool          `json:"is_playing"`
-	Progress    time.Duration `json:"progress"`
-	Timestamp   time.Time	  `json:"timestamp"`
+	CurrentSong *song.Model `json:"current_song"`
+	IsPlaying   bool        `json:"is_playing"`
+	ProgressMs  int64       `json:"progress"`
+	Timestamp   time.Time   `json:"timestamp"`
 }
 
 type Handler interface {

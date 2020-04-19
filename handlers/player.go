@@ -136,7 +136,7 @@ func (h *handler) GetState(w http.ResponseWriter, r *http.Request) {
 	result := &sse.PlayerStateChangePayload{
 		CurrentSong: playr.CurrentSong,
 		IsPlaying:   !playr.Paused,
-		Progress:    playr.Progress(),
+		ProgressMs:  playr.Progress().Milliseconds(),
 		Timestamp:   time.Now(),
 	}
 
