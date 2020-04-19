@@ -38,13 +38,23 @@ func TestHandler_Play(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -110,13 +120,22 @@ func TestHandler_Play_NotAdmin(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -162,13 +181,22 @@ func TestHandler_Play_NoUserWithID(t *testing.T) {
 			db.ErrNoUserWithID,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -214,8 +242,17 @@ func TestHandler_Play_InternalError(t *testing.T) {
 			errors.New("test"),
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	handler := &handler{
-		UserCollection: userCollection,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -264,13 +301,22 @@ func TestHandler_Pause(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -336,13 +382,22 @@ func TestHandler_Skip(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -407,13 +462,22 @@ func TestHandler_Skip_NotAdmin(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -463,13 +527,22 @@ func TestHandler_Seek(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -538,13 +611,22 @@ func TestHandler_Seek_NotAdmin(t *testing.T) {
 			nil,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
 
 	handler := &handler{
-		eventBus:       eventBus,
-		UserCollection: userCollection,
+		eventBus:          eventBus,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)
@@ -585,8 +667,17 @@ func TestHandler_Seek_UrlMalformed(t *testing.T) {
 	eventBus.Start()
 	defer eventBus.Stop()
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	handler := &handler{
-		eventBus: eventBus,
+		eventBus:          eventBus,
+		SessionCollection: sessionCollection,
 	}
 
 	playerHandler := PlayerHandler(handler)

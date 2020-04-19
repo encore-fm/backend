@@ -4,15 +4,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/antonbaumann/spotify-jukebox/player"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/session"
+
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/db/mocks"
 	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/session"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
@@ -30,10 +31,6 @@ func TestHandler_Join(t *testing.T) {
 	var sessionCollection db.SessionCollection
 	sessionCollection = &mocks.SessionCollection{}
 
-	// set up userCollection mock
-	var userCollection db.UserCollection
-	userCollection = &mocks.UserCollection{}
-
 	// GetSessionByID successful
 	sessionCollection.(*mocks.SessionCollection).
 		On("GetSessionByID", context.TODO(), sessionID).
@@ -41,6 +38,14 @@ func TestHandler_Join(t *testing.T) {
 			&session.Session{ID: sessionID, SongList: make([]*song.Model, 0)},
 			nil,
 		)
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
+	// set up userCollection mock
+	var userCollection db.UserCollection
+	userCollection = &mocks.UserCollection{}
 
 	// no error if correct user is added
 	userCollection.(*mocks.UserCollection).
@@ -163,9 +168,18 @@ func TestHandler_ListSongs(t *testing.T) {
 		On("ListSongs", context.TODO(), sessionID).
 		Return(songList, nil)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
+		SongCollection:    songCollection,
+		SessionCollection: sessionCollection,
 	}
 	userHandler := UserHandler(handler)
 
@@ -245,13 +259,22 @@ func TestHandler_Vote(t *testing.T) {
 		).
 		Return(nil)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
-		UserCollection: userCollection,
-		eventBus:       eventBus,
+		SongCollection:    songCollection,
+		UserCollection:    userCollection,
+		SessionCollection: sessionCollection,
+		eventBus:          eventBus,
 	}
 	userHandler := UserHandler(handler)
 
