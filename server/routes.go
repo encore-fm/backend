@@ -107,6 +107,11 @@ func (s *Model) setupPlayerRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/player/seek/{position_ms}",
 		auth(http.HandlerFunc(s.PlayerHandler.Seek)),
 	).Methods(http.MethodPost)
+
+	r.Handle(
+		"/users/{username}/player/state",
+		auth(http.HandlerFunc(s.PlayerHandler.GetState)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupDebugRoutes(r *mux.Router) {

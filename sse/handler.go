@@ -3,9 +3,10 @@ package sse
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/antonbaumann/spotify-jukebox/song"
 	"net/http"
 	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/song"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/gorilla/mux"
@@ -18,9 +19,10 @@ const (
 )
 
 type PlayerStateChangePayload struct {
-	CurrentSong *song.Model   `json:"current_song"`
-	IsPlaying   bool          `json:"is_playing"`
-	Progress    time.Duration `json:"progress"`
+	CurrentSong *song.Model `json:"current_song"`
+	IsPlaying   bool        `json:"is_playing"`
+	ProgressMs  int64       `json:"progress"`
+	Timestamp   time.Time   `json:"timestamp"`
 }
 
 type Handler interface {

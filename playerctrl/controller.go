@@ -3,8 +3,9 @@ package playerctrl
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/song"
 	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/song"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -260,7 +261,7 @@ func (ctrl *Controller) notifyPlayerStateChange(sessionID string) {
 
 	var currentSong *song.Model
 	var isPlaying bool
-	var progress time.Duration
+	var progress int64
 
 	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
@@ -271,13 +272,14 @@ func (ctrl *Controller) notifyPlayerStateChange(sessionID string) {
 	if playr != nil {
 		currentSong = playr.CurrentSong
 		isPlaying = !playr.Paused
-		progress = playr.Progress()
+		progress = playr.Progress().Milliseconds()
 	}
 
 	payload := &sse.PlayerStateChangePayload{
 		CurrentSong: currentSong,
 		IsPlaying:   isPlaying,
-		Progress:    progress,
+		ProgressMs:  progress,
+		Timestamp:   time.Now(),
 	}
 
 	ctrl.eventBus.Publish(
