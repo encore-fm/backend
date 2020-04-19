@@ -175,8 +175,6 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	}
 
 	ctrl.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList[1:])
-	// send out a player state change event
-	ctrl.notifyPlayerStateChange(sessionID)
 
 	// fetch next song after song has ended
 	ctrl.setTimer(
@@ -195,6 +193,9 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	if err := ctrl.playerCollection.SetPlayer(ctx, sessionID, newPlayer); err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
+
+	// send out a player state change event
+	ctrl.notifyPlayerStateChange(sessionID)
 
 	ctrl.notifyClients(
 		sessionID,
