@@ -10,7 +10,7 @@ import (
 type notifyAction = func(client spotify.Client)
 
 func (ctrl *Controller) setPlayerStateWithOptions(opt *spotify.PlayOptions, paused bool) notifyAction {
-	msg := "[spotifyctrl] set state"
+	msg := "[playerctrl] set state"
 	return func(client spotify.Client) {
 		if !paused {
 			if err := client.PlayOpt(opt); err != nil {
@@ -35,7 +35,7 @@ func (ctrl *Controller) setPlayerStateAction(songID string, position time.Durati
 // Returns a function that notifies the client to skip to the next song.
 // Required when skip request is made on an empty queue
 func (ctrl *Controller) playerSkipAction() notifyAction {
-	msg := "[spotifyctrl] player skip"
+	msg := "[playerctrl] player skip"
 	return func(client spotify.Client) {
 		if err := client.Next(); err != nil {
 			log.Errorf("%v: %v", msg, err)
