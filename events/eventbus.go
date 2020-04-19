@@ -38,6 +38,7 @@ type EventBus interface {
 type eventBus struct {
 	subscribers      map[EventType]map[GroupID]map[chan Event]bool
 	newSubscriptions chan subscription
+	unsubscriptions  chan subscription
 	eventChan        chan Event
 	quit             chan struct{}
 }
@@ -74,24 +75,7 @@ func (eb *eventBus) Subscribe(types []EventType, groupIDs []GroupID) subscriptio
 
 // removes channel from topics
 func (eb *eventBus) Unsubscribe(sub subscription) {
-	msg := "[eventbus] unsubscribe"
-	for _, eventType := range sub.Types {
-		if groups, ok := eb.subscribers[eventType]; ok {
-			for _, id := range sub.Groups {
-				delete(groups[id], sub.Channel)
-
-				if len(groups[id]) == 0 {
-					delete(groups, id)
-				}
-			}
-
-			if len(groups) == 0 {
-				delete(eb.subscribers, eventType)
-			}
-		}
-	}
-	close(sub.Channel)
-	log.Infof("%v: type=%v groups=%v", msg, sub.Types, sub.Groups)
+	eb.unsubscriptions <- sub
 }
 
 func (eb *eventBus) Publish(eventType EventType, groupID GroupID, data EventPayload) {
@@ -109,6 +93,9 @@ func (eb *eventBus) loop() {
 
 		case sub := <-eb.newSubscriptions:
 			eb.subscribe(sub)
+
+		case unsub := <-eb.unsubscriptions:
+			eb.unsubscribe(unsub)
 
 		case ev := <-eb.eventChan:
 			eb.forwardEvent(ev)
@@ -173,4 +160,25 @@ func (eb *eventBus) subscribe(sub subscription) {
 	}
 
 	log.Infof("[eventbus] new subscription: types=%v groups=%v", sub.Types, sub.Groups)
+}
+
+func (eb *eventBus) unsubscribe(sub subscription) {
+	msg := "[eventbus] unsubscribe"
+	for _, eventType := range sub.Types {
+		if groups, ok := eb.subscribers[eventType]; ok {
+			for _, id := range sub.Groups {
+				delete(groups[id], sub.Channel)
+
+				if len(groups[id]) == 0 {
+					delete(groups, id)
+				}
+			}
+
+			if len(groups) == 0 {
+				delete(eb.subscribers, eventType)
+			}
+		}
+	}
+	close(sub.Channel)
+	log.Infof("%v: type=%v groups=%v", msg, sub.Types, sub.Groups)
 }
