@@ -88,6 +88,9 @@ func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	songID := vars["song_id"]
 	sessionID := r.Header.Get("Session")
 
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
+
 	if err := h.SongCollection.RemoveSong(ctx, sessionID, songID); err != nil {
 		if errors.Is(err, db.ErrNoSessionWithID) {
 			handleError(w, http.StatusBadRequest, log.WarnLevel, msg, err, SessionNotFoundError)

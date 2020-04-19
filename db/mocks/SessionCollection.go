@@ -74,3 +74,8 @@ func (_m *SessionCollection) ListSessionIDs(ctx context.Context) ([]string, erro
 
 	return r0, r1
 }
+
+// SetLastUpdated provides a mock function with given fields: ctx, sessionID
+func (_m *SessionCollection) SetLastUpdated(ctx context.Context, sessionID string) {
+	_m.Called(ctx, sessionID)
+}

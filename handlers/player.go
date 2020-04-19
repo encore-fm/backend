@@ -52,10 +52,14 @@ func (h *handler) checkUserPermissions(w http.ResponseWriter, msg string, userID
 
 func (h *handler) setPausedState(w http.ResponseWriter, r *http.Request, paused bool) {
 	msg := "[player handler]: play / pause"
+	ctx := context.Background()
 
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
+
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
 
 	if ok := h.checkUserPermissions(w, msg, user.GenerateUserID(username, sessionID)); !ok {
 		return
@@ -80,10 +84,14 @@ func (h *handler) Pause(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) Skip(w http.ResponseWriter, r *http.Request) {
 	msg := "[player handler]: skip song"
+	ctx := context.Background()
 
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
+
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
 
 	if ok := h.checkUserPermissions(w, msg, user.GenerateUserID(username, sessionID)); !ok {
 		return
@@ -98,10 +106,14 @@ func (h *handler) Skip(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) Seek(w http.ResponseWriter, r *http.Request) {
 	msg := "[player handler]: seek"
+	ctx := context.Background()
 
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
+
+	// update session time stamp
+	h.SessionCollection.SetLastUpdated(ctx, sessionID)
 
 	positionMs, err := strconv.Atoi(vars["position_ms"])
 	if err != nil {

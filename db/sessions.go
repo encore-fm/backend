@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/session"
@@ -18,6 +19,7 @@ type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 	ListSessionIDs(ctx context.Context) ([]string, error)
+	SetLastUpdated(ctx context.Context, sessionID string)
 }
 
 type sessionCollection struct {
@@ -98,4 +100,30 @@ func (c *sessionCollection) ListSessionIDs(ctx context.Context) ([]string, error
 	}
 
 	return sessIDs, nil
+}
+
+// sets the last updated timestamp of the specified session to time.Now()
+func (c *sessionCollection) SetLastUpdated(ctx context.Context, sessionID string) {
+	errMsg := "[db] refresh session: %w"
+
+	filter := bson.D{{"_id", sessionID}}
+	update := bson.D{
+		{
+			Key: "$set",
+			Value: bson.D{
+				{
+					Key:   "last_updated",
+					Value: time.Now(),
+				},
+			},
+		},
+	}
+
+	result, err := c.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		log.Errorf(errMsg, err)
+	}
+	if result.MatchedCount == 0 {
+		log.Errorf(errMsg, ErrNoSessionWithID)
+	}
 }
