@@ -165,11 +165,18 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 		return
 	}
 	userID := payload.UserID
+	synchronized := payload.Synchronized
 
 	// sets the synchronized flag in the user
-	err := ctrl.userCollection.SetSynchronized(ctx, userID, payload.Synchronized)
+	err := ctrl.userCollection.SetSynchronized(ctx, userID, synchronized)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	// user wants to desynchronize, no further action needed.
+	if !synchronized {
+		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 		return
 	}
 
@@ -177,6 +184,12 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
+		return
+	}
+
+	// todo: think about the best way to handle this case
+	if playr.CurrentSong == nil {
+		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 		return
 	}
 
@@ -188,6 +201,8 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 			playr.Paused,
 		),
 	)
+
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
 func (ctrl *Controller) handleReset(ev events.Event) {
