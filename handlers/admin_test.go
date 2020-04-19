@@ -167,9 +167,18 @@ func TestHandler_RemoveSong_NoSongWithID(t *testing.T) {
 			db.ErrNoSongWithID,
 		)
 
+	// set up songCollection mock
+	var sessionCollection db.SessionCollection
+	sessionCollection = &mocks.SessionCollection{}
+
+	sessionCollection.(*mocks.SessionCollection).
+		On("SetLastUpdated", context.TODO(), sessionID).
+		Return()
+
 	// create handler with mock collections
 	handler := &handler{
 		SongCollection: songCollection,
+		SessionCollection: sessionCollection,
 	}
 	adminHandler := AdminHandler(handler)
 
