@@ -159,6 +159,9 @@ func (h *handler) GetState(w http.ResponseWriter, r *http.Request) {
 
 // todo: component and system tests
 func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchronized bool) {
+	msg := "[player handler] set synchronized"
+	ctx := context.Background()
+
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
@@ -169,6 +172,19 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 		events.GroupID(sessionID),
 		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: synchronized},
 	)
+
+	usr, err := h.UserCollection.GetUserByID(ctx, userID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	result := &struct {
+		Synchronized bool `json:"synchronized"`
+	}{
+		Synchronized: usr.SpotifySynchronized,
+	}
+	jsonResponse(w, result)
 }
 
 func (h *handler) Synchronize(w http.ResponseWriter, r *http.Request) {
