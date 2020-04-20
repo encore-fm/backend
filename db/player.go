@@ -170,7 +170,7 @@ func (c *playerCollection) SetPlaying(ctx context.Context, sessionID string) err
 }
 
 func (c *playerCollection) IncrementProgress(ctx context.Context, sessionID string, progress time.Duration) error {
-	errMsg := "[db] set progress: %w"
+	errMsg := "[db] increment progress: %w"
 	filter := bson.D{{"_id", sessionID}}
 	update := bson.D{
 		{
