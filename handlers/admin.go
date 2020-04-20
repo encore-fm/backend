@@ -86,10 +86,7 @@ func (h *handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] delete session"
 	ctx := context.Background()
 
-	vars := mux.Vars(r)
-	username := vars["username"]
 	sessionID := r.Header.Get("Session")
-	userID := user.GenerateUserID(username, sessionID)
 
 	// pause spotify clients
 	clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
@@ -104,7 +101,7 @@ func (h *handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.UserCollection.DeleteUsersBySessionID(ctx, userID)
+	err = h.UserCollection.DeleteUsersBySessionID(ctx, sessionID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return

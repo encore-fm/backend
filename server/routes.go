@@ -73,7 +73,7 @@ func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	).Methods(http.MethodPost)
 
 	r.Handle(
-		"/admin/${username}/deleteSession",
+		"/admin/{username}/deleteSession",
 		auth(http.HandlerFunc(s.AdminHandler.DeleteSession)),
 	).Methods(http.MethodDelete)
 
