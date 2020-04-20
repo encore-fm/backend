@@ -16,6 +16,7 @@ import (
 
 type AdminHandler interface {
 	CreateSession(w http.ResponseWriter, r *http.Request)
+	DeleteSession(w http.ResponseWriter, r *http.Request)
 	RemoveSong(w http.ResponseWriter, r *http.Request)
 }
 
@@ -81,9 +82,46 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	jsonResponse(w, response)
 }
 
-func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
+func (h *handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] delete session"
 	ctx := context.Background()
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+	userID := user.GenerateUserID(username, sessionID)
+
+	// pause the admin's spotify client
+	clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	// find admin's client
+	for _, client := range clients {
+		if client.ID == userID {
+			spotifyClient := h.spotifyAuthenticator.NewClient(client.AuthToken)
+			err = spotifyClient.Pause()
+			if err != nil {
+				log.Errorf("%v: %v", msg, err)
+			}
+			break
+		}
+	}
+
+	err = h.UserCollection.DeleteUser(ctx, userID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+	err = h.SessionCollection.DeleteSession(ctx, sessionID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+	}
+}
+
+func (h *handler) RemoveSong(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] remove song"
+	ctx := context.Background()
 	vars := mux.Vars(r)
 	songID := vars["song_id"]
 	sessionID := r.Header.Get("Session")
