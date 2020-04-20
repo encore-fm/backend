@@ -17,7 +17,6 @@ import (
 
 type SessionCollection interface {
 	AddSession(ctx context.Context, sess *session.Session) error
-	DeleteSession(ctx context.Context, sessionID string) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 	ListSessionIDs(ctx context.Context) ([]string, error)
 	SetLastUpdated(ctx context.Context, sessionID string)
@@ -52,23 +51,6 @@ func (c *sessionCollection) AddSession(ctx context.Context, sess *session.Sessio
 		}
 		return fmt.Errorf(errMsg, err)
 	}
-	return nil
-}
-
-// DeleteSession deletes a session from the session collection
-// if session with this id does not exists, returns `ErrNoSessionWithID` error
-func (c *sessionCollection) DeleteSession(ctx context.Context, sessionID string) error {
-	errMsg := "[db] delete session: %w"
-
-	filter := bson.M{"_id": sessionID}
-	res, err := c.collection.DeleteOne(ctx, filter)
-	if err != nil {
-		return fmt.Errorf(errMsg, err)
-	}
-	if res.DeletedCount == 0 {
-		return fmt.Errorf(errMsg, ErrNoSessionWithID)
-	}
-
 	return nil
 }
 
