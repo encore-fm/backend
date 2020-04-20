@@ -18,6 +18,7 @@ import (
 
 type UserHandler interface {
 	Join(w http.ResponseWriter, r *http.Request)
+	Leave(w http.ResponseWriter, r *http.Request)
 	UserPing(w http.ResponseWriter, r *http.Request)
 	ListUsers(w http.ResponseWriter, r *http.Request)
 	SuggestSong(w http.ResponseWriter, r *http.Request)
@@ -86,6 +87,32 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("%v: [%v] successfully joined session with id [%v]", msg, username, sess.ID)
 	jsonResponse(w, response)
+}
+
+func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] leave"
+	ctx := context.Background()
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+	userID := user.GenerateUserID(username, sessionID)
+
+	usr, err := h.UserCollection.GetUserByID(ctx, userID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+	// admin should not be allowed the leave his own session (see delete session endpoint)
+	if usr.IsAdmin {
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, ErrUserIsAdmin, ActionNotAllowedError)
+		return
+	}
+
+	err = h.UserCollection.DeleteUser(ctx, userID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+	}
 }
 
 func (h *handler) UserPing(w http.ResponseWriter, r *http.Request) {

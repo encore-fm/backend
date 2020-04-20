@@ -31,6 +31,20 @@ func (_m *UserCollection) AddUser(ctx context.Context, newUser *user.Model) erro
 	return r0
 }
 
+// DeleteUser provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) DeleteUser(ctx context.Context, userID string) error {
+	ret := _m.Called(ctx, userID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetAdminBySessionID provides a mock function with given fields: ctx, sessionID
 func (_m *UserCollection) GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error) {
 	ret := _m.Called(ctx, sessionID)

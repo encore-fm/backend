@@ -20,6 +20,8 @@ var (
 	// Authentication Errors
 	ErrWrongUserSecret = errors.New("user secret wrong")
 	ErrUserNotAdmin    = errors.New("user not an admin")
+	// Actions that cannot be performed by the admin e.g. leaving session
+	ErrUserIsAdmin = errors.New("the action cannot be performed by an admin")
 
 	// Frontend errors
 	RequestUrlMalformedError = FrontendError{
