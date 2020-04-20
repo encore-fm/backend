@@ -21,6 +21,17 @@ func New() (*Model, error) {
 		config.Conf.Database.DBPassword,
 		config.Conf.Database.DBHost,
 	)
+
+	if config.Conf.Server.Debug {
+		mongoURI = fmt.Sprintf(
+			"mongodb://%v:%v@%v:%v/?connect=direct",
+			config.Conf.Database.DBUser,
+			config.Conf.Database.DBPassword,
+			config.Conf.Database.DBHost,
+			config.Conf.Database.DBPort,
+		)
+	}
+
 	clientOptions := options.Client().ApplyURI(mongoURI)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
