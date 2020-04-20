@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/zmb3/spotify"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -173,25 +174,21 @@ func (ctrl *Controller) handleSynchronize(ev events.Event) {
 		return
 	}
 
-	// if no song in player, you know what to do...
-	// TODO: IF THIS APP EVER GETS SERIOUS WE NEED TO GET THE HELL RID OF THIS
-	songID := "4uLU6hMCjMI75M1A2tKUQC" // not rick roll
-	progress := time.Duration(0)       // we must enjoy the full length beauty
-	paused := false                    // hell no, crank that sh*t up
 	if playr.CurrentSong != nil {
-		songID = playr.CurrentSong.ID
-		progress = playr.Progress()
-		paused = playr.Paused
+		// get the user's client up to speed...
+		ctrl.notifyClient(sessionID, userID,
+			ctrl.setPlayerStateAction(
+				playr.CurrentSong.ID,
+				playr.Progress(),
+				playr.Paused,
+			),
+		)
+		// if no songs in session, pause the client
+	} else {
+		ctrl.notifyClient(sessionID, userID,
+			func(client spotify.Client) { _ = client.Pause() },
+		)
 	}
-
-	// get the user's client up to speed...
-	ctrl.notifyClient(sessionID, userID,
-		ctrl.setPlayerStateAction(
-			songID,
-			progress,
-			paused,
-		),
-	)
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
