@@ -21,6 +21,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 	).Methods(http.MethodPost)
 
 	r.Handle(
+		"/users/{username}/leave",
+		auth(http.HandlerFunc(s.UserHandler.Leave)),
+	).Methods(http.MethodDelete)
+
+	r.Handle(
 		"/users/{username}/ping",
 		auth(http.HandlerFunc(s.UserHandler.UserPing)),
 	)
