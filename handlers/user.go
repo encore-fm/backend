@@ -113,8 +113,7 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 	if usr.SpotifySynchronized {
 		clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
 		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
+			log.Errorf("%v: %v", msg, err)
 		}
 		// find user's client
 		for _, client := range clients {
@@ -122,7 +121,7 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 				spotifyClient := h.spotifyAuthenticator.NewClient(client.AuthToken)
 				err = spotifyClient.Pause()
 				if err != nil {
-					log.Warnf("%v: %v", msg, err)
+					log.Errorf("%v: %v", msg, err)
 				}
 				break
 			}
