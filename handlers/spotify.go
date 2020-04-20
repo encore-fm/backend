@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"errors"
+	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
@@ -60,6 +62,17 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	// synchronize the user
+	_, err = h.UserCollection.SetSynchronized(ctx, user.ID, true)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	h.eventBus.Publish(
+		playerctrl.Synchronize,
+		events.GroupID(user.SessionID),
+		playerctrl.SynchronizePayload{UserID: user.ID},
+	)
 
 	log.Infof("%v: successfully received token for user [%v]", msg, user.Username)
 	http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)

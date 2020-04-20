@@ -98,7 +98,7 @@ func (ctrl *Controller) eventLoop() {
 	playPause := ctrl.eventBus.Subscribe([]events.EventType{PlayPauseEvent}, []events.GroupID{events.GroupIDAny})
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
 	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
-	setSynchronized := ctrl.eventBus.Subscribe([]events.EventType{SetSynchronized}, []events.GroupID{events.GroupIDAny})
+	synchronize := ctrl.eventBus.Subscribe([]events.EventType{Synchronize}, []events.GroupID{events.GroupIDAny})
 	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
@@ -115,8 +115,8 @@ func (ctrl *Controller) eventLoop() {
 		case ev := <-seek.Channel:
 			ctrl.handleSeek(ev)
 
-		case ev := <-setSynchronized.Channel:
-			ctrl.handleSetSynchronized(ev)
+		case ev := <-synchronize.Channel:
+			ctrl.handleSynchronize(ev)
 
 		case ev := <-reset.Channel:
 			ctrl.handleReset(ev)

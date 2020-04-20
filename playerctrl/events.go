@@ -29,11 +29,10 @@ type SeekPayload struct {
 }
 
 // define set synchronized event
-const SetSynchronized events.EventType = "player_event:set_synchronized"
+const Synchronize events.EventType = "player_event:set_synchronized"
 
-type SetSynchronizedPayload struct {
-	UserID       string
-	Synchronized bool
+type SynchronizePayload struct {
+	UserID string
 }
 
 // define reset event

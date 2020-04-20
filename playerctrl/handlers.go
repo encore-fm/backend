@@ -154,31 +154,17 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
-func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
+func (ctrl *Controller) handleSynchronize(ev events.Event) {
 	msg := "[playerctrl] handle set synchronized"
 	ctx := context.Background()
 	sessionID := string(ev.GroupID)
 
-	payload, ok := ev.Data.(SetSynchronizedPayload)
+	payload, ok := ev.Data.(SynchronizePayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
 		return
 	}
 	userID := payload.UserID
-	synchronized := payload.Synchronized
-
-	// sets the synchronized flag in the user
-	err := ctrl.userCollection.SetSynchronized(ctx, userID, synchronized)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		return
-	}
-
-	// user wants to desynchronize, no further action needed.
-	if !synchronized {
-		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-		return
-	}
 
 	// get player to extract current playing information
 	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)

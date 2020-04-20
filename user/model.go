@@ -65,7 +65,7 @@ func New(username, sessionID string) (*Model, error) {
 		Score:               1,
 		AuthState:           state,
 		SpotifyAuthorized:   false,
-		SpotifySynchronized: true,
+		SpotifySynchronized: false,
 	}
 	return model, nil
 }

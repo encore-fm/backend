@@ -161,17 +161,26 @@ func (_m *UserCollection) ListUsers(ctx context.Context, sessionID string) ([]*u
 }
 
 // SetSynchronized provides a mock function with given fields: ctx, userID, synchronized
-func (_m *UserCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) error {
+func (_m *UserCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error) {
 	ret := _m.Called(ctx, userID, synchronized)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) error); ok {
+	var r0 *user.Model
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *user.Model); ok {
 		r0 = rf(ctx, userID, synchronized)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*user.Model)
+		}
 	}
 
-	return r0
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
+		r1 = rf(ctx, userID, synchronized)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // SetToken provides a mock function with given fields: ctx, userID, token
