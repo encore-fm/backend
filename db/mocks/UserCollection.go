@@ -45,20 +45,6 @@ func (_m *UserCollection) DeleteUser(ctx context.Context, userID string) error {
 	return r0
 }
 
-// DeleteUsersBySessionID provides a mock function with given fields: ctx, sessionID
-func (_m *UserCollection) DeleteUsersBySessionID(ctx context.Context, sessionID string) error {
-	ret := _m.Called(ctx, sessionID)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, sessionID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // GetAdminBySessionID provides a mock function with given fields: ctx, sessionID
 func (_m *UserCollection) GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error) {
 	ret := _m.Called(ctx, sessionID)
