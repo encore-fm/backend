@@ -65,9 +65,9 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	// synchronize the user
 	h.eventBus.Publish(
-		playerctrl.SetSynchronized,
+		playerctrl.Synchronize,
 		events.GroupID(user.SessionID),
-		playerctrl.SetSynchronizedPayload{UserID: user.ID, Synchronized: true},
+		playerctrl.SynchronizePayload{UserID: user.ID},
 	)
 
 	log.Infof("%v: successfully received token for user [%v]", msg, user.Username)
