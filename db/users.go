@@ -19,6 +19,7 @@ type UserCollection interface {
 	GetAdminBySessionID(ctx context.Context, sessionID string) (*user.Model, error)
 	AddUser(ctx context.Context, newUser *user.Model) error
 	DeleteUser(ctx context.Context, userID string) error
+	DeleteUsersBySessionID(ctx context.Context, sessionID string) error
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
@@ -123,6 +124,21 @@ func (c *userCollection) DeleteUser(ctx context.Context, userID string) error {
 	}
 	if res.DeletedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoUserWithID)
+	}
+
+	return nil
+}
+
+func (c *userCollection) DeleteUsersBySessionID(ctx context.Context, sessionID string) error {
+	errMsg := "[db] delete users by session id: %w"
+
+	filter := bson.M{"session_id": sessionID}
+	res, err := c.collection.DeleteMany(ctx, filter)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if res.DeletedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoSessionWithID)
 	}
 
 	return nil

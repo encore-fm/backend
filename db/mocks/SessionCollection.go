@@ -29,6 +29,20 @@ func (_m *SessionCollection) AddSession(ctx context.Context, sess *session.Sessi
 	return r0
 }
 
+// DeleteSession provides a mock function with given fields: ctx, sessionID
+func (_m *SessionCollection) DeleteSession(ctx context.Context, sessionID string) error {
+	ret := _m.Called(ctx, sessionID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, sessionID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetSessionByID provides a mock function with given fields: ctx, sessionID
 func (_m *SessionCollection) GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error) {
 	ret := _m.Called(ctx, sessionID)
