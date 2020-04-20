@@ -108,7 +108,7 @@ func (h *handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	err = h.UserCollection.DeleteUser(ctx, userID)
+	err = h.UserCollection.DeleteUsersBySessionID(ctx, userID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
