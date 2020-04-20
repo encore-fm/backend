@@ -125,6 +125,12 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 		return
 	}
 
+	// if no song is in player, no further action is needed
+	if p.IsEmpty() {
+		log.Warnf("%v: no song in player", msg)
+		return
+	}
+
 	delta := p.Progress() - payload.Progress
 	if err := ctrl.playerCollection.IncrementProgress(ctx, sessionID, delta); err != nil {
 		log.Errorf("%v: %v", msg, err)
@@ -174,21 +180,23 @@ func (ctrl *Controller) handleSynchronize(ev events.Event) {
 		return
 	}
 
-	if playr.CurrentSong != nil {
-		// get the user's client up to speed...
-		ctrl.notifyClient(sessionID, userID,
-			ctrl.setPlayerStateAction(
-				playr.CurrentSong.ID,
-				playr.Progress(),
-				playr.Paused,
-			),
-		)
+	if playr.IsEmpty() {
 		// if no songs in session, pause the client
-	} else {
 		ctrl.notifyClient(sessionID, userID,
 			func(client spotify.Client) { _ = client.Pause() },
 		)
+		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+		return
 	}
+
+	// get the user's client up to speed...
+	ctrl.notifyClient(sessionID, userID,
+		ctrl.setPlayerStateAction(
+			playr.CurrentSong.ID,
+			playr.Progress(),
+			playr.Paused,
+		),
+	)
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
