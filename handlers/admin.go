@@ -91,20 +91,16 @@ func (h *handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Header.Get("Session")
 	userID := user.GenerateUserID(username, sessionID)
 
-	// pause the admin's spotify client
+	// pause spotify clients
 	clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
-	// find admin's client
 	for _, client := range clients {
-		if client.ID == userID {
-			spotifyClient := h.spotifyAuthenticator.NewClient(client.AuthToken)
-			err = spotifyClient.Pause()
-			if err != nil {
-				log.Errorf("%v: %v", msg, err)
-			}
-			break
+		spotifyClient := h.spotifyAuthenticator.NewClient(client.AuthToken)
+		err = spotifyClient.Pause()
+		if err != nil {
+			log.Errorf("%v: %v", msg, err)
 		}
 	}
 
