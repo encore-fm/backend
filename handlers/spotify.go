@@ -64,6 +64,10 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// synchronize the user
+	_, err = h.UserCollection.SetSynchronized(ctx, user.ID, true)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
 	h.eventBus.Publish(
 		playerctrl.Synchronize,
 		events.GroupID(user.SessionID),
