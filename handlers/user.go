@@ -109,6 +109,24 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// pause the user's spotify client
+	clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+	// find user's client
+	for _, client := range clients {
+		if client.ID == userID {
+			spotifyClient := h.spotifyAuthenticator.NewClient(client.AuthToken)
+			err = spotifyClient.Pause()
+			if err != nil {
+				log.Warnf("%v: %v", msg, err)
+			}
+			break
+		}
+	}
+
 	err = h.UserCollection.DeleteUser(ctx, userID)
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
