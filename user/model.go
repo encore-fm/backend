@@ -46,6 +46,7 @@ type ListElement struct {
 	Username string `json:"username" bson:"username"`
 	IsAdmin  bool   `json:"is_admin" bson:"is_admin"`
 	Score    int    `json:"score" bson:"score"`
+	SpotifySynchronized bool `json:"spotify_synchronized" bson:"spotify_synchronized"`
 }
 
 type SpotifyClient struct {
