@@ -2,8 +2,10 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
+	"github.com/antonbaumann/spotify-jukebox/user"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,6 +26,18 @@ var (
 	ErrUserIsAdmin = errors.New("the action cannot be performed by an admin")
 
 	// Frontend errors
+	UsernameTooShortError = FrontendError{
+		Error:       "UsernameTooShortError",
+		Description: fmt.Sprintf("username should have at least %v characters.", user.MinLen),
+	}
+	UsernameTooLongError = FrontendError{
+		Error:       "UsernameTooLongError",
+		Description: fmt.Sprintf("username should not have more than %v characters.", user.MaxLen),
+	}
+	UsernameInvalidCharacterError = FrontendError{
+		Error:       "UsernameInvalidCharacterError",
+		Description: "username contains invalid character",
+	}
 	RequestUrlMalformedError = FrontendError{
 		Error:       "RequestUrlMalformedError",
 		Description: "Request url does not match expected model.",

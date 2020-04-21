@@ -36,6 +36,28 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// create admin user. contains
+	// - user secret
+	// - state for spotify authentication
+	admin, err := user.NewAdmin(username, sess.ID)
+	if err != nil {
+		if errors.Is(err, user.ErrUsernameTooShort) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameTooShortError)
+			return
+		}
+		if errors.Is(err, user.ErrUsernameTooLong) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameTooLongError)
+			return
+		}
+		if errors.Is(err, user.ErrUsernameInvalidCharacter) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameInvalidCharacterError)
+			return
+		}
+
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
 	// save session in db
 	err = h.SessionCollection.AddSession(ctx, sess)
 	if err != nil {
@@ -44,15 +66,6 @@ func (h *handler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		} else {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		}
-		return
-	}
-
-	// create admin user. contains
-	// - user secret
-	// - state for spotify authentication
-	admin, err := user.NewAdmin(username, sess.ID)
-	if err != nil {
-		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
 
