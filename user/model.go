@@ -30,7 +30,7 @@ var (
 type Model struct {
 	ID                string `json:"id" bson:"_id"`
 	Username          string `json:"username" bson:"username"`
-	Secret            string `json:"secret" bson:"secret"`
+	Secret            string `json:"-" bson:"secret"`
 	SessionID         string `json:"session_id" bson:"session_id"`
 	IsAdmin           bool   `json:"is_admin" bson:"is_admin"`
 	Score             int    `json:"score" bson:"score"`
