@@ -223,7 +223,10 @@ func (c *userCollection) SetToken(ctx context.Context, userID string, token *oau
 
 func (c *userCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error) {
 	errMsg := "[db] set synchronized: %w"
-	filter := bson.M{"_id": userID}
+	filter := bson.M{
+		"_id":                userID,
+		"spotify_authorized": true,
+	}
 	update := bson.M{
 		"$set": bson.M{"spotify_synchronized": synchronized},
 	}
