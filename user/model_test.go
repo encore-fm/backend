@@ -34,3 +34,17 @@ func TestNewAdmin(t *testing.T) {
 	assert.False(t, result.SpotifyAuthorized)
 	assert.Equal(t, 128, len(result.Secret))
 }
+
+func TestNew_InvalidUsername(t *testing.T) {
+	username := "12"
+	_, err := New(username, "")
+	assert.Equal(t, ErrUsernameTooShort, err)
+
+	username = "aaaaaaaaaaaaaaaaaaaaa" // 21 * a
+	_, err = New(username, "")
+	assert.Equal(t, ErrUsernameTooLong, err)
+
+	username = "test!user~"
+	_, err = New(username, "")
+	assert.Equal(t, ErrUsernameInvalidCharacter, err)
+}

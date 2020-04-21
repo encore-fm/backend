@@ -3,8 +3,9 @@ package handlers
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"net/http"
+
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -59,6 +60,19 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 
 	newUser, err := user.New(username, sessionID)
 	if err != nil {
+		if errors.Is(err, user.ErrUsernameTooShort) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameTooShortError)
+			return
+		}
+		if errors.Is(err, user.ErrUsernameTooLong) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameTooLongError)
+			return
+		}
+		if errors.Is(err, user.ErrUsernameInvalidCharacter) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameInvalidCharacterError)
+			return
+		}
+
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
