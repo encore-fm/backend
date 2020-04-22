@@ -3,8 +3,9 @@ package handlers
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"net/http"
+
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -19,6 +20,7 @@ import (
 type UserHandler interface {
 	Join(w http.ResponseWriter, r *http.Request)
 	Leave(w http.ResponseWriter, r *http.Request)
+	UserInfo(w http.ResponseWriter, r *http.Request)
 	UserPing(w http.ResponseWriter, r *http.Request)
 	ListUsers(w http.ResponseWriter, r *http.Request)
 	SuggestSong(w http.ResponseWriter, r *http.Request)
@@ -59,6 +61,19 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 
 	newUser, err := user.New(username, sessionID)
 	if err != nil {
+		if errors.Is(err, user.ErrUsernameTooShort) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameTooShortError)
+			return
+		}
+		if errors.Is(err, user.ErrUsernameTooLong) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameTooLongError)
+			return
+		}
+		if errors.Is(err, user.ErrUsernameInvalidCharacter) {
+			handleError(w, http.StatusBadRequest, log.DebugLevel, msg, err, UsernameInvalidCharacterError)
+			return
+		}
+
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
@@ -132,6 +147,24 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 	}
+}
+
+func (h *handler) UserInfo(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] user info"
+	ctx := context.Background()
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+
+	userID := user.GenerateUserID(username, sessionID)
+	usr, err := h.UserCollection.GetUserByID(ctx, userID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	jsonResponse(w, usr)
 }
 
 func (h *handler) UserPing(w http.ResponseWriter, r *http.Request) {

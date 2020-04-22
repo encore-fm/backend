@@ -1,7 +1,9 @@
 package user
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/antonbaumann/spotify-jukebox/util"
 	"golang.org/x/oauth2"
@@ -12,10 +14,23 @@ const (
 	SecretBytes = 64
 )
 
+var ErrUsernameTooShort = fmt.Errorf("username must have at least %v characters", MinLen)
+var ErrUsernameTooLong = fmt.Errorf("username can not have more than %v characters", MaxLen)
+var ErrUsernameInvalidCharacter = errors.New("username contains invalid character")
+
+const (
+	MinLen = 3
+	MaxLen = 20
+)
+
+var (
+	allowedCharactersRegex = regexp.MustCompile("^[\\w.-]*$")
+)
+
 type Model struct {
 	ID                string `json:"id" bson:"_id"`
 	Username          string `json:"username" bson:"username"`
-	Secret            string `json:"secret" bson:"secret"`
+	Secret            string `json:"-" bson:"secret"`
 	SessionID         string `json:"session_id" bson:"session_id"`
 	IsAdmin           bool   `json:"is_admin" bson:"is_admin"`
 	Score             int    `json:"score" bson:"score"`
@@ -31,6 +46,7 @@ type ListElement struct {
 	Username string `json:"username" bson:"username"`
 	IsAdmin  bool   `json:"is_admin" bson:"is_admin"`
 	Score    int    `json:"score" bson:"score"`
+	SpotifySynchronized bool `json:"spotify_synchronized" bson:"spotify_synchronized"`
 }
 
 type SpotifyClient struct {
@@ -45,7 +61,27 @@ func GenerateUserID(username, sessionID string) string {
 	return fmt.Sprintf("%v@%v", username, sessionID)
 }
 
+func validateUsername(username string) error {
+	if len(username) < MinLen {
+		return ErrUsernameTooShort
+	}
+
+	if len(username) > MaxLen {
+		return ErrUsernameTooLong
+	}
+
+	if !allowedCharactersRegex.MatchString(username) {
+		return ErrUsernameInvalidCharacter
+	}
+
+	return nil
+}
+
 func New(username, sessionID string) (*Model, error) {
+	if err := validateUsername(username); err != nil {
+		return nil, err
+	}
+
 	secret, err := util.GenerateSecret(SecretBytes)
 	if err != nil {
 		return nil, err
