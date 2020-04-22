@@ -20,6 +20,7 @@ import (
 type UserHandler interface {
 	Join(w http.ResponseWriter, r *http.Request)
 	Leave(w http.ResponseWriter, r *http.Request)
+	UserInfo(w http.ResponseWriter, r *http.Request)
 	UserPing(w http.ResponseWriter, r *http.Request)
 	ListUsers(w http.ResponseWriter, r *http.Request)
 	SuggestSong(w http.ResponseWriter, r *http.Request)
@@ -146,6 +147,24 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 	}
+}
+
+func (h *handler) UserInfo(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] user info"
+	ctx := context.Background()
+
+	vars := mux.Vars(r)
+	username := vars["username"]
+	sessionID := r.Header.Get("Session")
+
+	userID := user.GenerateUserID(username, sessionID)
+	usr, err := h.UserCollection.GetUserByID(ctx, userID)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	jsonResponse(w, usr)
 }
 
 func (h *handler) UserPing(w http.ResponseWriter, r *http.Request) {
