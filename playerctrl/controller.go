@@ -167,9 +167,8 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		if err != nil {
 			log.Errorf("%v: %v", msg, err)
 		}
-		// if no song is in the queue and a getNextSong is requested, notify the spotify clients to skip song
-		ctrl.notifyClients(sessionID, ctrl.playerSkipAction())
-		log.Warnf("%v: %v", msg, "songlist empty")
+		// send out a player state change event
+		ctrl.notifyPlayerStateChange(sessionID)
 		return
 	}
 
