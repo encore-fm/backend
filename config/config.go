@@ -3,6 +3,7 @@ package config
 import (
 	"flag"
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"
 )
@@ -63,6 +64,12 @@ func Setup() {
 		panic(err)
 	}
 	Conf = c
+
+	// setup logrus time stamps
+	formatter := &logrus.TextFormatter{
+		FullTimestamp: true,
+	}
+	logrus.SetFormatter(formatter)
 }
 
 // FromFile reads configuration from a file, bind a CLI flag to
