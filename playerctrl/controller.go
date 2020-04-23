@@ -3,15 +3,16 @@ package playerctrl
 import (
 	"context"
 	"errors"
-	"github.com/antonbaumann/spotify-jukebox/user"
 	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/sse"
+	"github.com/antonbaumann/spotify-jukebox/user"
 
 	"github.com/antonbaumann/spotify-jukebox/song"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/antonbaumann/spotify-jukebox/sse"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
