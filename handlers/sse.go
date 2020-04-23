@@ -41,6 +41,23 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		[]events.GroupID{events.GroupID(sessionID)},
 	)
 
+	// Listen to the closing of the http connection
+	go func() {
+		<-ctx.Done()
+		// Remove this client from the map of attached clients
+		// when `EventHandler` exits.
+
+		h.eventBus.Unsubscribe(sub)
+
+		log.Info("[sse] HTTP connection just closed")
+	}()
+
+	// Set the headers related to event streaming.
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Transfer-Encoding", "chunked")
+
 	playr, err := h.PlayerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
@@ -60,23 +77,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	sendEvent(w, f, msg, sse.PlayerStateChange, events.GroupID(sessionID), playerState)
 	sendEvent(w, f, msg, sse.PlaylistChange, events.GroupID(sessionID), playlist)
-
-	// Listen to the closing of the http connection
-	go func() {
-		<-ctx.Done()
-		// Remove this client from the map of attached clients
-		// when `EventHandler` exits.
-
-		h.eventBus.Unsubscribe(sub)
-
-		log.Info("[sse] HTTP connection just closed")
-	}()
-
-	// Set the headers related to event streaming.
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Transfer-Encoding", "chunked")
 
 	// Don't close the connection, instead loop endlessly.
 	for {
@@ -101,9 +101,9 @@ func sendEvent(
 	msg string,
 	eventType events.EventType,
 	groupID events.GroupID,
-	data interface{},
+	payload interface{},
 ) {
-	data, err := json.Marshal(data)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		log.Errorf(msg, err)
 	}
