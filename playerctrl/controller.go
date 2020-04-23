@@ -167,8 +167,9 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		if err != nil {
 			log.Errorf("%v: %v", msg, err)
 		}
-		// send out a player state change event
-		ctrl.notifyPlayerStateChange(sessionID)
+		// explicitly publish a skip event when playlist is empty, or else last song (in player) cannot get skipped
+		ctrl.notifyClients(sessionID, ctrl.playerSkipAction())
+		log.Warnf("%v: %v", msg, "songlist empty")
 		return
 	}
 
