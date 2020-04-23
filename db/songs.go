@@ -199,7 +199,7 @@ func (c *songCollection) ListSongs(ctx context.Context, sessionID string) ([]*so
 	}
 	defer cursor.Close(ctx)
 
-	var songList []*song.Model
+	songList := make([]*song.Model, 0)
 
 	// define custom result struct because I'm too stupid
 	// to make the mongo aggregation pipeline do what i want

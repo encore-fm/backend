@@ -58,10 +58,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Timestamp:   time.Now(),
 	}
 
-	go func() {
-		h.eventBus.Publish(sse.PlayerStateChange, events.GroupID(sessionID), playerState)
-		h.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), playlist)
-	}()
+	sendEvent(w, f, msg, sse.PlayerStateChange, events.GroupID(sessionID), playerState)
+	sendEvent(w, f, msg, sse.PlaylistChange, events.GroupID(sessionID), playlist)
 
 	// Listen to the closing of the http connection
 	go func() {
@@ -91,23 +89,34 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		data, err := json.Marshal(event.Data)
-		if err != nil {
-			log.Errorf(msg, err)
-		}
-
-		// Write to the ResponseWriter, `w`.
-		_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", event.Type, data)
-		if err != nil {
-			log.Errorf(msg, err)
-		}
-
-		log.Infof("[sse] sent event: type=%v group=%v", event.Type, event.GroupID)
-
-		// Flush the response. This is only possible if
-		// the response supports streaming.
-		f.Flush()
+		sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
 	}
 
 	log.Infof(msg, r.URL.Path)
+}
+
+func sendEvent(
+	w http.ResponseWriter,
+	f http.Flusher,
+	msg string,
+	eventType events.EventType,
+	groupID events.GroupID,
+	data interface{},
+) {
+	data, err := json.Marshal(data)
+	if err != nil {
+		log.Errorf(msg, err)
+	}
+
+	// Write to the ResponseWriter, `w`.
+	_, err = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", eventType, data)
+	if err != nil {
+		log.Errorf(msg, err)
+	}
+
+	log.Infof("[sse] sent event: type=%v group=%v", eventType, groupID)
+
+	// Flush the response. This is only possible if
+	// the response supports streaming.
+	f.Flush()
 }
