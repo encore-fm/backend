@@ -58,7 +58,7 @@ func TestHandler_Join(t *testing.T) {
 
 	userCollection.(*mocks.UserCollection).
 		On("ListUsers", context.TODO(), sessionID).
-		Return(make([]*user.ListElement, 0))
+		Return(make([]*user.ListElement, 0), nil)
 
 	// create handler with mock collections
 	handler := &handler{
