@@ -3,9 +3,10 @@ package handlers
 import (
 	"context"
 	"errors"
+	"net/http"
+
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
-	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/config"
 	log "github.com/sirupsen/logrus"
@@ -30,17 +31,42 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	// extract actual state from url
 	actualState := values.Get("state")
+	authorizationErr := values.Get("error")
 
 	// find user linked to state
-	user, err := h.UserCollection.GetUserByState(ctx, actualState)
+	usr, err := h.UserCollection.GetUserByState(ctx, actualState)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, msg, http.StatusInternalServerError)
 		return
 	}
-	if user == nil {
+	if usr == nil {
 		log.Errorf("%v: %v", msg, ErrNoUserWithState)
 		http.Error(w, ErrNoUserWithState.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// error in authentication flow
+	// occurs when user doesn't authorize app e.g. 'cancels'
+	if authorizationErr != "" {
+		log.Warnf("%v: %v", msg, authorizationErr)
+
+		if usr.IsAdmin {
+			err = h.UserCollection.DeleteUsersBySessionID(ctx, usr.SessionID)
+			if err != nil {
+				log.Errorf("%v: %v", msg, err)
+			} else {
+				log.Infof("%v: successfully deleted all users in session [%v]", msg, usr.SessionID)
+			}
+			err = h.SessionCollection.DeleteSession(ctx, usr.SessionID)
+			if err != nil {
+				log.Errorf("%v: %v", msg, err)
+			} else {
+				log.Infof("%v: successfully deleted session [%v]", msg, usr.SessionID)
+			}
+		}
+
+		http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
 		return
 	}
 
@@ -57,23 +83,23 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	// save token in user struct in db
 	// this also sets the `SpotifyAuthorized` field to true
-	if err := h.UserCollection.SetToken(ctx, user.ID, token); err != nil {
+	if err := h.UserCollection.SetToken(ctx, usr.ID, token); err != nil {
 		log.Errorf("%v: %v", msg, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// synchronize the user
-	_, err = h.UserCollection.SetSynchronized(ctx, user.ID, true)
+	_, err = h.UserCollection.SetSynchronized(ctx, usr.ID, true)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
 	h.eventBus.Publish(
 		playerctrl.Synchronize,
-		events.GroupID(user.SessionID),
-		playerctrl.SynchronizePayload{UserID: user.ID},
+		events.GroupID(usr.SessionID),
+		playerctrl.SynchronizePayload{UserID: usr.ID},
 	)
 
-	log.Infof("%v: successfully received token for user [%v]", msg, user.Username)
+	log.Infof("%v: successfully received token for usr [%v]", msg, usr.Username)
 	http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
 }
