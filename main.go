@@ -19,6 +19,7 @@ func spotifyAuthSetup() spotify.Authenticator {
 		spotify.ScopeUserModifyPlaybackState,
 		spotify.ScopeUserReadPrivate,
 		spotify.ScopeUserReadPlaybackState,
+		spotify.ScopeUserTopRead,
 	)
 	spotifyAuth.SetAuthInfo(
 		config.Conf.Spotify.ClientID,
