@@ -181,6 +181,19 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 		playerctrl.SynchronizePayload{UserID: userID},
 	)
 
+	// get new user list for sse event
+	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+
+	// send sse event that a user has joined a session
+	h.eventBus.Publish(
+		sse.UserListChange,
+		events.GroupID(sessionID),
+		userList,
+	)
+
 	result := &struct {
 		Synchronized bool `json:"synchronized"`
 	}{

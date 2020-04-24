@@ -10,6 +10,7 @@ import (
 const (
 	PlaylistChange    events.EventType = "sse:playlist_change"
 	PlayerStateChange events.EventType = "sse:player_state_change"
+	UserListChange    events.EventType = "sse:user_list_change"
 )
 
 type PlayerStateChangePayload struct {
