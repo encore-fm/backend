@@ -100,6 +100,6 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		playerctrl.SynchronizePayload{UserID: usr.ID},
 	)
 
-	log.Infof("%v: successfully received token for usr [%v]", msg, usr.Username)
+	log.Infof("%v: successfully received token for user [%v]", msg, usr.Username)
 	http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
 }
