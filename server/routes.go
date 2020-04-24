@@ -69,6 +69,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/sessionInfo/{session_id}",
 		http.HandlerFunc(s.UserHandler.SessionInfo),
 	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/favouriteSongs",
+		auth(http.HandlerFunc(s.UserHandler.ListFavouriteSongs)),
+	).Methods(http.MethodGet)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {

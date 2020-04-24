@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
@@ -29,6 +30,7 @@ type UserHandler interface {
 	ClientToken(w http.ResponseWriter, r *http.Request)
 	AuthToken(w http.ResponseWriter, r *http.Request)
 	SessionInfo(w http.ResponseWriter, r *http.Request)
+	ListFavouriteSongs(w http.ResponseWriter, r *http.Request)
 }
 
 var _ UserHandler = (*handler)(nil)
@@ -447,4 +449,41 @@ func (h *handler) SessionInfo(w http.ResponseWriter, r *http.Request) {
 
 	jsonResponse(w, response)
 	log.Infof("%v: session=[%v]", msg, sessionID)
+}
+
+func (h *handler) ListFavouriteSongs(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] list favourite songs"
+	ctx := context.Background()
+	vars := mux.Vars(r)
+
+	sessionID := r.Header.Get("Session")
+	username := vars["username"]
+
+	userInfo, err := h.UserCollection.GetUserByID(ctx, user.GenerateUserID(username, sessionID))
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	if !userInfo.SpotifyAuthorized {
+		handleError(
+			w,
+			http.StatusBadRequest,
+			log.WarnLevel,
+			msg,
+			fmt.Errorf("%v: spotify not authorized", msg),
+			SpotifyNotAuthenticatedError,
+		)
+		return
+	}
+
+	client := h.spotifyAuthenticator.NewClient(userInfo.AuthToken)
+
+	topTracks, err := client.CurrentUsersTopTracks()
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+
+	jsonResponse(w, topTracks.Tracks)
 }
