@@ -38,7 +38,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// subscribe to playlist changes
 	sub := h.eventBus.Subscribe(
-		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange},
+		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange},
 		[]events.GroupID{events.GroupID(sessionID)},
 	)
 
@@ -74,6 +74,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: %v", msg, err)
 	}
 
+	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+
 	playerState := sse.PlayerStateChangePayload{
 		CurrentSong: playr.CurrentSong,
 		IsPlaying:   !playr.Paused,
@@ -83,6 +88,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	sendEvent(w, f, msg, sse.PlayerStateChange, events.GroupID(sessionID), playerState)
 	sendEvent(w, f, msg, sse.PlaylistChange, events.GroupID(sessionID), playlist)
+	sendEvent(w, f, msg, sse.UserListChange, events.GroupID(sessionID), userList)
 
 	// Don't close the connection, instead loop endlessly.
 	for {

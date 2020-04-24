@@ -89,6 +89,18 @@ func (h *handler) Join(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	// get new user list for sse event
+	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+
+	// send sse event that a user has joined a session
+	h.eventBus.Publish(
+		sse.UserListChange,
+		events.GroupID(sessionID),
+		userList,
+	)
 
 	// create authentication url containing auth state
 	// auth state will later be used to link spotify callback to user
@@ -149,6 +161,19 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 	}
+
+	// get new user list for sse event
+	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+
+	// send sse event that a user has joined a session
+	h.eventBus.Publish(
+		sse.UserListChange,
+		events.GroupID(sessionID),
+		userList,
+	)
 }
 
 func (h *handler) UserInfo(w http.ResponseWriter, r *http.Request) {
