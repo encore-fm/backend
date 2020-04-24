@@ -22,7 +22,7 @@ func New() *Player {
 }
 
 func (p *Player) IsEmpty() bool {
-	return p.CurrentSong == nil
+	return p.CurrentSong == nil || p.Progress() >= time.Millisecond * time.Duration(p.CurrentSong.Duration)
 }
 
 func (p *Player) Progress() time.Duration {

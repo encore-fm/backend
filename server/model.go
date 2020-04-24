@@ -6,7 +6,6 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/handlers"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
-	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/zmb3/spotify"
 )
 
@@ -15,7 +14,7 @@ type Model struct {
 	UserCollection    db.UserCollection
 	SessionCollection db.SessionCollection
 	SongCollection    db.SongCollection
-	SSEHandler        sse.Handler
+	SSEHandler        handlers.SSEHandler
 	AdminHandler      handlers.AdminHandler
 	UserHandler       handlers.UserHandler
 	ServerHandler     handlers.ServerHandler
@@ -45,14 +44,12 @@ func New(
 		spotifyClient,
 	)
 
-	sseHandler := sse.New(eventBus)
-
 	server := &Model{
 		Port:              config.Conf.Server.Port,
 		UserCollection:    userHandle,
 		SessionCollection: sessHandle,
 		SongCollection:    songHandle,
-		SSEHandler:        sseHandler,
+		SSEHandler:        handlers.SSEHandler(handler),
 		AdminHandler:      handlers.AdminHandler(handler),
 		UserHandler:       handlers.UserHandler(handler),
 		ServerHandler:     handlers.ServerHandler(handler),
