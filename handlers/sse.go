@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/sse"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
@@ -61,6 +62,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	playr, err := h.PlayerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
+	}
+
+	// return empty player if player is nil
+	if playr == nil {
+		playr = player.New()
 	}
 
 	playlist, err := h.SongCollection.ListSongs(ctx, sessionID)
