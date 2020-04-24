@@ -109,11 +109,11 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		playerctrl.SynchronizePayload{UserID: usr.ID},
 	)
 
+	redirectUrl := config.Conf.Server.FrontendBaseUrl
+	if !usr.IsAdmin {
+		redirectUrl = fmt.Sprintf("%v/callback/success", config.Conf.Server.FrontendBaseUrl)
+	}
+
 	log.Infof("%v: successfully received token for user [%v]", msg, usr.Username)
-	http.Redirect(
-		w,
-		r,
-		fmt.Sprintf("%v/callback/success", config.Conf.Server.FrontendBaseUrl),
-		http.StatusSeeOther,
-	)
+	http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
 }
