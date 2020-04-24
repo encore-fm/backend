@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -64,9 +65,17 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 			} else {
 				log.Infof("%v: successfully deleted session [%v]", msg, usr.SessionID)
 			}
+
+			http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
+			return
 		}
 
-		http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
+		http.Redirect(
+			w,
+			r,
+			fmt.Sprintf("%v/callback/error", config.Conf.Server.FrontendBaseUrl),
+			http.StatusSeeOther,
+		)
 		return
 	}
 
@@ -100,6 +109,11 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		playerctrl.SynchronizePayload{UserID: usr.ID},
 	)
 
+	redirectUrl := config.Conf.Server.FrontendBaseUrl
+	if !usr.IsAdmin {
+		redirectUrl = fmt.Sprintf("%v/callback/success", config.Conf.Server.FrontendBaseUrl)
+	}
+
 	log.Infof("%v: successfully received token for user [%v]", msg, usr.Username)
-	http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
+	http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
 }
