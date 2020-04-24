@@ -61,10 +61,13 @@ func TestHandler_Join(t *testing.T) {
 		Return(make([]*user.ListElement, 0), nil)
 
 	// create handler with mock collections
+	eventBus := events.NewEventBus()
+	eventBus.Start()
 	handler := &handler{
 		UserCollection:       userCollection,
 		SessionCollection:    sessionCollection,
 		spotifyAuthenticator: spotify.NewAuthenticator("http://123.de"),
+		eventBus:             eventBus,
 	}
 	userHandler := UserHandler(handler)
 
