@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -13,9 +14,13 @@ const (
 	UserListChange    events.EventType = "sse:user_list_change"
 )
 
+type PlaylistChangePayload []*song.Model
+
 type PlayerStateChangePayload struct {
 	CurrentSong *song.Model `json:"current_song"`
 	IsPlaying   bool        `json:"is_playing"`
 	ProgressMs  int64       `json:"progress"`
 	Timestamp   time.Time   `json:"timestamp"`
 }
+
+type UserListChangePayload []*user.Model
