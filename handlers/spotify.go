@@ -15,6 +15,7 @@ import (
 
 var (
 	ErrNoUserWithState = errors.New("no user with this state in db")
+	ErrUserNotPremium  = errors.New("user doesnt have a premium account")
 )
 
 type SpotifyHandler interface {
@@ -38,12 +39,12 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	usr, err := h.UserCollection.GetUserByState(ctx, actualState)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
-		http.Error(w, msg, http.StatusInternalServerError)
+		redirect(w, r, false, "")
 		return
 	}
 	if usr == nil {
 		log.Errorf("%v: %v", msg, ErrNoUserWithState)
-		http.Error(w, ErrNoUserWithState.Error(), http.StatusInternalServerError)
+		redirect(w, r, false, "")
 		return
 	}
 
@@ -53,29 +54,14 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		log.Warnf("%v: %v", msg, authorizationErr)
 
 		if usr.IsAdmin {
-			err = h.UserCollection.DeleteUsersBySessionID(ctx, usr.SessionID)
-			if err != nil {
-				log.Errorf("%v: %v", msg, err)
-			} else {
-				log.Infof("%v: successfully deleted all users in session [%v]", msg, usr.SessionID)
-			}
-			err = h.SessionCollection.DeleteSession(ctx, usr.SessionID)
-			if err != nil {
-				log.Errorf("%v: %v", msg, err)
-			} else {
-				log.Infof("%v: successfully deleted session [%v]", msg, usr.SessionID)
-			}
+			h.deleteSessionAndUsers(ctx, usr.SessionID)
 
+			// if user is admin dont redirect to callback popup
 			http.Redirect(w, r, config.Conf.Server.FrontendBaseUrl, http.StatusSeeOther)
 			return
 		}
 
-		http.Redirect(
-			w,
-			r,
-			fmt.Sprintf("%v/callback/error", config.Conf.Server.FrontendBaseUrl),
-			http.StatusSeeOther,
-		)
+		redirect(w, r, true, "")
 		return
 	}
 
@@ -86,7 +72,7 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	token, err := h.spotifyAuthenticator.Exchange(code)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirect(w, r, false, "")
 		return
 	}
 
@@ -94,7 +80,21 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	// this also sets the `SpotifyAuthorized` field to true
 	if err := h.UserCollection.SetToken(ctx, usr.ID, token); err != nil {
 		log.Errorf("%v: %v", msg, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		redirect(w, r, false, "")
+		return
+	}
+
+	client := h.spotifyAuthenticator.NewClient(token)
+	spotifyUser, err := client.CurrentUser()
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		redirect(w, r, false, "")
+		return
+	}
+	if spotifyUser.Product != "premium" {
+
+		log.Errorf("%v: %v", msg, ErrUserNotPremium)
+		redirect(w, r, false, "encore requires a valid spotify premium account.")
 		return
 	}
 
@@ -116,4 +116,35 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof("%v: successfully received token for user [%v]", msg, usr.Username)
 	http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
+}
+
+func redirect(w http.ResponseWriter, r *http.Request, success bool, msg string) {
+	successUrl := fmt.Sprintf("%v/callback/success", config.Conf.Server.FrontendBaseUrl)
+	failureUrl := fmt.Sprintf("%v/callback/error", config.Conf.Server.FrontendBaseUrl)
+
+	redirectUrl := successUrl
+	if !success {
+		redirectUrl = failureUrl
+	}
+
+	if msg != "" {
+		redirectUrl = fmt.Sprintf("%v/%v", redirectUrl, msg)
+	}
+	http.Redirect(w, r, redirectUrl, http.StatusSeeOther)
+}
+
+func (h *handler) deleteSessionAndUsers(ctx context.Context, sessionID string) {
+	msg := "[handler] redirect: delete session and users"
+	err := h.UserCollection.DeleteUsersBySessionID(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	} else {
+		log.Infof("%v: successfully deleted all users in session [%v]", msg, sessionID)
+	}
+	err = h.SessionCollection.DeleteSession(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	} else {
+		log.Infof("%v: successfully deleted session [%v]", msg, sessionID)
+	}
 }
