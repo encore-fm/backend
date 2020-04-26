@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"go.mongodb.org/mongo-driver/bson"
@@ -25,6 +24,8 @@ type UserCollection interface {
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
 	SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error)
 	GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
+	AddSSEConnection(ctx context.Context, userID string) (int, error)
+	RemoveSSEConnection(ctx context.Context, userID string) (int, error)
 }
 
 type userCollection struct {
@@ -282,4 +283,44 @@ func (c *userCollection) GetSpotifyClients(ctx context.Context, sessionID string
 	}
 
 	return clients, nil
+}
+
+func (c *userCollection) incrementSSEConnections(ctx context.Context, userID string, amount int) (int, error) {
+	errMsg := "[db] increment sse connections: %w"
+
+	filter := bson.M{"_id": userID}
+	update := bson.M{
+		"$inc": bson.M{
+			"active_sse_connections": amount,
+		},
+	}
+	projection := bson.D{{"active_sse_connections", 1}}
+	after := options.After
+	opt := options.FindOneAndUpdateOptions{
+		Projection:     projection,
+		ReturnDocument: &after,
+	}
+
+	var res *struct {
+		ActiveSSEConnections int `bson:"active_sse_connections"`
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&res)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return -1, fmt.Errorf(errMsg, ErrNoUserWithID)
+		}
+		return -1, fmt.Errorf(errMsg, err)
+	}
+	return res.ActiveSSEConnections, nil
+}
+
+// increments the user's number of active sse connections by 1
+func (c *userCollection) AddSSEConnection(ctx context.Context, userID string) (int, error) {
+	return c.incrementSSEConnections(ctx, userID, 1)
+}
+
+// decrements the user's number of active sse connections by 1
+func (c *userCollection) RemoveSSEConnection(ctx context.Context, userID string) (int, error) {
+	return c.incrementSSEConnections(ctx, userID, -1)
 }

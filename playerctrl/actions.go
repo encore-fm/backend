@@ -42,3 +42,12 @@ func (ctrl *Controller) playerSkipAction() notifyAction {
 		}
 	}
 }
+
+func (ctrl *Controller) playerPauseAction() notifyAction {
+	msg := "[playerctrl] player pause"
+	return func(client spotify.Client) {
+		if err := client.Pause(); err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
+	}
+}

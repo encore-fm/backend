@@ -100,6 +100,7 @@ func (ctrl *Controller) eventLoop() {
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
 	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
 	synchronize := ctrl.eventBus.Subscribe([]events.EventType{Synchronize}, []events.GroupID{events.GroupIDAny})
+	desynchronize := ctrl.eventBus.Subscribe([]events.EventType{Desynchronize}, []events.GroupID{events.GroupIDAny})
 	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
@@ -118,6 +119,9 @@ func (ctrl *Controller) eventLoop() {
 
 		case ev := <-synchronize.Channel:
 			ctrl.handleSynchronize(ev)
+
+		case ev := <-desynchronize.Channel:
+			ctrl.handleDesynchronize(ev)
 
 		case ev := <-reset.Channel:
 			ctrl.handleReset(ev)

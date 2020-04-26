@@ -17,6 +17,27 @@ type UserCollection struct {
 	mock.Mock
 }
 
+// AddSSEConnection provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) AddSSEConnection(ctx context.Context, userID string) (int, error) {
+	ret := _m.Called(ctx, userID)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, string) int); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AddUser provides a mock function with given fields: ctx, newUser
 func (_m *UserCollection) AddUser(ctx context.Context, newUser *user.Model) error {
 	ret := _m.Called(ctx, newUser)
@@ -181,6 +202,27 @@ func (_m *UserCollection) ListUsers(ctx context.Context, sessionID string) ([]*u
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, sessionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RemoveSSEConnection provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) RemoveSSEConnection(ctx context.Context, userID string) (int, error) {
+	ret := _m.Called(ctx, userID)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, string) int); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
 	} else {
 		r1 = ret.Error(1)
 	}

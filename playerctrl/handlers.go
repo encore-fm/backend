@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/zmb3/spotify"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -162,7 +161,7 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 }
 
 func (ctrl *Controller) handleSynchronize(ev events.Event) {
-	msg := "[playerctrl] handle set synchronized"
+	msg := "[playerctrl] handle synchronize"
 	ctx := context.Background()
 	sessionID := string(ev.GroupID)
 
@@ -180,11 +179,9 @@ func (ctrl *Controller) handleSynchronize(ev events.Event) {
 		return
 	}
 
+	// if no songs in session, pause the client
 	if playr.IsEmpty() {
-		// if no songs in session, pause the client
-		ctrl.notifyClient(sessionID, userID,
-			func(client spotify.Client) { _ = client.Pause() },
-		)
+		ctrl.notifyClient(sessionID, userID, ctrl.playerPauseAction())
 		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 		return
 	}
@@ -199,6 +196,27 @@ func (ctrl *Controller) handleSynchronize(ev events.Event) {
 	)
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+}
+
+// desynchronizes the user and pauses their client
+func (ctrl *Controller) handleDesynchronize(ev events.Event) {
+	msg := "[playerctrl] handle desynchronize"
+	ctx := context.Background()
+	sessionID := string(ev.GroupID)
+	payload, ok := ev.Data.(DesynchronizePayload)
+	if !ok {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+	userID := payload.UserID
+
+	ctrl.notifyClient(sessionID, userID, ctrl.playerPauseAction())
+
+	// has to come after notifying client, since notifyClient only works if user is synchronized
+	_, err := ctrl.userCollection.SetSynchronized(ctx, userID, false)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
 }
 
 func (ctrl *Controller) handleReset(ev events.Event) {

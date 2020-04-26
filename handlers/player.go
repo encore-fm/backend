@@ -187,7 +187,7 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 		log.Errorf("%v: %v", msg, err)
 	}
 
-	// send sse event that a user has joined a session
+	// send sse event that a user has synchronized
 	h.eventBus.Publish(
 		sse.UserListChange,
 		events.GroupID(sessionID),

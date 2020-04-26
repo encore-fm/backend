@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"net/http"
 	"time"
 
@@ -19,7 +22,7 @@ type SSEHandler interface {
 
 var _ SSEHandler = (*handler)(nil)
 
-// This Broker method handles and HTTP request at the "/users/{session_id}" URL.
+// This Broker method handles and HTTP request at the "/events/{username}/{session_id}" URL.
 //
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -27,6 +30,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
 	sessionID := vars["session_id"]
+	username := vars["username"]
+	userID := user.GenerateUserID(username, sessionID)
 
 	// Make sure that the writer supports flushing.
 	//
@@ -36,6 +41,18 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// register active sse connection
+	_, err := h.UserCollection.AddSSEConnection(ctx, userID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	// synchronize user
+	_, err = h.UserCollection.SetSynchronized(ctx, userID, true)
+	h.eventBus.Publish(
+		playerctrl.Synchronize,
+		events.GroupID(sessionID),
+		playerctrl.SynchronizePayload{UserID: userID},
+	)
 	// subscribe to playlist changes
 	sub := h.eventBus.Subscribe(
 		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange},
@@ -49,6 +66,20 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// when `EventHandler` exits.
 
 		h.eventBus.Unsubscribe(sub)
+
+		// unregister sse connection
+		numberOfConnections, err := h.UserCollection.RemoveSSEConnection(context.Background(), userID)
+		if err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
+		// desynchronize user if no more connections are active
+		if numberOfConnections == 0 {
+			h.eventBus.Publish(
+				playerctrl.Desynchronize,
+				events.GroupID(sessionID),
+				playerctrl.DesynchronizePayload{UserID: userID},
+			)
+		}
 
 		log.Info("[sse] HTTP connection just closed")
 	}()
