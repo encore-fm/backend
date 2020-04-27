@@ -173,6 +173,12 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	}
 	userID := payload.UserID
 	synchronized := payload.Synchronized
+	// notify sse that user change sync status
+	defer ctrl.eventBus.Publish(
+		sse.UserSynchronizedChange,
+		events.GroupID(sessionID),
+		sse.UserSynchronizedChangePayload{Synchronized: synchronized},
+	)
 
 	// just pause the client
 	if !synchronized {
@@ -203,13 +209,6 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 			),
 		)
 	}
-
-	// notify sse that user change sync status
-	ctrl.eventBus.Publish(
-		sse.UserSynchronizedChange,
-		events.GroupID(sessionID),
-		sse.UserSynchronizedChangePayload{Synchronized: synchronized},
-	)
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
