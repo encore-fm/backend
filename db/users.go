@@ -23,7 +23,8 @@ type UserCollection interface {
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
 	SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error)
-	GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
+	GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error)
+	GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
 	AddSSEConnection(ctx context.Context, userID string) (int, error)
 	RemoveSSEConnection(ctx context.Context, userID string) (int, error)
 }
@@ -246,8 +247,32 @@ func (c *userCollection) SetSynchronized(ctx context.Context, userID string, syn
 	return usr, nil
 }
 
-func (c *userCollection) GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
-	errMsg := "[db] get spotify clients: %w"
+// gets an authorized user's Spotify client
+func (c *userCollection) GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error) {
+	errMsg := "[db] get spotify client: %w"
+	filter := bson.D{
+		{"_id", userID},
+		{"spotify_authorized", true},
+	}
+	projection := bson.D{
+		{"_id", 1},
+		{"username", 1},
+		{"session_id", 1},
+		{"is_admin", 1},
+		{"auth_token", 1},
+	}
+	opt := &options.FindOneOptions{Projection: projection}
+
+	var res *user.SpotifyClient
+	err := c.collection.FindOne(ctx, filter, opt).Decode(&res)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	return res, nil
+}
+
+func (c *userCollection) GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
+	errMsg := "[db] get synced spotify clients: %w"
 	filter := bson.D{
 		{"session_id", sessionID},
 		{"spotify_authorized", true},

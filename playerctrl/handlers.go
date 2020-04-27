@@ -160,18 +160,26 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
-func (ctrl *Controller) handleSynchronize(ev events.Event) {
-	msg := "[playerctrl] handle synchronize"
+func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
+	msg := "[playerctrl] handle set synchronized"
 	ctx := context.Background()
 	sessionID := string(ev.GroupID)
 
-	payload, ok := ev.Data.(SynchronizePayload)
+	payload, ok := ev.Data.(SetSynchronizedPayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
 		return
 	}
 	userID := payload.UserID
+	synchronized := payload.Synchronized
 
+	// just pause the client
+	if !synchronized {
+		ctrl.notifyClient(userID, ctrl.playerPauseAction())
+		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+		return
+	}
+	// else, synchronize user
 	// get player to extract current playing information
 	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
@@ -181,13 +189,14 @@ func (ctrl *Controller) handleSynchronize(ev events.Event) {
 
 	// if no songs in session, pause the client
 	if playr.IsEmpty() {
-		ctrl.notifyClient(sessionID, userID, ctrl.playerPauseAction())
+		ctrl.notifyClient(userID, ctrl.playerPauseAction())
 		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 		return
 	}
 
 	// get the user's client up to speed...
-	ctrl.notifyClient(sessionID, userID,
+	ctrl.notifyClient(
+		userID,
 		ctrl.setPlayerStateAction(
 			playr.CurrentSong.ID,
 			playr.Progress(),
@@ -196,27 +205,6 @@ func (ctrl *Controller) handleSynchronize(ev events.Event) {
 	)
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-}
-
-// desynchronizes the user and pauses their client
-func (ctrl *Controller) handleDesynchronize(ev events.Event) {
-	msg := "[playerctrl] handle desynchronize"
-	ctx := context.Background()
-	sessionID := string(ev.GroupID)
-	payload, ok := ev.Data.(DesynchronizePayload)
-	if !ok {
-		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
-		return
-	}
-	userID := payload.UserID
-
-	ctrl.notifyClient(sessionID, userID, ctrl.playerPauseAction())
-
-	// has to come after notifying client, since notifyClient only works if user is synchronized
-	_, err := ctrl.userCollection.SetSynchronized(ctx, userID, false)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-	}
 }
 
 func (ctrl *Controller) handleReset(ev events.Event) {

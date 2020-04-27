@@ -103,8 +103,31 @@ func (_m *UserCollection) GetAdminBySessionID(ctx context.Context, sessionID str
 	return r0, r1
 }
 
-// GetSpotifyClients provides a mock function with given fields: ctx, sessionID
-func (_m *UserCollection) GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
+// GetSpotifyClient provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error) {
+	ret := _m.Called(ctx, userID)
+
+	var r0 *user.SpotifyClient
+	if rf, ok := ret.Get(0).(func(context.Context, string) *user.SpotifyClient); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*user.SpotifyClient)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSyncedSpotifyClients provides a mock function with given fields: ctx, sessionID
+func (_m *UserCollection) GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
 	ret := _m.Called(ctx, sessionID)
 
 	var r0 []*user.SpotifyClient

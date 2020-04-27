@@ -5,10 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/sse"
-	"github.com/antonbaumann/spotify-jukebox/user"
-
 	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -99,8 +97,7 @@ func (ctrl *Controller) eventLoop() {
 	playPause := ctrl.eventBus.Subscribe([]events.EventType{PlayPauseEvent}, []events.GroupID{events.GroupIDAny})
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
 	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
-	synchronize := ctrl.eventBus.Subscribe([]events.EventType{Synchronize}, []events.GroupID{events.GroupIDAny})
-	desynchronize := ctrl.eventBus.Subscribe([]events.EventType{Desynchronize}, []events.GroupID{events.GroupIDAny})
+	setSynchronized := ctrl.eventBus.Subscribe([]events.EventType{SetSynchronized}, []events.GroupID{events.GroupIDAny})
 	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
@@ -117,11 +114,8 @@ func (ctrl *Controller) eventLoop() {
 		case ev := <-seek.Channel:
 			ctrl.handleSeek(ev)
 
-		case ev := <-synchronize.Channel:
-			ctrl.handleSynchronize(ev)
-
-		case ev := <-desynchronize.Channel:
-			ctrl.handleDesynchronize(ev)
+		case ev := <-setSynchronized.Channel:
+			ctrl.handleSetSynchronized(ev)
 
 		case ev := <-reset.Channel:
 			ctrl.handleReset(ev)
@@ -248,30 +242,18 @@ func initializeClient(client spotify.Client) {
 }
 
 // synchronizes the specified user with admin player state
-func (ctrl *Controller) notifyClient(sessionID, userID string, action notifyAction) {
+func (ctrl *Controller) notifyClient(userID string, action notifyAction) {
 	msg := "[playerctrl] notify client"
 	ctx := context.Background()
 
-	// get clients and filter out specific user client
-	clients, err := ctrl.userCollection.GetSpotifyClients(ctx, sessionID)
+	// get user's client
+	client, err := ctrl.userCollection.GetSpotifyClient(ctx, userID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
-	}
-	var userClient *user.SpotifyClient
-	for _, client := range clients {
-		// client found
-		if client.ID == userID {
-			userClient = client
-			break
-		}
-	}
-	// Client not found. Should never be the case.
-	if userClient == nil {
-		log.Errorf("%v: user client not found", msg)
 		return
 	}
 
-	spotifyClient := ctrl.authenticator.NewClient(userClient.AuthToken)
+	spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
 	initializeClient(spotifyClient)
 	action(spotifyClient)
 }
@@ -281,7 +263,7 @@ func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
 	msg := "[playerctrl] notify clients"
 	ctx := context.Background()
 
-	clients, err := ctrl.userCollection.GetSpotifyClients(ctx, sessionID)
+	clients, err := ctrl.userCollection.GetSyncedSpotifyClients(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}

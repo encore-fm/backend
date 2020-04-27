@@ -102,7 +102,7 @@ func (h *handler) DeleteSession(w http.ResponseWriter, r *http.Request) {
 	sessionID := r.Header.Get("Session")
 
 	// pause spotify clients
-	clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
+	clients, err := h.UserCollection.GetSyncedSpotifyClients(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}

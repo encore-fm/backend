@@ -104,9 +104,9 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: %v", msg, err)
 	}
 	h.eventBus.Publish(
-		playerctrl.Synchronize,
+		playerctrl.SetSynchronized,
 		events.GroupID(usr.SessionID),
-		playerctrl.SynchronizePayload{UserID: usr.ID},
+		playerctrl.SetSynchronizedPayload{UserID: usr.ID, Synchronized: true},
 	)
 
 	redirectUrl := config.Conf.Server.FrontendBaseUrl

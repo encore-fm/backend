@@ -23,7 +23,6 @@ type SSEHandler interface {
 var _ SSEHandler = (*handler)(nil)
 
 // This Broker method handles and HTTP request at the "/events/{username}/{session_id}" URL.
-//
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	msg := "[sse] serve http: %v"
@@ -48,10 +47,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// synchronize user
 	_, err = h.UserCollection.SetSynchronized(ctx, userID, true)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
 	h.eventBus.Publish(
-		playerctrl.Synchronize,
+		playerctrl.SetSynchronized,
 		events.GroupID(sessionID),
-		playerctrl.SynchronizePayload{UserID: userID},
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
 	)
 	// subscribe to playlist changes
 	sub := h.eventBus.Subscribe(
@@ -74,11 +76,16 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		// desynchronize user if no more connections are active
 		if numberOfConnections == 0 {
+			_, err := h.UserCollection.SetSynchronized(context.Background(), userID, false)
+			if err != nil {
+				log.Errorf("%v: %v", msg, err)
+			}
 			h.eventBus.Publish(
-				playerctrl.Desynchronize,
+				playerctrl.SetSynchronized,
 				events.GroupID(sessionID),
-				playerctrl.DesynchronizePayload{UserID: userID},
+				playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: false},
 			)
+			log.Error("4")
 		}
 
 		log.Info("[sse] HTTP connection just closed")

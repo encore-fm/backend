@@ -176,9 +176,9 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 
 	// publish the event to get the user's spotify client up to speed
 	h.eventBus.Publish(
-		playerctrl.Synchronize,
+		playerctrl.SetSynchronized,
 		events.GroupID(sessionID),
-		playerctrl.SynchronizePayload{UserID: userID},
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
 	)
 
 	// get new user list for sse event
