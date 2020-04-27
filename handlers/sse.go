@@ -85,7 +85,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				events.GroupID(sessionID),
 				playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: false},
 			)
-			log.Error("4")
 		}
 
 		log.Info("[sse] HTTP connection just closed")

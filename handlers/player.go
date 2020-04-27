@@ -178,7 +178,7 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 	h.eventBus.Publish(
 		playerctrl.SetSynchronizedEvent,
 		events.GroupID(sessionID),
-		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: synchronized},
 	)
 
 	// get new user list for sse event
