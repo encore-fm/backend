@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -176,32 +177,38 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	// just pause the client
 	if !synchronized {
 		ctrl.notifyClient(userID, ctrl.playerPauseAction())
-		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-		return
-	}
-	// else, synchronize user
-	// get player to extract current playing information
-	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-		return
+	} else {
+		// synchronize user
+		// get player to extract current playing information
+		playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+		if err != nil {
+			log.Errorf("%v: %v", msg, err)
+			return
+		}
+
+		// if no songs in session, pause the client
+		if playr.IsEmpty() {
+			ctrl.notifyClient(userID, ctrl.playerPauseAction())
+			log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+			return
+		}
+
+		// get the user's client up to speed...
+		ctrl.notifyClient(
+			userID,
+			ctrl.setPlayerStateAction(
+				playr.CurrentSong.ID,
+				playr.Progress(),
+				playr.Paused,
+			),
+		)
 	}
 
-	// if no songs in session, pause the client
-	if playr.IsEmpty() {
-		ctrl.notifyClient(userID, ctrl.playerPauseAction())
-		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-		return
-	}
-
-	// get the user's client up to speed...
-	ctrl.notifyClient(
-		userID,
-		ctrl.setPlayerStateAction(
-			playr.CurrentSong.ID,
-			playr.Progress(),
-			playr.Paused,
-		),
+	// notify sse that user change sync status
+	ctrl.eventBus.Publish(
+		sse.UserSynchronizedChange,
+		events.GroupID(sessionID),
+		sse.UserSynchronizedChangePayload{Synchronized: synchronized},
 	)
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
