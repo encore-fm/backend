@@ -36,13 +36,6 @@ type SetSynchronizedPayload struct {
 	Synchronized bool
 }
 
-// define set synchronized event
-const Synchronize events.EventType = "player_event:synchronize"
-
-type SynchronizePayload struct {
-	UserID string
-}
-
 // define reset event
 const ResetEvent events.EventType = "player_event:reset_session"
 
