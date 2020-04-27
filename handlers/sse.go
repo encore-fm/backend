@@ -51,7 +51,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: %v", msg, err)
 	}
 	h.eventBus.Publish(
-		playerctrl.SetSynchronized,
+		playerctrl.SetSynchronizedEvent,
 		events.GroupID(sessionID),
 		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
 	)
@@ -81,7 +81,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				log.Errorf("%v: %v", msg, err)
 			}
 			h.eventBus.Publish(
-				playerctrl.SetSynchronized,
+				playerctrl.SetSynchronizedEvent,
 				events.GroupID(sessionID),
 				playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: false},
 			)
