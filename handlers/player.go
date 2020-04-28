@@ -159,47 +159,17 @@ func (h *handler) GetState(w http.ResponseWriter, r *http.Request) {
 
 // todo: component and system tests
 func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchronized bool) {
-	msg := "[player handler] set synchronized"
-	ctx := context.Background()
-
 	vars := mux.Vars(r)
 	username := vars["username"]
 	sessionID := r.Header.Get("Session")
 	userID := user.GenerateUserID(username, sessionID)
 
-	// set the user's synchronized state in the db and returns the updated user
-	usr, err := h.UserCollection.SetSynchronized(ctx, userID, synchronized)
-	if err != nil {
-		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-		return
-	}
-
-	// publish the event to get the user's spotify client up to speed
+	// publish set synchronized event to synchronize user and his spotify client
 	h.eventBus.Publish(
-		playerctrl.Synchronize,
+		playerctrl.SetSynchronizedEvent,
 		events.GroupID(sessionID),
-		playerctrl.SynchronizePayload{UserID: userID},
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: synchronized},
 	)
-
-	// get new user list for sse event
-	userList, err := h.UserCollection.ListUsers(ctx, sessionID)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-	}
-
-	// send sse event that a user has joined a session
-	h.eventBus.Publish(
-		sse.UserListChange,
-		events.GroupID(sessionID),
-		userList,
-	)
-
-	result := &struct {
-		Synchronized bool `json:"synchronized"`
-	}{
-		Synchronized: usr.SpotifySynchronized,
-	}
-	jsonResponse(w, result)
 }
 
 func (h *handler) Synchronize(w http.ResponseWriter, r *http.Request) {

@@ -140,7 +140,7 @@ func (h *handler) Leave(w http.ResponseWriter, r *http.Request) {
 
 	// pause the user's spotify client
 	if usr.SpotifySynchronized {
-		clients, err := h.UserCollection.GetSpotifyClients(ctx, sessionID)
+		clients, err := h.UserCollection.GetSyncedSpotifyClients(ctx, sessionID)
 		if err != nil {
 			log.Errorf("%v: %v", msg, err)
 		}

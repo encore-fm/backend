@@ -40,6 +40,8 @@ type Model struct {
 
 	AuthToken *oauth2.Token `json:"-" bson:"auth_token"`
 	AuthState string        `json:"-" bson:"auth_state"`
+
+	ActiveSSEConnections int `json:"-" bson:"active_sse_connections"`
 }
 
 type ListElement struct {
@@ -93,15 +95,16 @@ func New(username, sessionID string) (*Model, error) {
 	}
 
 	model := &Model{
-		ID:                  GenerateUserID(username, sessionID),
-		Username:            username,
-		Secret:              secret,
-		SessionID:           sessionID,
-		IsAdmin:             false,
-		Score:               1,
-		AuthState:           state,
-		SpotifyAuthorized:   false,
-		SpotifySynchronized: false,
+		ID:                   GenerateUserID(username, sessionID),
+		Username:             username,
+		Secret:               secret,
+		SessionID:            sessionID,
+		IsAdmin:              false,
+		Score:                1,
+		AuthState:            state,
+		SpotifyAuthorized:    false,
+		SpotifySynchronized:  false,
+		ActiveSSEConnections: 0,
 	}
 	return model, nil
 }

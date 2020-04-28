@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/zmb3/spotify"
+	"github.com/antonbaumann/spotify-jukebox/sse"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -161,42 +161,71 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
-func (ctrl *Controller) handleSynchronize(ev events.Event) {
+func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	msg := "[playerctrl] handle set synchronized"
 	ctx := context.Background()
 	sessionID := string(ev.GroupID)
 
-	payload, ok := ev.Data.(SynchronizePayload)
+	payload, ok := ev.Data.(SetSynchronizedPayload)
 	if !ok {
 		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
 		return
 	}
 	userID := payload.UserID
+	synchronized := payload.Synchronized
 
-	// get player to extract current playing information
-	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	err := ctrl.userCollection.SetSynchronized(ctx, userID, synchronized)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		return
 	}
-
-	if playr.IsEmpty() {
-		// if no songs in session, pause the client
-		ctrl.notifyClient(sessionID, userID,
-			func(client spotify.Client) { _ = client.Pause() },
-		)
-		log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-		return
-	}
-
-	// get the user's client up to speed...
-	ctrl.notifyClient(sessionID, userID,
-		ctrl.setPlayerStateAction(
-			playr.CurrentSong.ID,
-			playr.Progress(),
-			playr.Paused,
-		),
+	// notify sse that user change sync status
+	ctrl.eventBus.Publish(
+		sse.UserSynchronizedChange,
+		events.GroupID(sessionID),
+		sse.UserSynchronizedChangePayload{Synchronized: synchronized, UserID: userID},
 	)
+
+	// notify sse that user list changed
+	userList, err := ctrl.userCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	ctrl.eventBus.Publish(
+		sse.UserListChange,
+		events.GroupID(sessionID),
+		userList,
+	)
+
+	// just pause the client
+	if !synchronized {
+		ctrl.notifyClient(userID, ctrl.playerPauseAction())
+	} else {
+		// synchronize user
+		// get player to extract current playing information
+		playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+		if err != nil {
+			log.Errorf("%v: %v", msg, err)
+			return
+		}
+
+		// if no songs in session, pause the client
+		if playr.IsEmpty() {
+			ctrl.notifyClient(userID, ctrl.playerPauseAction())
+			log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+			return
+		}
+
+		// get the user's client up to speed...
+		ctrl.notifyClient(
+			userID,
+			ctrl.setPlayerStateAction(
+				playr.CurrentSong.ID,
+				playr.Progress(),
+				playr.Paused,
+			),
+		)
+	}
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }

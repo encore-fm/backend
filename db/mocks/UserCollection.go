@@ -17,6 +17,27 @@ type UserCollection struct {
 	mock.Mock
 }
 
+// AddSSEConnection provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) AddSSEConnection(ctx context.Context, userID string) (int, error) {
+	ret := _m.Called(ctx, userID)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, string) int); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // AddUser provides a mock function with given fields: ctx, newUser
 func (_m *UserCollection) AddUser(ctx context.Context, newUser *user.Model) error {
 	ret := _m.Called(ctx, newUser)
@@ -82,8 +103,31 @@ func (_m *UserCollection) GetAdminBySessionID(ctx context.Context, sessionID str
 	return r0, r1
 }
 
-// GetSpotifyClients provides a mock function with given fields: ctx, sessionID
-func (_m *UserCollection) GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
+// GetSpotifyClient provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error) {
+	ret := _m.Called(ctx, userID)
+
+	var r0 *user.SpotifyClient
+	if rf, ok := ret.Get(0).(func(context.Context, string) *user.SpotifyClient); ok {
+		r0 = rf(ctx, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*user.SpotifyClient)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetSyncedSpotifyClients provides a mock function with given fields: ctx, sessionID
+func (_m *UserCollection) GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
 	ret := _m.Called(ctx, sessionID)
 
 	var r0 []*user.SpotifyClient
@@ -188,27 +232,39 @@ func (_m *UserCollection) ListUsers(ctx context.Context, sessionID string) ([]*u
 	return r0, r1
 }
 
-// SetSynchronized provides a mock function with given fields: ctx, userID, synchronized
-func (_m *UserCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error) {
-	ret := _m.Called(ctx, userID, synchronized)
+// RemoveSSEConnection provides a mock function with given fields: ctx, userID
+func (_m *UserCollection) RemoveSSEConnection(ctx context.Context, userID string) (int, error) {
+	ret := _m.Called(ctx, userID)
 
-	var r0 *user.Model
-	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *user.Model); ok {
-		r0 = rf(ctx, userID, synchronized)
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, string) int); ok {
+		r0 = rf(ctx, userID)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*user.Model)
-		}
+		r0 = ret.Get(0).(int)
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
-		r1 = rf(ctx, userID, synchronized)
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, userID)
 	} else {
 		r1 = ret.Error(1)
 	}
 
 	return r0, r1
+}
+
+// SetSynchronized provides a mock function with given fields: ctx, userID, synchronized
+func (_m *UserCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) error {
+	ret := _m.Called(ctx, userID, synchronized)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) error); ok {
+		r0 = rf(ctx, userID, synchronized)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // SetToken provides a mock function with given fields: ctx, userID, token

@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"net/http"
 	"time"
 
@@ -19,14 +22,15 @@ type SSEHandler interface {
 
 var _ SSEHandler = (*handler)(nil)
 
-// This Broker method handles and HTTP request at the "/users/{session_id}" URL.
-//
+// This Broker method handles and HTTP request at the "/events/{username}/{session_id}" URL.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	msg := "[sse] serve http: %v"
 
 	vars := mux.Vars(r)
 	sessionID := vars["session_id"]
+	username := vars["username"]
+	userID := user.GenerateUserID(username, sessionID)
 
 	// Make sure that the writer supports flushing.
 	//
@@ -35,11 +39,22 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
 		return
 	}
-
-	// subscribe to playlist changes
+	// subscribe to changes
 	sub := h.eventBus.Subscribe(
-		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange},
+		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange, sse.UserSynchronizedChange},
 		[]events.GroupID{events.GroupID(sessionID)},
+	)
+
+	// register active sse connection
+	_, err := h.UserCollection.AddSSEConnection(ctx, userID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	// synchronize user
+	h.eventBus.Publish(
+		playerctrl.SetSynchronizedEvent,
+		events.GroupID(sessionID),
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
 	)
 
 	// Listen to the closing of the http connection
@@ -49,6 +64,20 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// when `EventHandler` exits.
 
 		h.eventBus.Unsubscribe(sub)
+
+		// unregister sse connection
+		numberOfConnections, err := h.UserCollection.RemoveSSEConnection(context.Background(), userID)
+		if err != nil {
+			log.Errorf("%v: %v", msg, err)
+		}
+		// desynchronize user if no more connections are active
+		if numberOfConnections == 0 {
+			h.eventBus.Publish(
+				playerctrl.SetSynchronizedEvent,
+				events.GroupID(sessionID),
+				playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: false},
+			)
+		}
 
 		log.Info("[sse] HTTP connection just closed")
 	}()

@@ -99,14 +99,10 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// synchronize the user
-	_, err = h.UserCollection.SetSynchronized(ctx, usr.ID, true)
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-	}
 	h.eventBus.Publish(
-		playerctrl.Synchronize,
+		playerctrl.SetSynchronizedEvent,
 		events.GroupID(usr.SessionID),
-		playerctrl.SynchronizePayload{UserID: usr.ID},
+		playerctrl.SetSynchronizedPayload{UserID: usr.ID, Synchronized: true},
 	)
 
 	redirectUrl := config.Conf.Server.FrontendBaseUrl

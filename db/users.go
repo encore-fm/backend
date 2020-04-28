@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,8 +22,11 @@ type UserCollection interface {
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
-	SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error)
-	GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
+	SetSynchronized(ctx context.Context, userID string, synchronized bool) error
+	GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error)
+	GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
+	AddSSEConnection(ctx context.Context, userID string) (int, error)
+	RemoveSSEConnection(ctx context.Context, userID string) (int, error)
 }
 
 type userCollection struct {
@@ -221,7 +223,7 @@ func (c *userCollection) SetToken(ctx context.Context, userID string, token *oau
 	return nil
 }
 
-func (c *userCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error) {
+func (c *userCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) error {
 	errMsg := "[db] set synchronized: %w"
 	filter := bson.M{
 		"_id":                userID,
@@ -230,23 +232,44 @@ func (c *userCollection) SetSynchronized(ctx context.Context, userID string, syn
 	update := bson.M{
 		"$set": bson.M{"spotify_synchronized": synchronized},
 	}
-	var usr *user.Model
 
-	after := options.After
-	opt := options.FindOneAndUpdateOptions{ReturnDocument: &after}
-	err := c.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&usr)
+	res, err := c.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, fmt.Errorf(errMsg, ErrNoUserWithID)
-		}
-		return nil, fmt.Errorf(errMsg, err)
+		return fmt.Errorf(errMsg, err)
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 
-	return usr, nil
+	return nil
 }
 
-func (c *userCollection) GetSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
-	errMsg := "[db] get spotify clients: %w"
+// gets an authorized user's Spotify client
+func (c *userCollection) GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error) {
+	errMsg := "[db] get spotify client: %w"
+	filter := bson.D{
+		{"_id", userID},
+		{"spotify_authorized", true},
+	}
+	projection := bson.D{
+		{"_id", 1},
+		{"username", 1},
+		{"session_id", 1},
+		{"is_admin", 1},
+		{"auth_token", 1},
+	}
+	opt := &options.FindOneOptions{Projection: projection}
+
+	var res *user.SpotifyClient
+	err := c.collection.FindOne(ctx, filter, opt).Decode(&res)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	return res, nil
+}
+
+func (c *userCollection) GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error) {
+	errMsg := "[db] get synced spotify clients: %w"
 	filter := bson.D{
 		{"session_id", sessionID},
 		{"spotify_authorized", true},
@@ -282,4 +305,44 @@ func (c *userCollection) GetSpotifyClients(ctx context.Context, sessionID string
 	}
 
 	return clients, nil
+}
+
+func (c *userCollection) incrementSSEConnections(ctx context.Context, userID string, amount int) (int, error) {
+	errMsg := "[db] increment sse connections: %w"
+
+	filter := bson.M{"_id": userID}
+	update := bson.M{
+		"$inc": bson.M{
+			"active_sse_connections": amount,
+		},
+	}
+	projection := bson.D{{"active_sse_connections", 1}}
+	after := options.After
+	opt := options.FindOneAndUpdateOptions{
+		Projection:     projection,
+		ReturnDocument: &after,
+	}
+
+	var res *struct {
+		ActiveSSEConnections int `bson:"active_sse_connections"`
+	}
+
+	err := c.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&res)
+	if err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return -1, fmt.Errorf(errMsg, ErrNoUserWithID)
+		}
+		return -1, fmt.Errorf(errMsg, err)
+	}
+	return res.ActiveSSEConnections, nil
+}
+
+// increments the user's number of active sse connections by 1
+func (c *userCollection) AddSSEConnection(ctx context.Context, userID string) (int, error) {
+	return c.incrementSSEConnections(ctx, userID, 1)
+}
+
+// decrements the user's number of active sse connections by 1
+func (c *userCollection) RemoveSSEConnection(ctx context.Context, userID string) (int, error) {
+	return c.incrementSSEConnections(ctx, userID, -1)
 }
