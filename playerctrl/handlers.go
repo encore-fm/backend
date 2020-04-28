@@ -183,7 +183,7 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	ctrl.eventBus.Publish(
 		sse.UserSynchronizedChange,
 		events.GroupID(sessionID),
-		sse.UserSynchronizedChangePayload{Synchronized: synchronized},
+		sse.UserSynchronizedChangePayload{Synchronized: synchronized, UserID: userID},
 	)
 
 	// just pause the client

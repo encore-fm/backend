@@ -27,5 +27,6 @@ type PlayerStateChangePayload struct {
 type UserListChangePayload []*user.Model
 
 type UserSynchronizedChangePayload struct {
-	Synchronized bool `json:"synchronized"`
+	UserID       string `json:"user_id"`
+	Synchronized bool   `json:"synchronized"`
 }
