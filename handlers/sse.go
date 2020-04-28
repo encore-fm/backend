@@ -46,7 +46,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: %v", msg, err)
 	}
 	// synchronize user
-	_, err = h.UserCollection.SetSynchronized(ctx, userID, true)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
@@ -76,7 +75,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		// desynchronize user if no more connections are active
 		if numberOfConnections == 0 {
-			_, err := h.UserCollection.SetSynchronized(context.Background(), userID, false)
 			if err != nil {
 				log.Errorf("%v: %v", msg, err)
 			}

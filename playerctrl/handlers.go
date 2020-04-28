@@ -173,8 +173,14 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	}
 	userID := payload.UserID
 	synchronized := payload.Synchronized
+
+	err := ctrl.userCollection.SetSynchronized(ctx, userID, synchronized)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
 	// notify sse that user change sync status
-	defer ctrl.eventBus.Publish(
+	ctrl.eventBus.Publish(
 		sse.UserSynchronizedChange,
 		events.GroupID(sessionID),
 		sse.UserSynchronizedChangePayload{Synchronized: synchronized},

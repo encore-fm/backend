@@ -167,14 +167,7 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 	sessionID := r.Header.Get("Session")
 	userID := user.GenerateUserID(username, sessionID)
 
-	// set the user's synchronized state in the db and returns the updated user
-	usr, err := h.UserCollection.SetSynchronized(ctx, userID, synchronized)
-	if err != nil {
-		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-		return
-	}
-
-	// publish the event to get the user's spotify client up to speed
+	// publish set synchronized event to synchronize user and his spotify client
 	h.eventBus.Publish(
 		playerctrl.SetSynchronizedEvent,
 		events.GroupID(sessionID),
@@ -193,13 +186,6 @@ func (h *handler) setSynchronized(w http.ResponseWriter, r *http.Request, synchr
 		events.GroupID(sessionID),
 		userList,
 	)
-
-	result := &struct {
-		Synchronized bool `json:"synchronized"`
-	}{
-		Synchronized: usr.SpotifySynchronized,
-	}
-	jsonResponse(w, result)
 }
 
 func (h *handler) Synchronize(w http.ResponseWriter, r *http.Request) {

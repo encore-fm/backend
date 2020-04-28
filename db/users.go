@@ -22,7 +22,7 @@ type UserCollection interface {
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
-	SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error)
+	SetSynchronized(ctx context.Context, userID string, synchronized bool) error
 	GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error)
 	GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
 	AddSSEConnection(ctx context.Context, userID string) (int, error)
@@ -223,7 +223,7 @@ func (c *userCollection) SetToken(ctx context.Context, userID string, token *oau
 	return nil
 }
 
-func (c *userCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) (*user.Model, error) {
+func (c *userCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) error {
 	errMsg := "[db] set synchronized: %w"
 	filter := bson.M{
 		"_id":                userID,
@@ -232,19 +232,16 @@ func (c *userCollection) SetSynchronized(ctx context.Context, userID string, syn
 	update := bson.M{
 		"$set": bson.M{"spotify_synchronized": synchronized},
 	}
-	var usr *user.Model
 
-	after := options.After
-	opt := options.FindOneAndUpdateOptions{ReturnDocument: &after}
-	err := c.collection.FindOneAndUpdate(ctx, filter, update, &opt).Decode(&usr)
+	res, err := c.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, fmt.Errorf(errMsg, ErrNoUserWithID)
-		}
-		return nil, fmt.Errorf(errMsg, err)
+		return fmt.Errorf(errMsg, err)
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoUserWithID)
 	}
 
-	return usr, nil
+	return nil
 }
 
 // gets an authorized user's Spotify client
