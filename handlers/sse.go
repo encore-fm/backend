@@ -39,6 +39,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
 		return
 	}
+	// subscribe to changes
+	sub := h.eventBus.Subscribe(
+		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange, sse.UserSynchronizedChange},
+		[]events.GroupID{events.GroupID(sessionID)},
+	)
 
 	// register active sse connection
 	_, err := h.UserCollection.AddSSEConnection(ctx, userID)
@@ -46,18 +51,10 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		log.Errorf("%v: %v", msg, err)
 	}
 	// synchronize user
-	if err != nil {
-		log.Errorf("%v: %v", msg, err)
-	}
 	h.eventBus.Publish(
 		playerctrl.SetSynchronizedEvent,
 		events.GroupID(sessionID),
 		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
-	)
-	// subscribe to playlist changes
-	sub := h.eventBus.Subscribe(
-		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange, sse.UserSynchronizedChange},
-		[]events.GroupID{events.GroupID(sessionID)},
 	)
 
 	// Listen to the closing of the http connection
@@ -75,9 +72,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		// desynchronize user if no more connections are active
 		if numberOfConnections == 0 {
-			if err != nil {
-				log.Errorf("%v: %v", msg, err)
-			}
 			h.eventBus.Publish(
 				playerctrl.SetSynchronizedEvent,
 				events.GroupID(sessionID),
