@@ -186,6 +186,17 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 		sse.UserSynchronizedChangePayload{Synchronized: synchronized, UserID: userID},
 	)
 
+	// notify sse that user list changed
+	userList, err := ctrl.userCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	ctrl.eventBus.Publish(
+		sse.UserListChange,
+		events.GroupID(sessionID),
+		userList,
+	)
+
 	// just pause the client
 	if !synchronized {
 		ctrl.notifyClient(userID, ctrl.playerPauseAction())
