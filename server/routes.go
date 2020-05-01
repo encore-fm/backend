@@ -74,6 +74,11 @@ func (s *Model) setupUserRoutes(r *mux.Router, auth handlers.AuthFunc) {
 		"/users/{username}/favouriteSongs",
 		auth(http.HandlerFunc(s.UserHandler.ListFavouriteSongs)),
 	).Methods(http.MethodGet)
+
+	r.Handle(
+		"/users/{username}/setSyncMode/{syncMode}",
+		auth(http.HandlerFunc(s.UserHandler.SetSyncMode)),
+	).Methods(http.MethodPost)
 }
 
 func (s *Model) setupAdminRoutes(r *mux.Router, auth handlers.AuthFunc) {

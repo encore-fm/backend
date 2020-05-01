@@ -23,6 +23,7 @@ type UserCollection interface {
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
 	SetSynchronized(ctx context.Context, userID string, synchronized bool) error
+	SetAutoSync(ctx context.Context, userID string, autoSync bool) error
 	GetSpotifyClient(ctx context.Context, userID string) (*user.SpotifyClient, error)
 	GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
 	AddSSEConnection(ctx context.Context, userID string) (int, error)
@@ -231,6 +232,24 @@ func (c *userCollection) SetSynchronized(ctx context.Context, userID string, syn
 	}
 	update := bson.M{
 		"$set": bson.M{"spotify_synchronized": synchronized},
+	}
+
+	res, err := c.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if res.MatchedCount == 0 {
+		return fmt.Errorf(errMsg, ErrNoUserWithID)
+	}
+
+	return nil
+}
+
+func (c *userCollection) SetAutoSync(ctx context.Context, userID string, autoSync bool) error {
+	errMsg := "[db] set auto sync: %w"
+	filter := bson.M{"_id": userID}
+	update := bson.M{
+		"$set": bson.M{"auto_sync": autoSync},
 	}
 
 	res, err := c.collection.UpdateOne(ctx, filter, update)

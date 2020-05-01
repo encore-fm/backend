@@ -98,6 +98,8 @@ func (ctrl *Controller) eventLoop() {
 	skip := ctrl.eventBus.Subscribe([]events.EventType{SkipEvent}, []events.GroupID{events.GroupIDAny})
 	seek := ctrl.eventBus.Subscribe([]events.EventType{SeekEvent}, []events.GroupID{events.GroupIDAny})
 	setSynchronized := ctrl.eventBus.Subscribe([]events.EventType{SetSynchronizedEvent}, []events.GroupID{events.GroupIDAny})
+	sseConnectionEstablished := ctrl.eventBus.Subscribe([]events.EventType{SSEConnectionEstablishedEvent}, []events.GroupID{events.GroupIDAny})
+	sseConnectionRemoved := ctrl.eventBus.Subscribe([]events.EventType{SSEConnectionRemovedEvent}, []events.GroupID{events.GroupIDAny})
 	reset := ctrl.eventBus.Subscribe([]events.EventType{ResetEvent}, []events.GroupID{events.GroupIDAny})
 
 	for {
@@ -116,6 +118,12 @@ func (ctrl *Controller) eventLoop() {
 
 		case ev := <-setSynchronized.Channel:
 			ctrl.handleSetSynchronized(ev)
+
+		case ev := <-sseConnectionEstablished.Channel:
+			ctrl.handleSSEConnections(ev, true)
+
+		case ev := <-sseConnectionRemoved.Channel:
+			ctrl.handleSSEConnections(ev, false)
 
 		case ev := <-reset.Channel:
 			ctrl.handleReset(ev)
