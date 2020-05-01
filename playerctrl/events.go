@@ -40,7 +40,10 @@ type SetSynchronizedPayload struct {
 const SSEConnectionEstablishedEvent events.EventType = "player_event:sse_connection_established"
 const SSEConnectionRemovedEvent events.EventType = "player_event:sse_connection_removed"
 
-type SSEConnectionPayload struct {
+type SSEConnectionEstablishedPayload sseConnectionPayload
+type SSEConnectionRemovedPayload sseConnectionPayload
+
+type sseConnectionPayload struct {
 	UserID string
 }
 

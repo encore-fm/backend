@@ -120,10 +120,10 @@ func (ctrl *Controller) eventLoop() {
 			ctrl.handleSetSynchronized(ev)
 
 		case ev := <-sseConnectionEstablished.Channel:
-			ctrl.handleSSEConnections(ev, true)
+			ctrl.handleSSEConnectionEstablished(ev)
 
 		case ev := <-sseConnectionRemoved.Channel:
-			ctrl.handleSSEConnections(ev, false)
+			ctrl.handleSSEConnectionRemoved(ev)
 
 		case ev := <-reset.Channel:
 			ctrl.handleReset(ev)

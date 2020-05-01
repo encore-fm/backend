@@ -54,7 +54,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.eventBus.Publish(
 		playerctrl.SSEConnectionEstablishedEvent,
 		events.GroupID(sessionID),
-		playerctrl.SSEConnectionPayload{UserID: userID},
+		playerctrl.SSEConnectionEstablishedPayload{UserID: userID},
 	)
 
 	// Listen to the closing of the http connection
@@ -75,7 +75,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			h.eventBus.Publish(
 				playerctrl.SSEConnectionRemovedEvent,
 				events.GroupID(sessionID),
-				playerctrl.SSEConnectionPayload{UserID: userID},
+				playerctrl.SSEConnectionRemovedPayload{UserID: userID},
 			)
 		}
 
