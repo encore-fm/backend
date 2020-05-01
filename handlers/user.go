@@ -544,12 +544,6 @@ func (h *handler) SetSyncMode(w http.ResponseWriter, r *http.Request) {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
-		// publish set synchronized event to synchronize user and his spotify client
-		h.eventBus.Publish(
-			playerctrl.SetSynchronizedEvent,
-			events.GroupID(sessionID),
-			playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
-		)
 		break
 	case ForceDesync:
 		err := h.UserCollection.SetSynchronized(ctx, userID, false)
@@ -562,12 +556,6 @@ func (h *handler) SetSyncMode(w http.ResponseWriter, r *http.Request) {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
-		// publish set synchronized event to synchronize user and his spotify client
-		h.eventBus.Publish(
-			playerctrl.SetSynchronizedEvent,
-			events.GroupID(sessionID),
-			playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: false},
-		)
 		break
 	case Auto:
 		err := h.UserCollection.SetSynchronized(ctx, userID, true)
@@ -580,15 +568,16 @@ func (h *handler) SetSyncMode(w http.ResponseWriter, r *http.Request) {
 			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 			return
 		}
-		// publish set synchronized event to synchronize user and his spotify client
-		h.eventBus.Publish(
-			playerctrl.SetSynchronizedEvent,
-			events.GroupID(sessionID),
-			playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
-		)
 		break
 	default:
 		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, ErrBadSyncMode, BadSyncModeError)
 		return
 	}
+
+	// publish set synchronized event to synchronize user and his spotify client
+	h.eventBus.Publish(
+		playerctrl.SetSynchronizedEvent,
+		events.GroupID(sessionID),
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
+	)
 }
