@@ -31,6 +31,7 @@ type UserHandler interface {
 	AuthToken(w http.ResponseWriter, r *http.Request)
 	SessionInfo(w http.ResponseWriter, r *http.Request)
 	ListFavouriteSongs(w http.ResponseWriter, r *http.Request)
+	SetSyncMode(w http.ResponseWriter, r *http.Request)
 }
 
 var _ UserHandler = (*handler)(nil)
@@ -190,8 +191,24 @@ func (h *handler) UserInfo(w http.ResponseWriter, r *http.Request) {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
+	var syncMode SyncMode
+	if usr.AutoSync {
+		syncMode = Auto
+	} else if usr.SpotifySynchronized {
+		syncMode = ForceSync
+	} else {
+		syncMode = ForceDesync
+	}
 
-	jsonResponse(w, usr)
+	response := &struct {
+		*user.Model
+		SyncMode SyncMode `json:"sync_mode"`
+	}{
+		usr,
+		syncMode,
+	}
+
+	jsonResponse(w, response)
 }
 
 func (h *handler) UserPing(w http.ResponseWriter, r *http.Request) {
@@ -511,4 +528,56 @@ func (h *handler) ListFavouriteSongs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jsonResponse(w, topTracks.Tracks)
+}
+
+type SyncMode string
+
+const (
+	ForceSync   SyncMode = "FORCE_SYNC"
+	ForceDesync SyncMode = "FORCE_DESYNC"
+	Auto        SyncMode = "AUTO"
+)
+
+func (h *handler) SetSyncMode(w http.ResponseWriter, r *http.Request) {
+	msg := "[handler] set sync mode"
+	ctx := context.Background()
+	vars := mux.Vars(r)
+
+	sessionID := r.Header.Get("Session")
+	username := vars["username"]
+	userID := user.GenerateUserID(username, sessionID)
+	syncMode := SyncMode(vars["syncMode"])
+
+	var sync, autoSync bool
+	switch syncMode {
+	case ForceSync:
+		sync = true
+		autoSync = false
+	case ForceDesync:
+		sync = false
+		autoSync = false
+	case Auto:
+		sync = true
+		autoSync = true
+	default:
+		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, ErrBadSyncMode, BadSyncModeError)
+		return
+	}
+
+	err := h.UserCollection.SetSynchronized(ctx, userID, sync)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+	err = h.UserCollection.SetAutoSync(ctx, userID, autoSync)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+	// publish set synchronized event to synchronize user and his spotify client
+	h.eventBus.Publish(
+		playerctrl.SetSynchronizedEvent,
+		events.GroupID(sessionID),
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: sync},
+	)
 }

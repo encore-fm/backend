@@ -50,11 +50,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
-	// synchronize user
+	// publish an sse connection established event to sync user
 	h.eventBus.Publish(
-		playerctrl.SetSynchronizedEvent,
+		playerctrl.SSEConnectionEvent,
 		events.GroupID(sessionID),
-		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
+		playerctrl.SSEConnectionPayload{UserID: userID, ConnectionEstablished: true},
 	)
 
 	// Listen to the closing of the http connection
@@ -73,9 +73,9 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// desynchronize user if no more connections are active
 		if numberOfConnections == 0 {
 			h.eventBus.Publish(
-				playerctrl.SetSynchronizedEvent,
+				playerctrl.SSEConnectionEvent,
 				events.GroupID(sessionID),
-				playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: false},
+				playerctrl.SSEConnectionPayload{UserID: userID, ConnectionEstablished: false},
 			)
 		}
 

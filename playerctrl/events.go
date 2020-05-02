@@ -36,6 +36,14 @@ type SetSynchronizedPayload struct {
 	Synchronized bool
 }
 
+// define sse connection event
+const SSEConnectionEvent events.EventType = "player_event:sse_connection"
+
+type SSEConnectionPayload struct {
+	UserID                string
+	ConnectionEstablished bool
+}
+
 // define reset event
 const ResetEvent events.EventType = "player_event:reset_session"
 

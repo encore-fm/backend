@@ -174,7 +174,12 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	userID := payload.UserID
 	synchronized := payload.Synchronized
 
-	err := ctrl.userCollection.SetSynchronized(ctx, userID, synchronized)
+	var err error
+	if synchronized {
+		err = ctrl.synchronizeUser(sessionID, userID)
+	} else {
+		err = ctrl.desynchronizeUser(userID)
+	}
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 		return
@@ -191,43 +196,118 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
-	ctrl.eventBus.Publish(
-		sse.UserListChange,
-		events.GroupID(sessionID),
-		userList,
-	)
-
-	// just pause the client
-	if !synchronized {
-		ctrl.notifyClient(userID, ctrl.playerPauseAction())
-	} else {
-		// synchronize user
-		// get player to extract current playing information
-		playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
-		if err != nil {
-			log.Errorf("%v: %v", msg, err)
-			return
-		}
-
-		// if no songs in session, pause the client
-		if playr.IsEmpty() {
-			ctrl.notifyClient(userID, ctrl.playerPauseAction())
-			log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-			return
-		}
-
-		// get the user's client up to speed...
-		ctrl.notifyClient(
-			userID,
-			ctrl.setPlayerStateAction(
-				playr.CurrentSong.ID,
-				playr.Progress(),
-				playr.Paused,
-			),
+	if userList != nil {
+		ctrl.eventBus.Publish(
+			sse.UserListChange,
+			events.GroupID(sessionID),
+			userList,
 		)
 	}
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+}
+
+// handles new and removed sse connections. The connectionEstablished flag specified whether it's a new incoming
+// connection or the removal of an old connection
+func (ctrl *Controller) handleSSEConnection(ev events.Event) {
+	msg := "[playerctrl] handle sse connections"
+	ctx := context.Background()
+	sessionID := string(ev.GroupID)
+	payload, ok := ev.Data.(SSEConnectionPayload)
+	if !ok {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+	userID := payload.UserID
+	connectionEstablished := payload.ConnectionEstablished
+
+	usr, err := ctrl.userCollection.GetUserByID(ctx, userID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+
+	// user doesn't want to be synced/desynced automatically -> do nothing.
+	if !usr.AutoSync {
+		return
+	}
+	// otherwise, sync/desync user
+	synchronize := connectionEstablished // connection established -> sync, otherwise desync.
+	if synchronize {
+		err = ctrl.synchronizeUser(sessionID, userID)
+	} else {
+		err = ctrl.desynchronizeUser(userID)
+	}
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+		return
+	}
+	// notify sse that user change sync status
+	ctrl.eventBus.Publish(
+		sse.UserSynchronizedChange,
+		events.GroupID(sessionID),
+		sse.UserSynchronizedChangePayload{Synchronized: synchronize, UserID: userID},
+	)
+
+	// notify sse that user list changed
+	userList, err := ctrl.userCollection.ListUsers(ctx, sessionID)
+	if err != nil {
+		log.Errorf("%v: %v", msg, err)
+	}
+	if userList != nil {
+		ctrl.eventBus.Publish(
+			sse.UserListChange,
+			events.GroupID(sessionID),
+			userList,
+		)
+	}
+
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
+}
+
+func (ctrl *Controller) synchronizeUser(sessionID, userID string) error {
+	ctx := context.Background()
+
+	err := ctrl.userCollection.SetSynchronized(ctx, userID, true)
+	if err != nil {
+		return err
+	}
+
+	// get player to extract current playing information
+	playr, err := ctrl.playerCollection.GetPlayer(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
+	// if no songs in session, pause the client
+	if playr.IsEmpty() {
+		ctrl.notifyClient(userID, ctrl.playerPauseAction())
+		return nil
+	}
+
+	// get the user's client up to speed...
+	ctrl.notifyClient(
+		userID,
+		ctrl.setPlayerStateAction(
+			playr.CurrentSong.ID,
+			playr.Progress(),
+			playr.Paused,
+		),
+	)
+	return nil
+}
+
+func (ctrl *Controller) desynchronizeUser(userID string) error {
+	ctx := context.Background()
+
+	err := ctrl.userCollection.SetSynchronized(ctx, userID, false)
+	if err != nil {
+		return err
+	}
+
+	// pause the client when the user desynchronizes
+	ctrl.notifyClient(userID, ctrl.playerPauseAction())
+	return nil
 }
 
 func (ctrl *Controller) handleReset(ev events.Event) {

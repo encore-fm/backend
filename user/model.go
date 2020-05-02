@@ -36,7 +36,8 @@ type Model struct {
 	Score             int    `json:"score" bson:"score"`
 	SpotifyAuthorized bool   `json:"spotify_authorized" bson:"spotify_authorized"`
 
-	SpotifySynchronized bool `json:"spotify_synchronized" bson:"spotify_synchronized"`
+	SpotifySynchronized bool `json:"-" bson:"spotify_synchronized"`
+	AutoSync            bool `json:"-" bson:"auto_sync"`
 
 	AuthToken *oauth2.Token `json:"-" bson:"auth_token"`
 	AuthState string        `json:"-" bson:"auth_state"`
@@ -104,6 +105,7 @@ func New(username, sessionID string) (*Model, error) {
 		AuthState:            state,
 		SpotifyAuthorized:    false,
 		SpotifySynchronized:  false,
+		AutoSync:             true,
 		ActiveSSEConnections: 0,
 	}
 	return model, nil

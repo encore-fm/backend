@@ -253,6 +253,20 @@ func (_m *UserCollection) RemoveSSEConnection(ctx context.Context, userID string
 	return r0, r1
 }
 
+// SetAutoSync provides a mock function with given fields: ctx, userID, autoSync
+func (_m *UserCollection) SetAutoSync(ctx context.Context, userID string, autoSync bool) error {
+	ret := _m.Called(ctx, userID, autoSync)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) error); ok {
+		r0 = rf(ctx, userID, autoSync)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // SetSynchronized provides a mock function with given fields: ctx, userID, synchronized
 func (_m *UserCollection) SetSynchronized(ctx context.Context, userID string, synchronized bool) error {
 	ret := _m.Called(ctx, userID, synchronized)
