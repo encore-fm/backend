@@ -25,7 +25,7 @@ var (
 	// Actions that cannot be performed by the admin e.g. leaving session
 	ErrUserIsAdmin = errors.New("the action cannot be performed by an admin")
 	// specifies that a sync mode did not match expected form
-	ErrBadSyncMode = errors.New(`sync mode must be in {"ForceSync", "ForceDesync", "Auto"}`)
+	ErrBadSyncMode = errors.New(`sync mode must be in {"FORCE_SYNC", "FORCE_DESYNC", "AUTO"}`)
 
 	// Frontend errors
 	UsernameTooShortError = FrontendError{
@@ -82,7 +82,7 @@ var (
 	}
 	BadSyncModeError = FrontendError{
 		Error:       "BadSyncModeError",
-		Description: `sync mode must be in {"ForceSync", "ForceDesync", "Auto"}`,
+		Description: `sync mode must be in {"FORCE_SYNC", "FORCE_DESYNC", "AUTO"}`,
 	}
 	UserNotFoundError = FrontendError{
 		Error:       "UserNotFoundError",

@@ -553,15 +553,12 @@ func (h *handler) SetSyncMode(w http.ResponseWriter, r *http.Request) {
 	case ForceSync:
 		sync = true
 		autoSync = false
-		break
 	case ForceDesync:
 		sync = false
 		autoSync = false
-		break
 	case Auto:
 		sync = true
 		autoSync = true
-		break
 	default:
 		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, ErrBadSyncMode, BadSyncModeError)
 		return
