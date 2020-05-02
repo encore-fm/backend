@@ -201,11 +201,11 @@ func (h *handler) UserInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := &struct {
-		UserInfo *user.Model `json:"user_info"`
-		SyncMode SyncMode    `json:"sync_mode"`
+		*user.Model
+		SyncMode SyncMode `json:"sync_mode"`
 	}{
-		UserInfo: usr,
-		SyncMode: syncMode,
+		usr,
+		syncMode,
 	}
 
 	jsonResponse(w, response)
