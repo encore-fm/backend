@@ -185,12 +185,6 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 		return
 	}
 
-	// notify sse that user change sync status
-	ctrl.eventBus.Publish(
-		sse.UserSynchronizedChange,
-		events.GroupID(sessionID),
-		sse.UserSynchronizedChangePayload{Synchronized: synchronized, UserID: userID},
-	)
 	// notify sse that user list changed
 	userList, err := ctrl.userCollection.ListUsers(ctx, sessionID)
 	if err != nil {
@@ -262,13 +256,6 @@ func (ctrl *Controller) handleSSEConnections(sessionID, userID string, connectio
 		log.Errorf("%v: %v", msg, err)
 		return
 	}
-
-	// notify sse that user change sync status
-	ctrl.eventBus.Publish(
-		sse.UserSynchronizedChange,
-		events.GroupID(sessionID),
-		sse.UserSynchronizedChangePayload{Synchronized: synchronize, UserID: userID},
-	)
 
 	// notify sse that user list changed
 	userList, err := ctrl.userCollection.ListUsers(ctx, sessionID)

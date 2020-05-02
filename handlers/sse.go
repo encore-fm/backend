@@ -41,7 +41,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// subscribe to changes
 	sub := h.eventBus.Subscribe(
-		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange, sse.UserSynchronizedChange},
+		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange},
 		[]events.GroupID{events.GroupID(sessionID)},
 	)
 

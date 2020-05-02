@@ -191,8 +191,24 @@ func (h *handler) UserInfo(w http.ResponseWriter, r *http.Request) {
 		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
 		return
 	}
+	var syncMode SyncMode
+	if usr.AutoSync {
+		syncMode = Auto
+	} else if usr.SpotifySynchronized {
+		syncMode = ForceSync
+	} else {
+		syncMode = ForceDesync
+	}
 
-	jsonResponse(w, usr)
+	response := &struct {
+		UserInfo *user.Model `json:"user_info"`
+		SyncMode SyncMode    `json:"sync_mode"`
+	}{
+		UserInfo: usr,
+		SyncMode: syncMode,
+	}
+
+	jsonResponse(w, response)
 }
 
 func (h *handler) UserPing(w http.ResponseWriter, r *http.Request) {
@@ -532,52 +548,39 @@ func (h *handler) SetSyncMode(w http.ResponseWriter, r *http.Request) {
 	userID := user.GenerateUserID(username, sessionID)
 	syncMode := SyncMode(vars["syncMode"])
 
+	var sync, autoSync bool
 	switch syncMode {
 	case ForceSync:
-		err := h.UserCollection.SetSynchronized(ctx, userID, true)
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
-		err = h.UserCollection.SetAutoSync(ctx, userID, false)
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
+		sync = true
+		autoSync = false
 		break
 	case ForceDesync:
-		err := h.UserCollection.SetSynchronized(ctx, userID, false)
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
-		err = h.UserCollection.SetAutoSync(ctx, userID, false)
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
+		sync = false
+		autoSync = false
 		break
 	case Auto:
-		err := h.UserCollection.SetSynchronized(ctx, userID, true)
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
-		err = h.UserCollection.SetAutoSync(ctx, userID, true)
-		if err != nil {
-			handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
-			return
-		}
+		sync = true
+		autoSync = true
 		break
 	default:
 		handleError(w, http.StatusBadRequest, log.WarnLevel, msg, ErrBadSyncMode, BadSyncModeError)
 		return
 	}
 
+	err := h.UserCollection.SetSynchronized(ctx, userID, sync)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
+	err = h.UserCollection.SetAutoSync(ctx, userID, autoSync)
+	if err != nil {
+		handleError(w, http.StatusInternalServerError, log.ErrorLevel, msg, err, InternalServerError)
+		return
+	}
 	// publish set synchronized event to synchronize user and his spotify client
 	h.eventBus.Publish(
 		playerctrl.SetSynchronizedEvent,
 		events.GroupID(sessionID),
-		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: true},
+		playerctrl.SetSynchronizedPayload{UserID: userID, Synchronized: sync},
 	)
 }

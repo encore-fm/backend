@@ -36,7 +36,7 @@ type Model struct {
 	Score             int    `json:"score" bson:"score"`
 	SpotifyAuthorized bool   `json:"spotify_authorized" bson:"spotify_authorized"`
 
-	SpotifySynchronized bool `json:"spotify_synchronized" bson:"spotify_synchronized"`
+	SpotifySynchronized bool `json:"-" bson:"spotify_synchronized"`
 	AutoSync            bool `json:"-" bson:"auto_sync"`
 
 	AuthToken *oauth2.Token `json:"-" bson:"auth_token"`
