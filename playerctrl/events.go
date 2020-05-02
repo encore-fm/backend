@@ -36,15 +36,12 @@ type SetSynchronizedPayload struct {
 	Synchronized bool
 }
 
-// define sse connection events
-const SSEConnectionEstablishedEvent events.EventType = "player_event:sse_connection_established"
-const SSEConnectionRemovedEvent events.EventType = "player_event:sse_connection_removed"
+// define sse connection event
+const SSEConnectionEvent events.EventType = "player_event:sse_connection"
 
-type SSEConnectionEstablishedPayload sseConnectionPayload
-type SSEConnectionRemovedPayload sseConnectionPayload
-
-type sseConnectionPayload struct {
-	UserID string
+type SSEConnectionPayload struct {
+	UserID                string
+	ConnectionEstablished bool
 }
 
 // define reset event

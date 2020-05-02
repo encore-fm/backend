@@ -201,39 +201,19 @@ func (ctrl *Controller) handleSetSynchronized(ev events.Event) {
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
-func (ctrl *Controller) handleSSEConnectionEstablished(ev events.Event) {
-	msg := "[playerctrl] handle sse connection established"
-	sessionID := string(ev.GroupID)
-	payload, ok := ev.Data.(SSEConnectionEstablishedPayload)
-	if !ok {
-		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
-		return
-	}
-	userID := payload.UserID
-	ctrl.handleSSEConnections(sessionID, userID, true)
-
-	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-}
-
-func (ctrl *Controller) handleSSEConnectionRemoved(ev events.Event) {
-	msg := "[playerctrl] handle sse connection removed"
-	sessionID := string(ev.GroupID)
-	payload, ok := ev.Data.(SSEConnectionRemovedPayload)
-	if !ok {
-		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
-		return
-	}
-	userID := payload.UserID
-	ctrl.handleSSEConnections(sessionID, userID, false)
-
-	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
-}
-
 // handles new and removed sse connections. The connectionEstablished flag specified whether it's a new incoming
 // connection or the removal of an old connection
-func (ctrl *Controller) handleSSEConnections(sessionID, userID string, connectionEstablished bool) {
+func (ctrl *Controller) handleSSEConnection(ev events.Event) {
 	msg := "[playerctrl] handle sse connections"
 	ctx := context.Background()
+	sessionID := string(ev.GroupID)
+	payload, ok := ev.Data.(SSEConnectionPayload)
+	if !ok {
+		log.Errorf("%v: %v", msg, ErrEventPayloadMalformed)
+		return
+	}
+	userID := payload.UserID
+	connectionEstablished := payload.ConnectionEstablished
 
 	usr, err := ctrl.userCollection.GetUserByID(ctx, userID)
 	if err != nil {
@@ -269,6 +249,8 @@ func (ctrl *Controller) handleSSEConnections(sessionID, userID string, connectio
 			userList,
 		)
 	}
+
+	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
 }
 
 func (ctrl *Controller) synchronizeUser(sessionID, userID string) error {
