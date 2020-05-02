@@ -28,6 +28,7 @@ type UserCollection interface {
 	GetSyncedSpotifyClients(ctx context.Context, sessionID string) ([]*user.SpotifyClient, error)
 	AddSSEConnection(ctx context.Context, userID string) (int, error)
 	RemoveSSEConnection(ctx context.Context, userID string) (int, error)
+	ResetSSEConnections(ctx context.Context) error
 }
 
 type userCollection struct {
@@ -364,4 +365,20 @@ func (c *userCollection) AddSSEConnection(ctx context.Context, userID string) (i
 // decrements the user's number of active sse connections by 1
 func (c *userCollection) RemoveSSEConnection(ctx context.Context, userID string) (int, error) {
 	return c.incrementSSEConnections(ctx, userID, -1)
+}
+
+// resets the number of active sse connections of all users to 0. Required in case the server crashes while there
+// are still active SSE Connections.
+func (c *userCollection) ResetSSEConnections(ctx context.Context) error {
+	msg := "[db] reset sse connections: %w"
+	update := bson.M{
+		"$set": bson.M{
+			"active_sse_connections": 0,
+		},
+	}
+	_, err := c.collection.UpdateMany(ctx, bson.M{}, update)
+	if err != nil {
+		return fmt.Errorf(msg, err)
+	}
+	return nil
 }
