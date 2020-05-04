@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -49,6 +50,12 @@ func main() {
 		config.Conf.Database.DBHost,
 		config.Conf.Database.DBPort,
 	)
+	// reset nr of active sse connections to 0
+	// required in case there were active sse connections before server startup/reset
+	err = userDB.ResetSSEConnections(context.Background())
+	if err != nil {
+		log.Fatalf("[startup] resetting sse connections: %v", err)
+	}
 
 	// create spotify client
 	spotifyClient, err := spotifycl.New(config.Conf.Spotify.ClientID, config.Conf.Spotify.ClientSecret)
