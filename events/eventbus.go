@@ -1,6 +1,10 @@
 package events
 
-import log "github.com/sirupsen/logrus"
+import (
+	"sync"
+
+	log "github.com/sirupsen/logrus"
+)
 
 // if subscribed to GroupIDAny
 // any Event will be received
@@ -41,6 +45,7 @@ type eventBus struct {
 	unsubscriptions  chan subscription
 	eventChan        chan Event
 	quit             chan struct{}
+	unsubMutex       sync.RWMutex
 }
 
 var _ EventBus = (*eventBus)(nil)
@@ -133,6 +138,8 @@ func (eb *eventBus) forwardEvent(ev Event) {
 	}
 
 	// broadcast in goroutine to avoid blocking
+	eb.unsubMutex.RLock()
+	defer eb.unsubMutex.RUnlock()
 	go func(channels map[chan Event]bool, ev Event) {
 		for ch := range channels {
 			ch <- ev
@@ -165,6 +172,10 @@ func (eb *eventBus) subscribe(sub subscription) {
 
 func (eb *eventBus) unsubscribe(sub subscription) {
 	msg := "[eventbus] unsubscribe"
+
+	eb.unsubMutex.Lock()
+	defer eb.unsubMutex.Unlock()
+
 	for _, eventType := range sub.Types {
 		if groups, ok := eb.subscribers[eventType]; ok {
 			for _, id := range sub.Groups {
