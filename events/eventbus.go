@@ -55,7 +55,7 @@ func NewEventBus() EventBus {
 		subscribers:      make(map[EventType]map[GroupID]map[chan Event]bool),
 		newSubscriptions: make(chan subscription),
 		unsubscriptions:  make(chan subscription),
-		eventChan:        make(chan Event),
+		eventChan:        make(chan Event, 20),
 		quit:             make(chan struct{}),
 	}
 }
@@ -115,8 +115,9 @@ func (eb *eventBus) loop() {
 }
 
 func (eb *eventBus) forwardEvent(ev Event) {
-	msg := "[eventbus] forward Event"
+	eb.unsubMutex.RLock()
 
+	msg := "[eventbus] forward Event"
 	log.Infof("%v: received Event: type={%v} groupID={%v}", msg, ev.Type, ev.GroupID)
 
 	broadcastList := make(map[chan Event]bool)
@@ -137,18 +138,20 @@ func (eb *eventBus) forwardEvent(ev Event) {
 		}
 	}
 
-	// broadcast in goroutine to avoid blocking
-	eb.unsubMutex.RLock()
-	defer eb.unsubMutex.RUnlock()
+	//broadcast in goroutine to avoid blocking
 	go func(channels map[chan Event]bool, ev Event) {
 		for ch := range channels {
 			ch <- ev
 		}
 		log.Infof("%v: type={%v} groupID={%v} to %v clients", msg, ev.Type, ev.GroupID, len(channels))
+		eb.unsubMutex.RUnlock()
 	}(broadcastList, ev)
 }
 
 func (eb *eventBus) subscribe(sub subscription) {
+	eb.unsubMutex.Lock()
+	defer eb.unsubMutex.Unlock()
+
 	for _, evType := range sub.Types {
 		groups, ok := eb.subscribers[evType]
 		if !ok {
@@ -171,10 +174,10 @@ func (eb *eventBus) subscribe(sub subscription) {
 }
 
 func (eb *eventBus) unsubscribe(sub subscription) {
-	msg := "[eventbus] unsubscribe"
-
 	eb.unsubMutex.Lock()
 	defer eb.unsubMutex.Unlock()
+
+	msg := "[eventbus] unsubscribe"
 
 	for _, eventType := range sub.Types {
 		if groups, ok := eb.subscribers[eventType]; ok {

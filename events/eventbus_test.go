@@ -24,7 +24,7 @@ func TestEventBus_Unsubscribe(t *testing.T) {
 
 	bus.Unsubscribe(sub)
 	for {
-		if _, ok := <- sub.Channel; !ok {
+		if _, ok := <-sub.Channel; !ok {
 			break
 		}
 		time.Sleep(time.Millisecond * 200)
@@ -36,7 +36,6 @@ func TestEventBus_Unsubscribe(t *testing.T) {
 	assert.False(t, ok)
 }
 
-// todo write better tests
 func TestEventBus_Publish(t *testing.T) {
 	eventBus := NewEventBus()
 	eventBus.Start()
@@ -66,18 +65,25 @@ func TestEventBus_Publish(t *testing.T) {
 	go func() {
 		var collector []Event
 
-		for i := 0; i < 2; i++ {
-			res := <-sub1.Channel
+		for {
+			res, ok := <-sub1.Channel
+			if !ok {
+				ch1 <- collector
+				return
+			}
 			collector = append(collector, res)
 		}
 
-		ch1 <- collector
 	}()
 
 	for _, ev := range eventSplice {
 		eventBus.Publish(ev.Type, ev.GroupID, ev.Data)
 	}
 
+	// sleep 1 second to allow every event to be forwarded
+	time.Sleep(1 * time.Second)
+
+	eventBus.Unsubscribe(sub1)
 	events1 := <-ch1
 
 	assert.Equal(t, 2, len(events1))
