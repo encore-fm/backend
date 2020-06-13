@@ -3,6 +3,8 @@ package playerctrl
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/song"
@@ -31,7 +33,10 @@ type Controller struct {
 
 	// maps sessions to timers
 	// timer fires when current song ended and new song must be fetched from db
-	timers map[string]*time.Timer
+	sessionTimers map[string]*time.Timer
+
+	// maps spotify clients to timers
+	clientTimers map[string]*time.Timer
 }
 
 func NewController(
@@ -49,7 +54,8 @@ func NewController(
 		playerCollection:  playerCollection,
 		authenticator:     authenticator,
 		eventBus:          eventBus,
-		timers:            make(map[string]*time.Timer),
+		sessionTimers:     make(map[string]*time.Timer),
+		clientTimers:      make(map[string]*time.Timer),
 	}
 	return controller
 }
@@ -69,18 +75,18 @@ func (ctrl *Controller) Start() error {
 			log.Errorf(msg, err)
 		}
 		if playerState == nil || playerState.IsEmpty() {
-			ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+			ctrl.setSessionTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
 		} else {
 			timerDuration := time.Duration(playerState.CurrentSong.Duration)*time.Millisecond - playerState.Progress()
 			if timerDuration < 0 {
 				timerDuration = 0
 			}
-			ctrl.setTimer(
+			ctrl.setSessionTimer(
 				sessionID,
 				timerDuration,
 				func() { ctrl.getNextSong(sessionID) },
 			)
-			ctrl.notifyClients(
+			ctrl.notifyClientsBySessionID(
 				sessionID,
 				ctrl.setPlayerStateAction(playerState.CurrentSong.ID, playerState.Progress(), playerState.Paused),
 			)
@@ -127,22 +133,63 @@ func (ctrl *Controller) eventLoop() {
 	}
 }
 
-func (ctrl *Controller) setTimer(sessionID string, duration time.Duration, f func()) {
-	t, ok := ctrl.timers[sessionID]
-	if !ok {
-		ctrl.timers[sessionID] = time.AfterFunc(duration, f)
+func (ctrl *Controller) setSessionTimer(sessionID string, duration time.Duration, f func()) {
+	ctrl.setTimer(sessionID, duration, f, true)
+}
+
+func (ctrl *Controller) setClientTimer(clientID string, duration time.Duration, f func()) {
+	ctrl.setTimer(clientID, duration, f, false)
+}
+
+func (ctrl *Controller) stopSessionTimer(sessionID string) {
+	ctrl.stopTimer(sessionID, true)
+}
+
+func (ctrl *Controller) stopClientTimer(clientID string) {
+	ctrl.stopTimer(clientID, false)
+}
+
+func (ctrl *Controller) setTimer(timerID string, duration time.Duration, f func(), isSessionTimer bool) {
+	var t *time.Timer
+	var ok bool
+	if isSessionTimer {
+		t, ok = ctrl.sessionTimers[timerID]
+		if !ok {
+			ctrl.sessionTimers[timerID] = time.AfterFunc(duration, f)
+		} else {
+			t.Stop()
+			ctrl.sessionTimers[timerID] = time.AfterFunc(duration, f)
+		}
 	} else {
-		t.Reset(duration)
+		t, ok = ctrl.clientTimers[timerID]
+		if !ok {
+			ctrl.clientTimers[timerID] = time.AfterFunc(duration, f)
+		} else {
+			t.Stop()
+			ctrl.clientTimers[timerID] = time.AfterFunc(duration, f)
+		}
 	}
 }
 
-func (ctrl *Controller) stopTimer(sessionID string) {
-	t, ok := ctrl.timers[sessionID]
-	if ok {
-		if !t.Stop() {
-			<-t.C
+func (ctrl *Controller) stopTimer(timerID string, isSessionTimer bool) {
+	var t *time.Timer
+	var ok bool
+	if isSessionTimer {
+		t, ok = ctrl.sessionTimers[timerID]
+		if ok {
+			if !t.Stop() {
+				<-t.C
+			}
+			delete(ctrl.sessionTimers, timerID)
 		}
-		delete(ctrl.timers, sessionID)
+	} else {
+		t, ok = ctrl.clientTimers[timerID]
+		if ok {
+			if !t.Stop() {
+				<-t.C
+			}
+			delete(ctrl.clientTimers, timerID)
+		}
 	}
 }
 
@@ -156,7 +203,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 		// if error occurs while fetching list
 		// log error and try again in 500ms
 		log.Errorf("%v: %v", msg, err)
-		ctrl.setTimer(
+		ctrl.setSessionTimer(
 			sessionID,
 			time.Duration(500)*time.Millisecond,
 			func() { ctrl.getNextSong(sessionID) },
@@ -171,7 +218,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 			log.Errorf("%v: %v", msg, err)
 		}
 		// explicitly publish a skip event when playlist is empty, or else last song (in player) cannot get skipped
-		ctrl.notifyClients(sessionID, ctrl.playerSkipAction())
+		ctrl.notifyClientsBySessionID(sessionID, ctrl.playerSkipAction())
 		log.Warnf("%v: %v", msg, "songlist empty")
 		return
 	}
@@ -186,7 +233,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	ctrl.eventBus.Publish(sse.PlaylistChange, events.GroupID(sessionID), songList[1:])
 
 	// fetch next song after song has ended
-	ctrl.setTimer(
+	ctrl.setSessionTimer(
 		sessionID,
 		time.Duration(nextSong.Duration)*time.Millisecond,
 		func() { ctrl.getNextSong(sessionID) },
@@ -206,7 +253,7 @@ func (ctrl *Controller) getNextSong(sessionID string) {
 	// send out a player state change event
 	ctrl.notifyPlayerStateChange(sessionID)
 
-	ctrl.notifyClients(
+	ctrl.notifyClientsBySessionID(
 		sessionID,
 		ctrl.setPlayerStateAction(
 			newPlayer.CurrentSong.ID,
@@ -223,14 +270,10 @@ func initializeClient(client spotify.Client) {
 	devices, err := client.PlayerDevices()
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
-		return
 	}
 	if len(devices) == 0 {
-		// todo notify frontend about no devices being active
-		log.Warnf("%v: no spotify devices found", msg)
 		return
 	}
-
 	for _, device := range devices {
 		// Active device found. No action needed.
 		if device.Active {
@@ -245,9 +288,31 @@ func initializeClient(client spotify.Client) {
 	}
 }
 
+// initializes a user's spotify client and applies the specified notifyAction
+// reattempts after a fixed duration at failure (e.g. spotify/network error or no active devices found)
+func (ctrl *Controller) notifyClients(clients []*user.SpotifyClient, action notifyAction) {
+	msg := "[playerctrl] notify clients"
+
+	for _, client := range clients {
+		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
+		initializeClient(spotifyClient)
+		err := action(spotifyClient)
+		if err != nil {
+			retry := time.Duration(3000) * time.Millisecond
+			log.Errorf("%v: %v, %v", msg, err, fmt.Sprintf("retrying in %v", retry))
+			ctrl.setTimer(
+				client.ID,
+				retry,
+				func() { ctrl.notifyClients([]*user.SpotifyClient{client}, action) },
+				false,
+			)
+		}
+	}
+}
+
 // synchronizes the specified user with admin player state
-func (ctrl *Controller) notifyClient(userID string, action notifyAction) {
-	msg := "[playerctrl] notify client"
+func (ctrl *Controller) notifyClientByUserID(userID string, action notifyAction) {
+	msg := "[playerctrl] notify client by user id"
 	ctx := context.Background()
 
 	// get user's client
@@ -256,27 +321,19 @@ func (ctrl *Controller) notifyClient(userID string, action notifyAction) {
 		log.Errorf("%v: %v", msg, err)
 		return
 	}
-
-	spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
-	initializeClient(spotifyClient)
-	action(spotifyClient)
+	ctrl.notifyClients([]*user.SpotifyClient{client}, action)
 }
 
 // synchronizes all connected users with admin player state
-func (ctrl *Controller) notifyClients(sessionID string, action notifyAction) {
-	msg := "[playerctrl] notify clients"
+func (ctrl *Controller) notifyClientsBySessionID(sessionID string, action notifyAction) {
+	msg := "[playerctrl] notify clients by session id"
 	ctx := context.Background()
 
 	clients, err := ctrl.userCollection.GetSyncedSpotifyClients(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
 	}
-
-	for _, client := range clients {
-		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
-		initializeClient(spotifyClient)
-		action(spotifyClient)
-	}
+	ctrl.notifyClients(clients, action)
 }
 
 // sends out a player state change event with relevant data about the current player state

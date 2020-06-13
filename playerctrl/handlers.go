@@ -27,7 +27,7 @@ func (ctrl *Controller) handleSongAdded(ev events.Event) {
 		return
 	}
 
-	ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+	ctrl.setSessionTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
 }
 
 func (ctrl *Controller) handlePlayPause(ev events.Event) {
@@ -66,7 +66,7 @@ func (ctrl *Controller) handlePlayPause(ev events.Event) {
 		}
 	}
 
-	ctrl.notifyClients(sessionID,
+	ctrl.notifyClientsBySessionID(sessionID,
 		ctrl.setPlayerStateAction(
 			p.CurrentSong.ID,
 			p.Progress(),
@@ -77,13 +77,13 @@ func (ctrl *Controller) handlePlayPause(ev events.Event) {
 	ctrl.notifyPlayerStateChange(sessionID)
 
 	if !payload.Paused {
-		ctrl.setTimer(
+		ctrl.setSessionTimer(
 			sessionID,
 			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-p.Progress(),
 			func() { ctrl.getNextSong(sessionID) },
 		)
 	} else {
-		ctrl.stopTimer(sessionID)
+		ctrl.stopSessionTimer(sessionID)
 	}
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
@@ -137,7 +137,7 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 		return
 	}
 
-	ctrl.notifyClients(sessionID,
+	ctrl.notifyClientsBySessionID(sessionID,
 		ctrl.setPlayerStateAction(
 			p.CurrentSong.ID,
 			payload.Progress,
@@ -151,7 +151,7 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 	if !p.Paused {
 		songDuration := time.Duration(p.CurrentSong.Duration) * time.Millisecond
 		timerDuration := songDuration - payload.Progress
-		ctrl.setTimer(
+		ctrl.setSessionTimer(
 			sessionID,
 			timerDuration,
 			func() { ctrl.getNextSong(sessionID) },
@@ -281,12 +281,12 @@ func (ctrl *Controller) synchronizeUser(sessionID, userID string) error {
 
 	// if no songs in session, pause the client
 	if playr.IsEmpty() {
-		ctrl.notifyClient(userID, ctrl.playerPauseAction())
+		ctrl.notifyClientByUserID(userID, ctrl.playerPauseAction())
 		return nil
 	}
 
 	// get the user's client up to speed...
-	ctrl.notifyClient(
+	ctrl.notifyClientByUserID(
 		userID,
 		ctrl.setPlayerStateAction(
 			playr.CurrentSong.ID,
@@ -306,7 +306,7 @@ func (ctrl *Controller) desynchronizeUser(userID string) error {
 	}
 
 	// pause the client when the user desynchronizes
-	ctrl.notifyClient(userID, ctrl.playerPauseAction())
+	ctrl.notifyClientByUserID(userID, ctrl.playerPauseAction())
 	return nil
 }
 
@@ -333,5 +333,5 @@ func (ctrl *Controller) handleReset(ev events.Event) {
 	}
 
 	log.Infof("%v: id={%v}", msg, payload.SessionID)
-	ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
+	ctrl.setSessionTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 }
