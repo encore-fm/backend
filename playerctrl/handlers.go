@@ -27,7 +27,7 @@ func (ctrl *Controller) handleSongAdded(ev events.Event) {
 		return
 	}
 
-	ctrl.setSessionTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
+	ctrl.setTimer(sessionID, 0, func() { ctrl.getNextSong(sessionID) })
 }
 
 func (ctrl *Controller) handlePlayPause(ev events.Event) {
@@ -77,13 +77,13 @@ func (ctrl *Controller) handlePlayPause(ev events.Event) {
 	ctrl.notifyPlayerStateChange(sessionID)
 
 	if !payload.Paused {
-		ctrl.setSessionTimer(
+		ctrl.setTimer(
 			sessionID,
 			(time.Duration(p.CurrentSong.Duration)*time.Millisecond)-p.Progress(),
 			func() { ctrl.getNextSong(sessionID) },
 		)
 	} else {
-		ctrl.stopSessionTimer(sessionID)
+		ctrl.stopTimer(sessionID)
 	}
 
 	log.Infof("%v: type={%v} id={%v}", msg, ev.Type, ev.GroupID)
@@ -151,7 +151,7 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 	if !p.Paused {
 		songDuration := time.Duration(p.CurrentSong.Duration) * time.Millisecond
 		timerDuration := songDuration - payload.Progress
-		ctrl.setSessionTimer(
+		ctrl.setTimer(
 			sessionID,
 			timerDuration,
 			func() { ctrl.getNextSong(sessionID) },
@@ -333,5 +333,5 @@ func (ctrl *Controller) handleReset(ev events.Event) {
 	}
 
 	log.Infof("%v: id={%v}", msg, payload.SessionID)
-	ctrl.setSessionTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
+	ctrl.setTimer(payload.SessionID, 0, func() { ctrl.getNextSong(payload.SessionID) })
 }
