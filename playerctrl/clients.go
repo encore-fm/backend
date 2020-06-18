@@ -15,6 +15,7 @@ import (
 var notifyTimers = make(map[string]*time.Timer)
 
 const (
+	// exponential BackOff with min of (100*2^k)ms and max of 5000ms with a max number of attempts of 50
 	minBackOff  = time.Duration(50) * time.Millisecond // will be multiplied by 2^k
 	maxBackOff  = time.Duration(5000) * time.Millisecond
 	maxAttempts = 50
@@ -24,9 +25,11 @@ func retry(operation func() error, clientID string) {
 	retryWithAttempts(operation, clientID, 0)
 }
 
+// if max attempts are not exceeded, retries the given operation with an exponential backoff retry time
+// until the operation succeeds
 func retryWithAttempts(operation func() error, clientID string, attempts int) {
 	msg := "playerctrl"
-	// exponential BackOff with min of (100*2^k)ms and max of 5000ms
+
 	minBackOff := minBackOff * (2 << attempts)
 	backOff := time.Duration(math.Min(float64(minBackOff), float64(maxBackOff)))
 	if attempts >= maxAttempts {
@@ -36,11 +39,13 @@ func retryWithAttempts(operation func() error, clientID string, attempts int) {
 	err := operation()
 	if err != nil {
 		log.Warnf("%v, %v", err, fmt.Sprintf("retrying in %v", backOff))
+		// set the timer for the next attempt
 		newTimer := time.AfterFunc(backOff, func() { retryWithAttempts(operation, clientID, attempts+1) })
 		t, ok := notifyTimers[clientID]
 		if !ok {
 			notifyTimers[clientID] = newTimer
 		} else {
+			// if timer was already set, stop and overwrite
 			t.Stop()
 			notifyTimers[clientID] = newTimer
 		}
@@ -48,7 +53,7 @@ func retryWithAttempts(operation func() error, clientID string, attempts int) {
 }
 
 // initializes a user's spotify client and applies the specified notifyAction
-// reattempts after a fixed duration at failure (e.g. spotify/network error or no active devices found)
+// reattempts the action with exponential backoff time at failure (e.g. due to no device being active or other spotify error)
 func (ctrl *Controller) notifyClients(clients []*user.SpotifyClient, action notifyAction) {
 	for _, client := range clients {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
@@ -57,6 +62,7 @@ func (ctrl *Controller) notifyClients(clients []*user.SpotifyClient, action noti
 			activatePlayer(spotifyClient)
 			return action(spotifyClient)
 		}
+		// keep retrying the api request if it fails
 		retry(operation, client.ID)
 	}
 }
