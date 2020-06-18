@@ -66,7 +66,7 @@ func (ctrl *Controller) handlePlayPause(ev events.Event) {
 		}
 	}
 
-	ctrl.notifyClients(sessionID,
+	ctrl.notifyClientsBySessionID(sessionID,
 		ctrl.setPlayerStateAction(
 			p.CurrentSong.ID,
 			p.Progress(),
@@ -137,7 +137,7 @@ func (ctrl *Controller) handleSeek(ev events.Event) {
 		return
 	}
 
-	ctrl.notifyClients(sessionID,
+	ctrl.notifyClientsBySessionID(sessionID,
 		ctrl.setPlayerStateAction(
 			p.CurrentSong.ID,
 			payload.Progress,
@@ -281,12 +281,12 @@ func (ctrl *Controller) synchronizeUser(sessionID, userID string) error {
 
 	// if no songs in session, pause the client
 	if playr.IsEmpty() {
-		ctrl.notifyClient(userID, ctrl.playerPauseAction())
+		ctrl.notifyClientByUserID(userID, ctrl.playerPauseAction())
 		return nil
 	}
 
 	// get the user's client up to speed...
-	ctrl.notifyClient(
+	ctrl.notifyClientByUserID(
 		userID,
 		ctrl.setPlayerStateAction(
 			playr.CurrentSong.ID,
@@ -306,7 +306,7 @@ func (ctrl *Controller) desynchronizeUser(userID string) error {
 	}
 
 	// pause the client when the user desynchronizes
-	ctrl.notifyClient(userID, ctrl.playerPauseAction())
+	ctrl.notifyClientByUserID(userID, ctrl.playerPauseAction())
 	return nil
 }
 
