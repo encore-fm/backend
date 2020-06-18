@@ -48,9 +48,6 @@ func (ctrl *Controller) playerSkipAction() notifyAction {
 func (ctrl *Controller) playerPauseAction() notifyAction {
 	msg := "[playerctrl] player pause"
 	return func(client spotify.Client) error {
-		//// returning errors when attempting to pause causes retry in clients.go to needlessly reattempt to pause client
-		//_ = client.Pause()
-		//return nil
 		if err := client.Pause(); err != nil {
 			// exclude 403 error, which causes "restriction violated" bug:
 			// if a pause is attempted while player is already paused, spotify throws a "restriction violated" error, which
