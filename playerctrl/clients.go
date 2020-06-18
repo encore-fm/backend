@@ -53,7 +53,8 @@ func (ctrl *Controller) notifyClients(clients []*user.SpotifyClient, action noti
 	for _, client := range clients {
 		spotifyClient := ctrl.authenticator.NewClient(client.AuthToken)
 		operation := func() error {
-			initializeClient(spotifyClient)
+			// ensures that user has an active player before executing an action.
+			activatePlayer(spotifyClient)
 			return action(spotifyClient)
 		}
 		retry(operation, client.ID)
@@ -87,7 +88,7 @@ func (ctrl *Controller) notifyClientsBySessionID(sessionID string, action notify
 }
 
 // finds and activates a client's playback device if no active devices are found
-func initializeClient(client spotify.Client) {
+func activatePlayer(client spotify.Client) {
 	msg := "[playerctrl] initialize client"
 
 	devices, err := client.PlayerDevices()
