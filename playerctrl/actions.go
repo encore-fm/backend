@@ -2,6 +2,7 @@ package playerctrl
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/zmb3/spotify"
@@ -49,14 +50,9 @@ func (ctrl *Controller) playerPauseAction() notifyAction {
 	msg := "[playerctrl] player pause"
 	return func(client spotify.Client) error {
 		if err := client.Pause(); err != nil {
-			// exclude 403 error, which causes "restriction violated" bug:
-			// if a pause is attempted while player is already paused, spotify throws a "restriction violated" error, which
-			// causes the retry in clients.go to keep attempting to pause.
-			if err.(spotify.Error).Status == 403 {
-				return nil
-			}
-			return fmt.Errorf("%v: %v", msg, err)
+			log.Errorf("%v: %v", msg, err)
 		}
+		// explicitly ignore pause errors
 		return nil
 	}
 }
