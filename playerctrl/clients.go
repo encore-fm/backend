@@ -2,11 +2,10 @@ package playerctrl
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"github.com/antonbaumann/spotify-jukebox/user"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
-	"math"
 	"time"
 )
 
@@ -16,9 +15,10 @@ var notifyTimers = make(map[string]*time.Timer)
 
 const (
 	// exponential BackOff with min of (100*2^k)ms and max of 5000ms with a max number of attempts of 50
-	minBackOff  = time.Duration(50) * time.Millisecond // will be multiplied by 2^k
-	maxBackOff  = time.Duration(5000) * time.Millisecond
-	maxAttempts = 50
+	minBackOff      = time.Duration(50) * time.Millisecond // will be multiplied by 2^k
+	maxBackOff      = time.Duration(2500) * time.Millisecond
+	maxAttempts     = 10
+	TooManyRequests = 429
 )
 
 func retry(operation func() error, clientID string) {
@@ -30,15 +30,23 @@ func retry(operation func() error, clientID string) {
 func retryWithAttempts(operation func() error, clientID string, attempts int) {
 	msg := "playerctrl"
 
-	minBackOff := minBackOff * (2 << attempts)
-	backOff := time.Duration(math.Min(float64(minBackOff), float64(maxBackOff)))
+	multiplier := time.Duration(2 << attempts)
+	backOff := minBackOff * multiplier
+	if backOff > maxBackOff || backOff <= 0 {
+		backOff = maxBackOff
+	}
 	if attempts >= maxAttempts {
 		log.Warnf("%v: max retry attempts reached. aborting.", msg)
 		return
 	}
 	err := operation()
 	if err != nil {
-		log.Warnf("%v, %v", err, fmt.Sprintf("retrying in %v", backOff))
+		// too many requests
+		if spotifyErr := errors.Unwrap(err); spotifyErr.(spotify.Error).Status == TooManyRequests {
+			log.Errorf("spotify rate limit exceeded.")
+			return
+		}
+		log.Warnf("%v, retrying in %v, attempts: %v", err, backOff, attempts)
 		// set the timer for the next attempt
 		newTimer := time.AfterFunc(backOff, func() { retryWithAttempts(operation, clientID, attempts+1) })
 		t, ok := notifyTimers[clientID]
@@ -95,7 +103,7 @@ func (ctrl *Controller) notifyClientsBySessionID(sessionID string, action notify
 
 // finds and activates a client's playback device if no active devices are found
 func activatePlayer(client spotify.Client) {
-	msg := "[playerctrl] initialize client"
+	msg := "[playerctrl] activate player"
 
 	devices, err := client.PlayerDevices()
 	if err != nil {
