@@ -15,11 +15,11 @@ func (ctrl *Controller) setPlayerStateWithOptions(opt *spotify.PlayOptions, paus
 	return func(client spotify.Client) error {
 		if !paused {
 			if err := client.PlayOpt(opt); err != nil {
-				return fmt.Errorf("%v: %v", msg, err)
+				return fmt.Errorf("%v: %w", msg, err)
 			}
 		} else {
 			if err := client.PauseOpt(opt); err != nil {
-				return fmt.Errorf("%v: %v", msg, err)
+				return fmt.Errorf("%v: %w", msg, err)
 			}
 		}
 		return nil
@@ -40,7 +40,7 @@ func (ctrl *Controller) playerSkipAction() notifyAction {
 	msg := "[playerctrl] player skip"
 	return func(client spotify.Client) error {
 		if err := client.Next(); err != nil {
-			return fmt.Errorf("%v: %v", msg, err)
+			return fmt.Errorf("%v: %w", msg, err)
 		}
 		return nil
 	}
