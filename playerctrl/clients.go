@@ -42,9 +42,12 @@ func retryWithAttempts(operation func() error, clientID string, attempts int) {
 	err := operation()
 	if err != nil {
 		// too many requests
-		if spotifyErr := errors.Unwrap(err); spotifyErr.(spotify.Error).Status == TooManyRequests {
-			log.Errorf("spotify rate limit exceeded.")
-			return
+		spotifyErr := errors.Unwrap(err)
+		if e, ok := spotifyErr.(spotify.Error); ok {
+			if e.Status == TooManyRequests {
+				log.Errorf("spotify rate limit exceeded.")
+				return
+			}
 		}
 		log.Warnf("%v, retrying in %v, attempts: %v", err, backOff, attempts)
 		// set the timer for the next attempt

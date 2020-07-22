@@ -6,19 +6,12 @@ title = "Spotify-Jukebox Config File"
 max_users = 1000
 
 [spotify]
-client_id = "id"
-client_secret = "secret"
-redirect_url = "redirect.url"
+redirect_url = "https://api.encore-fm.com/callback"
 
 [server]
-debug = true
-port = 8080
-frontend_base_url = "http://localhost:3000"
+frontend_base_url = "https://encore-fm.com"
 
 [database]
-db_user = "root"
-db_password = "root"
-db_host = "127.0.0.1"
 db_port = 27017
 db_name = "spotify-jukebox"
 user_collection_name = "users"
