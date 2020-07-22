@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/joho/godotenv"
-	"github.com/prometheus/common/log"
 	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"
@@ -109,7 +108,7 @@ func FromFile() (*Config, error) {
 
 	conf := &Config{}
 	if err := viper.Unmarshal(conf); err != nil {
-		log.Errorf("unable to decode into config struct, %v", err)
+		logrus.Errorf("unable to decode into config struct, %v", err)
 	}
 
 	return conf, nil
