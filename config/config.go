@@ -42,7 +42,7 @@ var Conf *Config
 func Setup() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Info("[startup] no .env file found")
+		logrus.Info("[startup] no .env file found")
 	}
 
 	// reading sensitive values from environment and adding them to config
@@ -81,7 +81,7 @@ func Setup() {
 	if err != nil {
 		panic(err)
 	}
-	log.Infof("using config file at path %v", viper.ConfigFileUsed())
+	logrus.Infof("using config file at path %v", viper.ConfigFileUsed())
 
 	Conf = c
 
