@@ -22,12 +22,12 @@ func New() *Player {
 }
 
 func (p *Player) IsEmpty() bool {
-	return p.CurrentSong == nil || p.Progress() >= time.Millisecond * time.Duration(p.CurrentSong.Duration)
+	return p.CurrentSong == nil || p.Progress() >= time.Millisecond*time.Duration(p.CurrentSong.Duration)
 }
 
 func (p *Player) Progress() time.Duration {
 	if !p.Paused {
-		return time.Now().Sub(p.SongStart) - p.PauseDuration
+		return time.Since(p.SongStart) - p.PauseDuration
 	}
 	return p.PauseStart.Sub(p.SongStart) - p.PauseDuration
 }
