@@ -1,8 +1,7 @@
 package config
 
 import (
-	"flag"
-	"fmt"
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 
 	"github.com/spf13/viper"
@@ -41,29 +40,58 @@ var Conf *Config
 
 // sets default configuration settings
 func Setup() {
-	// parse optional config flag
-	path := flag.String("config", "", "Path of config file")
-	flag.Parse()
+	err := godotenv.Load()
+	if err != nil {
+		logrus.Info("[startup] no .env file found")
+	}
+
+	// reading sensitive values from environment and adding them to config
+	_ = viper.BindEnv("MONGO_HOST")
+	mongoHost := viper.GetString("MONGO_HOST")
+
+	_ = viper.BindEnv("MONGO_USER")
+	mongoUser := viper.GetString("MONGO_USER")
+
+	_ = viper.BindEnv("MONGO_PASSWORD")
+	mongoPassword := viper.GetString("MONGO_PASSWORD")
+
+	_ = viper.BindEnv("SPOTIFY_CLIENT_ID")
+	clientID := viper.GetString("SPOTIFY_CLIENT_ID")
+
+	_ = viper.BindEnv("SPOTIFY_CLIENT_SECRET")
+	clientSecret := viper.GetString("SPOTIFY_CLIENT_SECRET")
+
+	// heroku sets the PORT variable that you are supposed to bind
+	_ = viper.BindEnv("PORT")
+	port := viper.GetInt("PORT")
+
+	// look if development flag is set
+	_ = viper.BindEnv("DEVELOPMENT")
+	development := viper.GetBool("DEVELOPMENT")
 
 	// setup viper
+	viper.SetConfigName("production")
 	viper.SetConfigType("toml")
-	viper.SetConfigName("spotify-jukebox")
-
-	if *path != "" {
-		viper.SetConfigFile(*path)
-	} else {
-		// default lookup locations
-		viper.AddConfigPath("$HOME/.config/spotify-jukebox/")
-		viper.AddConfigPath("./")         // this is only the example file with dummy values
-		viper.AddConfigPath("config/")    // this is only the example file with dummy values
-		viper.AddConfigPath("../config/") // todo: find better way to make tests work
+	viper.AddConfigPath("config/")
+	if development {
+		viper.SetConfigName("development")
 	}
 
 	c, err := FromFile()
 	if err != nil {
 		panic(err)
 	}
+	logrus.Infof("using config file at path %v", viper.ConfigFileUsed())
+
 	Conf = c
+
+	Conf.Database.DBHost = mongoHost
+	Conf.Database.DBUser = mongoUser
+	Conf.Database.DBPassword = mongoPassword
+	Conf.Spotify.ClientID = clientID
+	Conf.Spotify.ClientSecret = clientSecret
+	Conf.Server.Port = port
+	Conf.Server.Debug = development
 
 	// setup logrus time stamps
 	formatter := &logrus.TextFormatter{
@@ -80,7 +108,7 @@ func FromFile() (*Config, error) {
 
 	conf := &Config{}
 	if err := viper.Unmarshal(conf); err != nil {
-		fmt.Printf("unable to decode into config struct, %v", err)
+		logrus.Errorf("unable to decode into config struct, %v", err)
 	}
 
 	return conf, nil

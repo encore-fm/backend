@@ -1,0 +1,18 @@
+# test config file example
+
+title = "Spotify-Jukebox Config File"
+
+# uncategorized options
+max_users = 1000
+
+[spotify]
+redirect_url = "http://localhost:3000/callback"
+
+[server]
+frontend_base_url = "http://localhost:3000"
+
+[database]
+db_port = 27017
+db_name = "spotify-jukebox"
+user_collection_name = "users"
+session_collection_name = "sessions"
