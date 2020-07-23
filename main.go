@@ -11,12 +11,6 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
-	"time"
-)
-
-const (
-	SessionExpiration = time.Hour * 48
-	CleaningInterval  = time.Hour
 )
 
 func spotifyAuthSetup() spotify.Authenticator {
@@ -89,12 +83,7 @@ func main() {
 	}
 	log.Info("[startup] successfully started player controller")
 
-	gc := garbagecoll.New(
-		SessionExpiration,
-		CleaningInterval,
-		userDB,
-		sessDB,
-	)
+	gc := garbagecoll.New(userDB, sessDB)
 	gc.Run()
 	log.Info("[startup] successfully started session garbage collector")
 

@@ -7,24 +7,22 @@ import (
 	"time"
 )
 
+const (
+	SessionExpiration = time.Hour * 48
+	CleaningInterval  = time.Hour
+)
+
 // responsible for deleting inactive sessionCollection
 type garbageCollector struct {
-	sessionExpiration time.Duration
 	ticker            *time.Ticker
 	userCollection    db.UserCollection
 	sessionCollection db.SessionCollection
 	quit              chan bool
 }
 
-func New(
-	sessionExpiration time.Duration,
-	cleanInterval time.Duration,
-	users db.UserCollection,
-	sessions db.SessionCollection,
-) *garbageCollector {
+func New(users db.UserCollection, sessions db.SessionCollection) *garbageCollector {
 	return &garbageCollector{
-		sessionExpiration: sessionExpiration,
-		ticker:            time.NewTicker(cleanInterval),
+		ticker:            time.NewTicker(CleaningInterval),
 		userCollection:    users,
 		sessionCollection: sessions,
 	}
@@ -72,7 +70,7 @@ func (gc garbageCollector) clean() {
 			logrus.Warnf("%v, %v", msg, err)
 			continue
 		}
-		if time.Since(session.LastUpdated) > gc.sessionExpiration {
+		if time.Since(session.LastUpdated) > SessionExpiration {
 			err = gc.userCollection.DeleteUsersBySessionID(ctx, sessionID)
 			if err != nil {
 				logrus.Warnf("%v, %v", msg, err)
