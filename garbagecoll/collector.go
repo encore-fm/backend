@@ -12,7 +12,7 @@ const (
 	CleaningInterval  = time.Hour
 )
 
-// responsible for deleting inactive sessionCollection
+// responsible for deleting inactive sessions
 type garbageCollector struct {
 	ticker            *time.Ticker
 	userCollection    db.UserCollection
@@ -29,6 +29,7 @@ func New(users db.UserCollection, sessions db.SessionCollection) *garbageCollect
 }
 
 func (gc garbageCollector) Run() {
+	// quit chanel should only exist when gc is running
 	quit := make(chan bool)
 	gc.quit = quit
 
