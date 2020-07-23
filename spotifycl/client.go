@@ -62,7 +62,7 @@ func (c *SpotifyClient) refreshToken() {
 	log.Info("[spotifycl] refreshed token")
 }
 
-func (c *SpotifyClient) GetClientToken() (*oauth2.Token, error){
+func (c *SpotifyClient) GetClientToken() (*oauth2.Token, error) {
 	c.refreshToken()
 	return c.Client.Token()
 }

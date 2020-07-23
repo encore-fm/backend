@@ -46,7 +46,6 @@ func TestHandler_Play(t *testing.T) {
 		On("SetLastUpdated", context.TODO(), sessionID).
 		Return()
 
-
 	eventBus := events.NewEventBus()
 	eventBus.Start()
 	defer eventBus.Stop()
