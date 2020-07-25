@@ -2,33 +2,40 @@ package garbagecoll
 
 import (
 	"context"
+	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/sirupsen/logrus"
 	"time"
 )
 
-const (
-	SessionExpiration = time.Hour * 48
-	CleaningInterval  = time.Hour
-)
+type GarbageCollector interface {
+	Start()
+	Stop()
+}
 
 // responsible for deleting inactive sessions
 type garbageCollector struct {
 	ticker            *time.Ticker
+	sessionExpiration time.Duration
 	userCollection    db.UserCollection
 	sessionCollection db.SessionCollection
 	quit              chan bool
 }
 
-func New(users db.UserCollection, sessions db.SessionCollection) *garbageCollector {
+var _ GarbageCollector = (*garbageCollector)(nil)
+
+func New(users db.UserCollection, sessions db.SessionCollection) GarbageCollector {
+	cleaningInterval := time.Second * time.Duration(config.Conf.GarbageCollector.CleaningIntervalInS)
+	sessionExpiration := time.Second * time.Duration(config.Conf.GarbageCollector.SessionExpirationInS)
 	return &garbageCollector{
-		ticker:            time.NewTicker(CleaningInterval),
+		ticker:            time.NewTicker(cleaningInterval),
+		sessionExpiration: sessionExpiration,
 		userCollection:    users,
 		sessionCollection: sessions,
 	}
 }
 
-func (gc garbageCollector) Run() {
+func (gc garbageCollector) Start() {
 	// quit chanel should only exist when gc is running
 	quit := make(chan bool)
 	gc.quit = quit
@@ -47,7 +54,7 @@ func (gc garbageCollector) Run() {
 	}()
 }
 
-func (gc garbageCollector) Quit() {
+func (gc garbageCollector) Stop() {
 	if gc.quit == nil {
 		logrus.Warn("garbage collector not running")
 		return
@@ -59,29 +66,24 @@ func (gc garbageCollector) clean() {
 	msg := "[garbagecoll] clean"
 	ctx := context.Background()
 
-	sessionIDs, err := gc.sessionCollection.ListSessionIDs(ctx)
+	expiredSessions, err := gc.sessionCollection.ListExpiredSessions(ctx, gc.sessionExpiration)
+	if len(expiredSessions) == 0 {
+		return
+	}
+	if err != nil {
+		logrus.Warnf("%v, %v", msg, err)
+		return
+	}
+	err = gc.userCollection.DeleteUsersBySessionIDs(ctx, expiredSessions)
+	if err != nil {
+		logrus.Warnf("%v, %v", msg, err)
+		return
+	}
+	err = gc.sessionCollection.DeleteSessions(ctx, expiredSessions)
 	if err != nil {
 		logrus.Warnf("%v, %v", msg, err)
 		return
 	}
 
-	for _, sessionID := range sessionIDs {
-		session, err := gc.sessionCollection.GetSessionByID(ctx, sessionID)
-		if err != nil {
-			logrus.Warnf("%v, %v", msg, err)
-			continue
-		}
-		if time.Since(session.LastUpdated) > SessionExpiration {
-			err = gc.userCollection.DeleteUsersBySessionID(ctx, sessionID)
-			if err != nil {
-				logrus.Warnf("%v, %v", msg, err)
-				continue
-			}
-			err = gc.sessionCollection.DeleteSession(ctx, sessionID)
-			if err != nil {
-				logrus.Warnf("%v, %v", msg, err)
-				continue
-			}
-		}
-	}
+	logrus.Infof("deleted %v session(s)", len(expiredSessions))
 }

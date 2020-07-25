@@ -84,7 +84,7 @@ func main() {
 	log.Info("[startup] successfully started player controller")
 
 	gc := garbagecoll.New(userDB, sessDB)
-	gc.Run()
+	gc.Start()
 	log.Info("[startup] successfully started session garbage collector")
 
 	// start server

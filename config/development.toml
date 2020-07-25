@@ -5,6 +5,13 @@ title = "Spotify-Jukebox Config File"
 # uncategorized options
 max_users = 1000
 
+# configuration options for the server's session garbage collector
+[garbagecoll]
+# 48h = 172800s per default
+session_expiration_s = 172800
+# 1h = 3600s per default
+cleaning_interval_s = 3600
+
 [spotify]
 redirect_url = "http://localhost:3000/callback"
 

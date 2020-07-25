@@ -7,6 +7,13 @@ import (
 	"github.com/spf13/viper"
 )
 
+type GarbageCollConfig struct {
+	// inactivity time in s until a session is deemed expired
+	SessionExpirationInS int `mapstructure:"session_expiration_s"`
+	// time in s for routine cleanup
+	CleaningIntervalInS int `mapstructure:"cleaning_interval_s"`
+}
+
 type SpotifyConfig struct {
 	ClientID     string `mapstructure:"client_id"`
 	ClientSecret string `mapstructure:"client_secret"`
@@ -30,10 +37,11 @@ type DBConfig struct {
 }
 
 type Config struct {
-	Spotify  *SpotifyConfig `mapstructure:"spotify"`
-	Server   *ServerConfig  `mapstructure:"server"`
-	Database *DBConfig      `mapstructure:"database"`
-	MaxUsers int            `mapstructure:"max_users"`
+	Spotify          *SpotifyConfig     `mapstructure:"spotify"`
+	Server           *ServerConfig      `mapstructure:"server"`
+	Database         *DBConfig          `mapstructure:"database"`
+	GarbageCollector *GarbageCollConfig `mapstructure:"garbagecoll"`
+	MaxUsers         int                `mapstructure:"max_users"`
 }
 
 var Conf *Config
