@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
@@ -9,6 +10,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
+	_ "github.com/heroku/x/hmetrics/onload"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )
