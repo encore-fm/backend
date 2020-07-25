@@ -87,8 +87,8 @@ func (c *sessionCollection) DeleteSessions(ctx context.Context, sessionIDs []str
 		return fmt.Errorf(errMsg, err)
 	}
 	if res.DeletedCount != int64(len(sessionIDs)) {
-		deleteErr := errors.New(fmt.Sprintf("one or more sessions with the given ids could not be deleted, "+
-			"expected count: %v, got: %v", len(sessionIDs), res.DeletedCount))
+		deleteErr := fmt.Errorf("one or more sessions with the given ids could not be deleted, "+
+			"expected count: %v, got: %v", len(sessionIDs), res.DeletedCount)
 		return fmt.Errorf(errMsg, deleteErr)
 	}
 
