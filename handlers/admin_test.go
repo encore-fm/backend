@@ -52,9 +52,9 @@ func TestHandler_RemoveSong(t *testing.T) {
 	eventBus.Start()
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
+		SongCollection:    songCollection,
 		SessionCollection: sessionCollection,
-		eventBus:       eventBus,
+		eventBus:          eventBus,
 	}
 	adminHandler := AdminHandler(handler)
 
@@ -117,7 +117,7 @@ func TestHandler_RemoveSong_NoSessionWithID(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
+		SongCollection:    songCollection,
 		SessionCollection: sessionCollection,
 	}
 	adminHandler := AdminHandler(handler)
@@ -177,7 +177,7 @@ func TestHandler_RemoveSong_NoSongWithID(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
+		SongCollection:    songCollection,
 		SessionCollection: sessionCollection,
 	}
 	adminHandler := AdminHandler(handler)
@@ -238,7 +238,7 @@ func TestHandler_RemoveSong_UnknownError(t *testing.T) {
 
 	// create handler with mock collections
 	handler := &handler{
-		SongCollection: songCollection,
+		SongCollection:    songCollection,
 		SessionCollection: sessionCollection,
 	}
 	adminHandler := AdminHandler(handler)

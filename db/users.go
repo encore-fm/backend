@@ -19,6 +19,7 @@ type UserCollection interface {
 	AddUser(ctx context.Context, newUser *user.Model) error
 	DeleteUser(ctx context.Context, userID string) error
 	DeleteUsersBySessionID(ctx context.Context, sessionID string) error
+	DeleteUsersBySessionIDs(ctx context.Context, sessionIDs []string) error
 	ListUsers(ctx context.Context, sessionID string) ([]*user.ListElement, error)
 	IncrementScore(ctx context.Context, username string, amount int) error
 	SetToken(ctx context.Context, userID string, token *oauth2.Token) error
@@ -143,6 +144,23 @@ func (c *userCollection) DeleteUsersBySessionID(ctx context.Context, sessionID s
 	}
 	if res.DeletedCount == 0 {
 		return fmt.Errorf(errMsg, ErrNoSessionWithID)
+	}
+
+	return nil
+}
+
+// deletes users from multiple sessions simultaneously
+func (c *userCollection) DeleteUsersBySessionIDs(ctx context.Context, sessionIDs []string) error {
+	errMsg := "[db] delete users by session ids: %w"
+
+	filter := bson.M{
+		"session_id": bson.M{
+			"$in": sessionIDs,
+		},
+	}
+	_, err := c.collection.DeleteMany(ctx, filter)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
 	}
 
 	return nil

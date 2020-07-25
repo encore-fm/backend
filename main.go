@@ -5,6 +5,7 @@ import (
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
 	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/antonbaumann/spotify-jukebox/garbagecoll"
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/server"
 	"github.com/antonbaumann/spotify-jukebox/spotifycl"
@@ -81,6 +82,10 @@ func main() {
 		log.Fatalf("[startup] starting player controller: %v", err)
 	}
 	log.Info("[startup] successfully started player controller")
+
+	gc := garbagecoll.New(userDB, sessDB)
+	gc.Start()
+	log.Info("[startup] successfully started session garbage collector")
 
 	// start server
 	svr := server.New(eventBus, userDB, sessDB, songDB, playerDB, spotifyAuth, spotifyClient)

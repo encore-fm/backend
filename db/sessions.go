@@ -20,6 +20,8 @@ type SessionCollection interface {
 	DeleteSession(ctx context.Context, sessionID string) error
 	GetSessionByID(ctx context.Context, sessionID string) (*session.Session, error)
 	ListSessionIDs(ctx context.Context) ([]string, error)
+	ListExpiredSessions(ctx context.Context, sessionExpiration time.Duration) ([]string, error)
+	DeleteSessions(ctx context.Context, sessionIDs []string) error
 	SetLastUpdated(ctx context.Context, sessionID string)
 }
 
@@ -72,6 +74,27 @@ func (c *sessionCollection) DeleteSession(ctx context.Context, sessionID string)
 	return nil
 }
 
+// deletes multiple sessions simultaneously
+func (c *sessionCollection) DeleteSessions(ctx context.Context, sessionIDs []string) error {
+	errMsg := "[db] delete sessions: %w"
+	filter := bson.M{
+		"_id": bson.M{
+			"$in": sessionIDs,
+		},
+	}
+	res, err := c.collection.DeleteMany(ctx, filter)
+	if err != nil {
+		return fmt.Errorf(errMsg, err)
+	}
+	if res.DeletedCount != int64(len(sessionIDs)) {
+		deleteErr := fmt.Errorf("one or more sessions with the given ids could not be deleted, "+
+			"expected count: %v, got: %v", len(sessionIDs), res.DeletedCount)
+		return fmt.Errorf(errMsg, deleteErr)
+	}
+
+	return nil
+}
+
 // GetSessionByID returns a session struct if sessionID exists
 // if sessionID does not exist it returns ErrNoSessionWithID
 // todo: write test
@@ -115,6 +138,44 @@ func (c *sessionCollection) ListSessionIDs(ctx context.Context) ([]string, error
 			return nil, fmt.Errorf(errMsg, err)
 		}
 		sessIDs = append(sessIDs, sess.ID)
+	}
+
+	return sessIDs, nil
+}
+
+func (c *sessionCollection) ListExpiredSessions(ctx context.Context, sessionExpiration time.Duration) ([]string, error) {
+	errMsg := "[db] list expired sessions: %w"
+
+	expirationDate := time.Now().Add(-sessionExpiration)
+	filter := bson.M{
+		"last_updated": bson.M{
+			"$lt": expirationDate,
+		},
+	}
+	projection := bson.M{
+		"_id": 1,
+	}
+
+	cursor, err := c.collection.Find(
+		ctx,
+		filter,
+		options.Find().SetProjection(projection),
+	)
+	if err != nil {
+		return nil, fmt.Errorf(errMsg, err)
+	}
+	defer cursor.Close(ctx)
+
+	var sessIDs []string
+	for cursor.Next(ctx) {
+		sessID := &struct {
+			SessID string `bson:"_id"`
+		}{}
+		err := cursor.Decode(sessID)
+		if err != nil {
+			return nil, fmt.Errorf(errMsg, err)
+		}
+		sessIDs = append(sessIDs, sessID.SessID)
 	}
 
 	return sessIDs, nil
