@@ -27,8 +27,8 @@ var _ SpotifyHandler = (*handler)(nil)
 // the user will eventually be redirected back to your redirect URL
 func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] redirect"
-	ctx := context.Background()
 
+	ctx := context.Background()
 	values := r.URL.Query()
 
 	// extract actual state from url
