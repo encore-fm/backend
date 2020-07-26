@@ -194,6 +194,11 @@ func (eb *eventBus) unsubscribe(sub subscription) {
 			}
 		}
 	}
+
+	for len(sub.Channel) > 0 {
+		<- sub.Channel
+	}
 	close(sub.Channel)
+
 	log.Infof("%v: type=%v groups=%v", msg, sub.Types, sub.Groups)
 }
