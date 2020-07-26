@@ -2,6 +2,7 @@ package events
 
 import (
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -116,7 +117,6 @@ func (eb *eventBus) loop() {
 
 func (eb *eventBus) forwardEvent(ev Event) {
 	eb.unsubMutex.RLock()
-	defer eb.unsubMutex.RUnlock()
 
 	msg := "[eventbus] forward Event"
 	log.Infof("%v: received Event: type={%v} groupID={%v}", msg, ev.Type, ev.GroupID)
@@ -141,9 +141,19 @@ func (eb *eventBus) forwardEvent(ev Event) {
 
 	//broadcast in goroutine to avoid blocking
 	go func(channels map[chan Event]bool, ev Event) {
+		defer eb.unsubMutex.RUnlock()
+
+		success := make(chan struct{}, 1)
+
 		for ch := range channels {
-			ch <- ev
+			select {
+			case <-success:
+				ch <- ev
+			case <-time.After(time.Second * 1):
+				continue
+			}
 		}
+
 		log.Infof("%v: type={%v} groupID={%v} to %v clients", msg, ev.Type, ev.GroupID, len(channels))
 	}(broadcastList, ev)
 }
@@ -195,9 +205,6 @@ func (eb *eventBus) unsubscribe(sub subscription) {
 		}
 	}
 
-	for len(sub.Channel) > 0 {
-		<- sub.Channel
-	}
 	close(sub.Channel)
 
 	log.Infof("%v: type=%v groups=%v", msg, sub.Types, sub.Groups)
