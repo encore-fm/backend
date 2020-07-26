@@ -2,6 +2,7 @@ package events
 
 import (
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -144,7 +145,7 @@ func (eb *eventBus) forwardEvent(ev Event) {
 		for ch := range channels {
 			select {
 			case ch <- ev:
-			default:
+			case <- time.After(time.Second * 1):
 				log.Warnf("%v: channel is blocking -> skipping", msg)
 			}
 		}
