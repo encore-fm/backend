@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
@@ -29,9 +28,7 @@ var _ SpotifyHandler = (*handler)(nil)
 func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 	msg := "[handler] redirect"
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * 5)
-	defer cancel()
-
+	ctx := context.Background()
 	values := r.URL.Query()
 
 	// extract actual state from url
@@ -78,7 +75,6 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		redirect(w, r, false, "")
 		return
 	}
-	log.Infof("%v: successfully exchanged token (code=%v)", msg, code)
 
 	// save token in user struct in db
 	// this also sets the `SpotifyAuthorized` field to true
@@ -108,7 +104,6 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		events.GroupID(usr.SessionID),
 		playerctrl.SetSynchronizedPayload{UserID: usr.ID, Synchronized: true},
 	)
-	log.Infof("%v: published synchronized event {user_id=%v}", msg, usr.ID)
 
 	redirectUrl := config.Conf.Server.FrontendBaseUrl
 	if !usr.IsAdmin {

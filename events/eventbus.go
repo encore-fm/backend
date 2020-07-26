@@ -116,6 +116,7 @@ func (eb *eventBus) loop() {
 
 func (eb *eventBus) forwardEvent(ev Event) {
 	eb.unsubMutex.RLock()
+	defer eb.unsubMutex.RUnlock()
 
 	msg := "[eventbus] forward Event"
 	log.Infof("%v: received Event: type={%v} groupID={%v}", msg, ev.Type, ev.GroupID)
@@ -144,7 +145,6 @@ func (eb *eventBus) forwardEvent(ev Event) {
 			ch <- ev
 		}
 		log.Infof("%v: type={%v} groupID={%v} to %v clients", msg, ev.Type, ev.GroupID, len(channels))
-		eb.unsubMutex.RUnlock()
 	}(broadcastList, ev)
 }
 
