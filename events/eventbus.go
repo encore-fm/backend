@@ -74,7 +74,7 @@ func (eb *eventBus) Subscribe(types []EventType, groupIDs []GroupID) subscriptio
 	subscription := subscription{
 		Types:   types,
 		Groups:  groupIDs,
-		Channel: make(chan Event),
+		Channel: make(chan Event, 5),
 	}
 	eb.newSubscriptions <- subscription
 	return subscription
@@ -145,7 +145,7 @@ func (eb *eventBus) forwardEvent(ev Event) {
 		for ch := range channels {
 			select {
 			case ch <- ev:
-			case <- time.After(time.Second * 1):
+			case <- time.After(time.Millisecond * 300):
 				log.Warnf("%v: channel is blocking -> skipping", msg)
 			}
 		}

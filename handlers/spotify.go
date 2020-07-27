@@ -98,6 +98,8 @@ func (h *handler) Redirect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// todo check if sse connection established before publishing event?
+
 	// synchronize the user
 	h.eventBus.Publish(
 		playerctrl.SetSynchronizedEvent,
