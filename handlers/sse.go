@@ -24,7 +24,7 @@ var _ SSEHandler = (*handler)(nil)
 
 // This Broker method handles and HTTP request at the "/events/{username}/{session_id}" URL.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx := context.Background()
 	msg := "[sse] serve http: %v"
 
 	vars := mux.Vars(r)
@@ -88,7 +88,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
-	h.sendSessionInfo(w, f, msg, ctx, sessionID)
+	h.sendSessionInfo(ctx, w, f, msg, sessionID)
 
 	// send complete session information every 30 sec
 	// - used as "keep connection alive" message
@@ -109,7 +109,7 @@ eventLoop:
 			}
 			sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
 		case <-ticker.C:
-			h.sendSessionInfo(w, f, msg, ctx, sessionID)
+			h.sendSessionInfo(ctx, w, f, msg, sessionID)
 		}
 	}
 
@@ -117,10 +117,10 @@ eventLoop:
 }
 
 func (h *handler) sendSessionInfo(
+	ctx context.Context,
 	w http.ResponseWriter,
 	f http.Flusher,
 	msg string,
-	ctx context.Context,
 	sessionID string,
 ) {
 	playr, err := h.PlayerCollection.GetPlayer(ctx, sessionID)
