@@ -4,14 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
-	"github.com/antonbaumann/spotify-jukebox/user"
 	"net/http"
 	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
 	"github.com/antonbaumann/spotify-jukebox/sse"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -24,7 +24,7 @@ var _ SSEHandler = (*handler)(nil)
 
 // This Broker method handles and HTTP request at the "/events/{username}/{session_id}" URL.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
+	ctx := context.Background()
 	msg := "[sse] serve http: %v"
 
 	vars := mux.Vars(r)
@@ -88,6 +88,41 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Transfer-Encoding", "chunked")
 
+	h.sendSessionInfo(ctx, w, f, msg, sessionID)
+
+	// send complete session information every 30 sec
+	// - used as "keep connection alive" message
+	// - overwrites inconsistencies in client
+	ticker := time.NewTicker(time.Second * 30)
+
+	// Don't close the connection, instead loop endlessly.
+eventLoop:
+	for {
+		select {
+		// Read from our messageChan.
+		case event, open := <-sub.Channel:
+			if !open {
+				// If our messageChan was closed, this means that the client has
+				// disconnected.
+				ticker.Stop()
+				break eventLoop
+			}
+			sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
+		case <-ticker.C:
+			h.sendSessionInfo(ctx, w, f, msg, sessionID)
+		}
+	}
+
+	log.Infof(msg, r.URL.Path)
+}
+
+func (h *handler) sendSessionInfo(
+	ctx context.Context,
+	w http.ResponseWriter,
+	f http.Flusher,
+	msg string,
+	sessionID string,
+) {
 	playr, err := h.PlayerCollection.GetPlayer(ctx, sessionID)
 	if err != nil {
 		log.Errorf("%v: %v", msg, err)
@@ -118,22 +153,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sendEvent(w, f, msg, sse.PlayerStateChange, events.GroupID(sessionID), playerState)
 	sendEvent(w, f, msg, sse.PlaylistChange, events.GroupID(sessionID), playlist)
 	sendEvent(w, f, msg, sse.UserListChange, events.GroupID(sessionID), userList)
-
-	// Don't close the connection, instead loop endlessly.
-	for {
-		// Read from our messageChan.
-		event, open := <-sub.Channel
-
-		if !open {
-			// If our messageChan was closed, this means that the client has
-			// disconnected.
-			break
-		}
-
-		sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
-	}
-
-	log.Infof(msg, r.URL.Path)
 }
 
 func sendEvent(
