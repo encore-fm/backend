@@ -7,12 +7,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/playerctrl"
-	"github.com/antonbaumann/spotify-jukebox/user"
-
-	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/sse"
+	"github.com/antonbaumann/spotify-jukebox/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )
@@ -97,7 +96,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ticker := time.NewTicker(time.Second * 30)
 
 	// Don't close the connection, instead loop endlessly.
-	eventLoop: for {
+eventLoop:
+	for {
 		select {
 		// Read from our messageChan.
 		case event, open := <-sub.Channel:
