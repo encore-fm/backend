@@ -44,19 +44,30 @@ func TestEventBus_RemoveGroups(t *testing.T) {
 	bus.Subscribe([]EventType{"event1", "event2"}, []GroupID{"group1", "group2"})
 	bus.Subscribe([]EventType{"event3", "event4"}, []GroupID{"group2"})
 
-	time.Sleep(200)
+	<-time.After(time.Millisecond * 100)
 
 	bus.RemoveGroups([]GroupID{"group2"})
+
+	<-time.After(time.Millisecond * 100)
+
+	bus.(*eventBus).mapMutex.RLock()
+	bus.(*eventBus).mapMutex.RUnlock()
 
 	m, ok := bus.(*eventBus).subscribers["event1"]
 	assert.True(t, ok)
 	assert.Contains(t, m, GroupID("group1"))
 
+	_, ok = m[GroupID("group2")]
+	assert.False(t, ok)
+
 	m, ok = bus.(*eventBus).subscribers["event2"]
 	assert.True(t, ok)
 	assert.Contains(t, m, GroupID("group1"))
 
-	_, ok = bus.(*eventBus).subscribers["event3"]
+	_, ok = m[GroupID("group2")]
+	assert.False(t, ok)
+
+	m, ok = bus.(*eventBus).subscribers["event3"]
 	assert.False(t, ok)
 
 	_, ok = bus.(*eventBus).subscribers["event4"]

@@ -47,7 +47,7 @@ type eventBus struct {
 	cleanups         chan []GroupID
 	eventChan        chan Event
 	quit             chan struct{}
-	unsubMutex       sync.RWMutex
+	mapMutex         sync.RWMutex
 }
 
 var _ EventBus = (*eventBus)(nil)
@@ -126,7 +126,7 @@ func (eb *eventBus) loop() {
 }
 
 func (eb *eventBus) forwardEvent(ev Event) {
-	eb.unsubMutex.RLock()
+	eb.mapMutex.RLock()
 
 	msg := "[eventbus] forward Event"
 	log.Infof("%v: received Event: type={%v} groupID={%v}", msg, ev.Type, ev.GroupID)
@@ -151,7 +151,7 @@ func (eb *eventBus) forwardEvent(ev Event) {
 
 	//broadcast in goroutine to avoid blocking
 	go func(channels map[chan Event]bool, ev Event) {
-		defer eb.unsubMutex.RUnlock()
+		defer eb.mapMutex.RUnlock()
 		for ch := range channels {
 			select {
 			case ch <- ev:
@@ -164,8 +164,8 @@ func (eb *eventBus) forwardEvent(ev Event) {
 }
 
 func (eb *eventBus) subscribe(sub subscription) {
-	eb.unsubMutex.Lock()
-	defer eb.unsubMutex.Unlock()
+	eb.mapMutex.Lock()
+	defer eb.mapMutex.Unlock()
 
 	for _, evType := range sub.Types {
 		groups, ok := eb.subscribers[evType]
@@ -189,8 +189,8 @@ func (eb *eventBus) subscribe(sub subscription) {
 }
 
 func (eb *eventBus) unsubscribe(sub subscription) {
-	eb.unsubMutex.Lock()
-	defer eb.unsubMutex.Unlock()
+	eb.mapMutex.Lock()
+	defer eb.mapMutex.Unlock()
 
 	msg := "[eventbus] unsubscribe"
 
@@ -215,8 +215,8 @@ func (eb *eventBus) unsubscribe(sub subscription) {
 }
 
 func (eb *eventBus) removeGroups(groups []GroupID) {
-	eb.unsubMutex.Lock()
-	defer eb.unsubMutex.Unlock()
+	eb.mapMutex.Lock()
+	defer eb.mapMutex.Unlock()
 
 	msg := "[eventbus] removeGroups"
 
