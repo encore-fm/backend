@@ -2,8 +2,9 @@ package playerctrl
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/zmb3/spotify"
 )

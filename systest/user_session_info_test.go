@@ -4,11 +4,12 @@ package systest
 
 import (
 	"encoding/json"
+	"net/http"
+	"testing"
+
 	"github.com/antonbaumann/spotify-jukebox/handlers"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"testing"
 )
 
 func Test_UserGetSessionInfo_InvalidSession(t *testing.T) {

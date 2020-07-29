@@ -1,10 +1,11 @@
 package session
 
 import (
+	"time"
+
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/song"
 	"github.com/antonbaumann/spotify-jukebox/util"
-	"time"
 )
 
 const IDBytes = 16

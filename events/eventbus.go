@@ -29,12 +29,12 @@ type subscription struct {
 	Channel chan Event
 }
 
-// todo: add unsubscribe method
 type EventBus interface {
 	Start()
 	Stop()
 	Subscribe([]EventType, []GroupID) subscription
 	Unsubscribe(subscription)
+	RemoveGroups([]GroupID)
 	Publish(EventType, GroupID, EventPayload)
 }
 
@@ -44,6 +44,7 @@ type eventBus struct {
 	subscribers      map[EventType]map[GroupID]map[chan Event]bool
 	newSubscriptions chan subscription
 	unsubscriptions  chan subscription
+	cleanups         chan []GroupID
 	eventChan        chan Event
 	quit             chan struct{}
 	unsubMutex       sync.RWMutex
@@ -56,6 +57,7 @@ func NewEventBus() EventBus {
 		subscribers:      make(map[EventType]map[GroupID]map[chan Event]bool),
 		newSubscriptions: make(chan subscription),
 		unsubscriptions:  make(chan subscription),
+		cleanups:         make(chan []GroupID),
 		eventChan:        make(chan Event, 20),
 		quit:             make(chan struct{}),
 	}
@@ -85,6 +87,11 @@ func (eb *eventBus) Unsubscribe(sub subscription) {
 	eb.unsubscriptions <- sub
 }
 
+// removes channel from outdated groups
+func (eb *eventBus) RemoveGroups(groups []GroupID) {
+	eb.cleanups <- groups
+}
+
 func (eb *eventBus) Publish(eventType EventType, groupID GroupID, data EventPayload) {
 	ev := Event{
 		Type:    eventType,
@@ -100,6 +107,9 @@ func (eb *eventBus) loop() {
 
 		case unsub := <-eb.unsubscriptions:
 			eb.unsubscribe(unsub)
+
+		case groups := <-eb.cleanups:
+			eb.removeGroups(groups)
 
 		case sub := <-eb.newSubscriptions:
 			eb.subscribe(sub)
@@ -145,7 +155,7 @@ func (eb *eventBus) forwardEvent(ev Event) {
 		for ch := range channels {
 			select {
 			case ch <- ev:
-			case <- time.After(time.Millisecond * 300):
+			case <-time.After(time.Millisecond * 300):
 				log.Warnf("%v: channel is blocking -> skipping", msg)
 			}
 		}
@@ -202,4 +212,25 @@ func (eb *eventBus) unsubscribe(sub subscription) {
 
 	close(sub.Channel)
 	log.Infof("%v: type=%v groups=%v", msg, sub.Types, sub.Groups)
+}
+
+func (eb *eventBus) removeGroups(groups []GroupID) {
+	eb.unsubMutex.Lock()
+	defer eb.unsubMutex.Unlock()
+
+	msg := "[eventbus] removeGroups"
+
+	for eventType, groupToChan := range eb.subscribers {
+		for _, id := range groups {
+			delete(groupToChan, id)
+		}
+
+		// if this eventType does not have subscribers anymore
+		// delete key
+		if len(eb.subscribers[eventType]) == 0 {
+			delete(eb.subscribers, eventType)
+		}
+	}
+
+	log.Infof("%v: groups=%v", msg, groups)
 }

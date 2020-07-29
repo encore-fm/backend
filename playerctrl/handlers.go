@@ -2,10 +2,11 @@ package playerctrl
 
 import (
 	"context"
+	"time"
+
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/player"
 	"github.com/antonbaumann/spotify-jukebox/sse"
-	"time"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	log "github.com/sirupsen/logrus"

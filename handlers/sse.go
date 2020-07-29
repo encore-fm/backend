@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
-	"github.com/antonbaumann/spotify-jukebox/user"
 	"net/http"
 	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/playerctrl"
+	"github.com/antonbaumann/spotify-jukebox/user"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/player"

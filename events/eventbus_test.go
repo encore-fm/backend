@@ -36,6 +36,33 @@ func TestEventBus_Unsubscribe(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestEventBus_RemoveGroups(t *testing.T) {
+	bus := NewEventBus()
+	bus.Start()
+	defer bus.Stop()
+
+	bus.Subscribe([]EventType{"event1", "event2"}, []GroupID{"group1", "group2"})
+	bus.Subscribe([]EventType{"event3", "event4"}, []GroupID{"group2"})
+
+	time.Sleep(200)
+
+	bus.RemoveGroups([]GroupID{"group2"})
+
+	m, ok := bus.(*eventBus).subscribers["event1"]
+	assert.True(t, ok)
+	assert.Contains(t, m, GroupID("group1"))
+
+	m, ok = bus.(*eventBus).subscribers["event2"]
+	assert.True(t, ok)
+	assert.Contains(t, m, GroupID("group1"))
+
+	_, ok = bus.(*eventBus).subscribers["event3"]
+	assert.False(t, ok)
+
+	_, ok = bus.(*eventBus).subscribers["event4"]
+	assert.False(t, ok)
+}
+
 func TestEventBus_Publish(t *testing.T) {
 	eventBus := NewEventBus()
 	eventBus.Start()

@@ -1,8 +1,9 @@
 package sse
 
 import (
-	"github.com/antonbaumann/spotify-jukebox/user"
 	"time"
+
+	"github.com/antonbaumann/spotify-jukebox/user"
 
 	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/antonbaumann/spotify-jukebox/song"

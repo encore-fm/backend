@@ -2,10 +2,12 @@ package garbagecoll
 
 import (
 	"context"
+	"time"
+
 	"github.com/antonbaumann/spotify-jukebox/config"
 	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/antonbaumann/spotify-jukebox/events"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
 type GarbageCollector interface {
@@ -19,12 +21,17 @@ type garbageCollector struct {
 	sessionExpiration time.Duration
 	userCollection    db.UserCollection
 	sessionCollection db.SessionCollection
+	eventBus          events.EventBus
 	quit              chan bool
 }
 
 var _ GarbageCollector = (*garbageCollector)(nil)
 
-func New(users db.UserCollection, sessions db.SessionCollection) GarbageCollector {
+func New(
+	users db.UserCollection,
+	sessions db.SessionCollection,
+	eventBus events.EventBus,
+) GarbageCollector {
 	cleaningInterval := time.Second * time.Duration(config.Conf.GarbageCollector.CleaningIntervalInS)
 	sessionExpiration := time.Second * time.Duration(config.Conf.GarbageCollector.SessionExpirationInS)
 	return &garbageCollector{
@@ -32,6 +39,7 @@ func New(users db.UserCollection, sessions db.SessionCollection) GarbageCollecto
 		sessionExpiration: sessionExpiration,
 		userCollection:    users,
 		sessionCollection: sessions,
+		eventBus:          eventBus,
 	}
 }
 
@@ -84,6 +92,8 @@ func (gc garbageCollector) clean() {
 		logrus.Warnf("%v, %v", msg, err)
 		return
 	}
+
+	gc.eventBus.RemoveGroups(events.AsGroupIDs(expiredSessions))
 
 	logrus.Infof("deleted %v session(s)", len(expiredSessions))
 }
