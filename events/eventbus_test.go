@@ -51,7 +51,7 @@ func TestEventBus_RemoveGroups(t *testing.T) {
 	<-time.After(time.Millisecond * 100)
 
 	bus.(*eventBus).mapMutex.RLock()
-	bus.(*eventBus).mapMutex.RUnlock()
+	defer bus.(*eventBus).mapMutex.RUnlock()
 
 	m, ok := bus.(*eventBus).subscribers["event1"]
 	assert.True(t, ok)
@@ -67,7 +67,7 @@ func TestEventBus_RemoveGroups(t *testing.T) {
 	_, ok = m[GroupID("group2")]
 	assert.False(t, ok)
 
-	m, ok = bus.(*eventBus).subscribers["event3"]
+	_, ok = bus.(*eventBus).subscribers["event3"]
 	assert.False(t, ok)
 
 	_, ok = bus.(*eventBus).subscribers["event4"]
