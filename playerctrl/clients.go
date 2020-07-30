@@ -3,10 +3,11 @@ package playerctrl
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/antonbaumann/spotify-jukebox/user"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
-	"time"
 )
 
 // maps spotify clients to timers
