@@ -75,13 +75,14 @@ func (gc garbageCollector) clean() {
 	ctx := context.Background()
 
 	expiredSessions, err := gc.sessionCollection.ListExpiredSessions(ctx, gc.sessionExpiration)
-	if len(expiredSessions) == 0 {
-		return
-	}
 	if err != nil {
 		logrus.Warnf("%v, %v", msg, err)
 		return
 	}
+	if len(expiredSessions) == 0 {
+		return
+	}
+
 	err = gc.userCollection.DeleteUsersBySessionIDs(ctx, expiredSessions)
 	if err != nil {
 		logrus.Warnf("%v, %v", msg, err)
