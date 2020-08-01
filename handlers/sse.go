@@ -40,6 +40,7 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
 		return
 	}
+
 	// subscribe to changes
 	sub := h.eventBus.Subscribe(
 		[]events.EventType{sse.PlaylistChange, sse.PlayerStateChange, sse.UserListChange, sse.UserSynchronizedChange},
@@ -91,11 +92,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	h.sendSessionInfo(ctx, w, f, msg, sessionID)
 
-	// send complete session information every 30 sec
-	// - used as "keep connection alive" message
-	// - overwrites inconsistencies in client
-	ticker := time.NewTicker(time.Second * 30)
-
 	// Don't close the connection, instead loop endlessly.
 eventLoop:
 	for {
@@ -105,12 +101,9 @@ eventLoop:
 			if !open {
 				// If our messageChan was closed, this means that the client has
 				// disconnected.
-				ticker.Stop()
 				break eventLoop
 			}
 			sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
-		case <-ticker.C:
-			h.sendSessionInfo(ctx, w, f, msg, sessionID)
 		}
 	}
 
