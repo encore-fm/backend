@@ -93,18 +93,15 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.sendSessionInfo(ctx, w, f, msg, sessionID)
 
 	// Don't close the connection, instead loop endlessly.
-eventLoop:
 	for {
-		select {
 		// Read from our messageChan.
-		case event, open := <-sub.Channel:
-			if !open {
-				// If our messageChan was closed, this means that the client has
-				// disconnected.
-				break eventLoop
-			}
-			sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
+		event, open := <-sub.Channel
+		if !open {
+			// If our messageChan was closed, this means that the client has
+			// disconnected.
+			break
 		}
+		sendEvent(w, f, msg, event.Type, event.GroupID, event.Data)
 	}
 
 	log.Infof(msg, r.URL.Path)
