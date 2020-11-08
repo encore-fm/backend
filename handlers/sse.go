@@ -25,7 +25,7 @@ var _ SSEHandler = (*handler)(nil)
 
 // This Broker method handles and HTTP request at the "/events/{username}/{session_id}" URL.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	ctx := r.Context()
 	msg := "[sse] serve http: %v"
 
 	vars := mux.Vars(r)
@@ -34,7 +34,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	userID := user.GenerateUserID(username, sessionID)
 
 	// Make sure that the writer supports flushing.
-	//
 	f, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
@@ -64,7 +63,6 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		<-ctx.Done()
 		// Remove this client from the map of attached clients
 		// when `EventHandler` exits.
-
 		h.eventBus.Unsubscribe(sub)
 
 		// unregister sse connection
