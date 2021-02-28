@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/encore-fm/backend/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )

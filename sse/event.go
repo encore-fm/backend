@@ -3,10 +3,9 @@ package sse
 import (
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/user"
-
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/song"
+	"github.com/encore-fm/backend/user"
 )
 
 const (

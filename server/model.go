@@ -1,11 +1,11 @@
 package server
 
 import (
-	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/handlers"
-	"github.com/antonbaumann/spotify-jukebox/spotifycl"
+	"github.com/encore-fm/backend/config"
+	"github.com/encore-fm/backend/db"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/handlers"
+	"github.com/encore-fm/backend/spotifycl"
 	"github.com/zmb3/spotify"
 )
 

@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/spotifycl"
+	"github.com/encore-fm/backend/db"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/spotifycl"
 	"github.com/zmb3/spotify"
 )
 

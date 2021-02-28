@@ -6,9 +6,9 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/antonbaumann/spotify-jukebox/session"
-	"github.com/antonbaumann/spotify-jukebox/song"
-	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/encore-fm/backend/session"
+	"github.com/encore-fm/backend/song"
+	"github.com/encore-fm/backend/user"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

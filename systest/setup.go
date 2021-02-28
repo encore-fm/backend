@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/encore-fm/backend/config"
 )
 
 func setupDB() {

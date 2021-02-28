@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/encore-fm/backend/user"
 	log "github.com/sirupsen/logrus"
 )
 

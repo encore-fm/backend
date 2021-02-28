@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/encore-fm/backend/config"
+	"github.com/encore-fm/backend/db"
+	"github.com/encore-fm/backend/events"
 	"github.com/sirupsen/logrus"
 )
 

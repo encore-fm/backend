@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/antonbaumann/spotify-jukebox/util"
+	"github.com/encore-fm/backend/util"
 	"golang.org/x/oauth2"
 )
 

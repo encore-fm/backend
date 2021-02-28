@@ -1,6 +1,6 @@
 # test config file example
 
-title = "Spotify-Jukebox Config File"
+title = "Encore-Backend Config File"
 
 # uncategorized options
 max_users = 1000

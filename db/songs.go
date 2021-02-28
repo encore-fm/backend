@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/session"
-	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/encore-fm/backend/config"
+	"github.com/encore-fm/backend/session"
+	"github.com/encore-fm/backend/song"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

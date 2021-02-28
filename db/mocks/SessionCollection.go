@@ -7,7 +7,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	session "github.com/antonbaumann/spotify-jukebox/session"
+	session "github.com/encore-fm/backend/session"
 
 	time "time"
 )

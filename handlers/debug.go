@@ -3,8 +3,8 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/playerctrl"
 	"github.com/gorilla/mux"
 )
 

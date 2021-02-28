@@ -2,7 +2,7 @@
 .DS_Store
 
 # binary
-spotify-jukebox
+backend
 
 # config file
 systest/spotify-jukebox-test.toml

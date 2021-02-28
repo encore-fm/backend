@@ -1,13 +1,13 @@
-[![Build Status](https://github.com/antonbaumann/spotify-jukebox/workflows/build/badge.svg)](https://github.com/antonbaumann/spotify-jukebox/actions?workflow=build)
-[![Go Report Card](https://goreportcard.com/badge/github.com/antonbaumann/spotify-jukebox)](https://goreportcard.com/report/github.com/antonbaumann/spotify-jukebox)
-[![codecov](https://codecov.io/gh/antonbaumann/spotify-jukebox/branch/master/graph/badge.svg?token=juTAuitYfJ)](https://codecov.io/gh/antonbaumann/spotify-jukebox)
-# Spotify Jukebox
+[![Build Status](https://github.com/encore-fm/backend/workflows/build/badge.svg)](https://github.com/encore-fm/backend/actions?workflow=build)
+[![Go Report Card](https://goreportcard.com/badge/github.com/encore-fm/backend)](https://goreportcard.com/report/github.com/encore-fm/backend)
+[![codecov](https://codecov.io/gh/encore-fm/backend/branch/master/graph/badge.svg?token=juTAuitYfJ)](https://codecov.io/gh/encore-fm/backend)
+# Encore Backend
 
 ## Quick start
 #### Build and run
 ```sh
 docker-compose up -d
-go build . && ./spotify-jukebox
+go build . && ./backend
 ```
 #### Run Component Tests
 ```sh
@@ -22,7 +22,7 @@ go test ./... -tags ci
 docker-compose -f systest/docker-compose.yml up -d
 
 # start backend with test configuration
-go build && ./spotify-jukebox -config <test_config_path>
+go build && ./backend -config <test_config_path>
 go test ./systest/... -config <test_config_path>
 ```
 ## Models

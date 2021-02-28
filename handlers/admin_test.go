@@ -9,10 +9,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/db/mocks"
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/encore-fm/backend/db"
+	"github.com/encore-fm/backend/db/mocks"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/song"
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 )

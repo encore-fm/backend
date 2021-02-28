@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/antonbaumann/spotify-jukebox/sse"
+	"github.com/encore-fm/backend/config"
+	"github.com/encore-fm/backend/player"
+	"github.com/encore-fm/backend/sse"
 
-	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/encore-fm/backend/events"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -3,9 +3,9 @@ package session
 import (
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/antonbaumann/spotify-jukebox/song"
-	"github.com/antonbaumann/spotify-jukebox/util"
+	"github.com/encore-fm/backend/player"
+	"github.com/encore-fm/backend/song"
+	"github.com/encore-fm/backend/util"
 )
 
 const IDBytes = 16
