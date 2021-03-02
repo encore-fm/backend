@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/handlers"
+	"github.com/encore-fm/backend/config"
+	"github.com/encore-fm/backend/handlers"
 	muxh "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"

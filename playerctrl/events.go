@@ -3,7 +3,7 @@ package playerctrl
 import (
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/events"
+	"github.com/encore-fm/backend/events"
 )
 
 // define song added event

@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
-	"github.com/antonbaumann/spotify-jukebox/db"
+	"github.com/encore-fm/backend/config"
+	"github.com/encore-fm/backend/db"
 )
 
 func TestMain(m *testing.M) {

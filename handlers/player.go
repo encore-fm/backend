@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
-	"github.com/antonbaumann/spotify-jukebox/sse"
-	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/encore-fm/backend/db"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/playerctrl"
+	"github.com/encore-fm/backend/sse"
+	"github.com/encore-fm/backend/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )

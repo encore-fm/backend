@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/antonbaumann/spotify-jukebox/session"
-	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/encore-fm/backend/session"
+	"github.com/encore-fm/backend/song"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 )

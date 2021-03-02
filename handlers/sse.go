@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
-	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/encore-fm/backend/playerctrl"
+	"github.com/encore-fm/backend/user"
 
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/antonbaumann/spotify-jukebox/sse"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/player"
+	"github.com/encore-fm/backend/sse"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )

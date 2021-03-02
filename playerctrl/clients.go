@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/encore-fm/backend/user"
 	log "github.com/sirupsen/logrus"
 	"github.com/zmb3/spotify"
 )

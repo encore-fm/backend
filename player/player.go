@@ -3,7 +3,7 @@ package player
 import (
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/encore-fm/backend/song"
 )
 
 // every session object in the db contains a player object

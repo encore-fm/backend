@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/antonbaumann/spotify-jukebox/player"
-	"github.com/antonbaumann/spotify-jukebox/session"
+	"github.com/encore-fm/backend/player"
+	"github.com/encore-fm/backend/session"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"

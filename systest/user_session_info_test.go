@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/antonbaumann/spotify-jukebox/handlers"
-	"github.com/antonbaumann/spotify-jukebox/song"
+	"github.com/encore-fm/backend/handlers"
+	"github.com/encore-fm/backend/song"
 	"github.com/stretchr/testify/assert"
 )
 

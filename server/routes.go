@@ -3,7 +3,7 @@ package server
 import (
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/handlers"
+	"github.com/encore-fm/backend/handlers"
 	"github.com/gorilla/mux"
 )
 

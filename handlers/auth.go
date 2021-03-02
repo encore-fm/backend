@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/db"
-	"github.com/antonbaumann/spotify-jukebox/user"
+	"github.com/encore-fm/backend/db"
+	"github.com/encore-fm/backend/user"
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 )

@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/antonbaumann/spotify-jukebox/handlers"
-	"github.com/antonbaumann/spotify-jukebox/user"
-	"github.com/antonbaumann/spotify-jukebox/util"
+	"github.com/encore-fm/backend/handlers"
+	"github.com/encore-fm/backend/user"
+	"github.com/encore-fm/backend/util"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 )

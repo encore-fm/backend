@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/antonbaumann/spotify-jukebox/events"
-	"github.com/antonbaumann/spotify-jukebox/playerctrl"
+	"github.com/encore-fm/backend/events"
+	"github.com/encore-fm/backend/playerctrl"
 
-	"github.com/antonbaumann/spotify-jukebox/config"
+	"github.com/encore-fm/backend/config"
 	log "github.com/sirupsen/logrus"
 )
 
